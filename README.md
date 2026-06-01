@@ -58,14 +58,13 @@ docker compose up -d --build
 
 ```yaml
 ports:
-  - "80:80"
+  - "${WEBSITE_HTTP_PORT:-80}:80"
 ```
 
-如果服务器已有外部网关或反代，可以改为只绑定本机端口，例如：
+如果服务器已有外部网关或反代，可以在 website 项目的 `.env` 中设置端口，例如：
 
-```yaml
-ports:
-  - "127.0.0.1:8081:80"
+```dotenv
+WEBSITE_HTTP_PORT=127.0.0.1:8081
 ```
 
 ## 发布检查
