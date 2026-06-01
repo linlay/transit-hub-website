@@ -1,0 +1,14 @@
+services:
+  transit-hub-website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - transit-hub-net
+    restart: unless-stopped
+
+networks:
+  transit-hub-net:
+    external: true
