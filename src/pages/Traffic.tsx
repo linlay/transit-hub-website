@@ -1,0 +1,74 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { api } from "../lib/api";
+import { dateTime, integer, usdFromMicro } from "../lib/format";
+
+export function Traffic() {
+  const [bucket, setBucket] = useState("day");
+  const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }) });
+  const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }) });
+
+  return (
+    <section className="page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">Usage</span>
+          <h1>Traffic</h1>
+        </div>
+        <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
+          <option value="day">Daily</option>
+          <option value="hour">Hourly</option>
+        </select>
+      </div>
+      <section className="panel">
+        <div className="chart">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={traffic.data?.items ?? []}>
+              <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
+              <YAxis tickLine={false} axisLine={false} />
+              <Tooltip />
+              <Bar dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+      <section className="panel">
+        <div className="panel-heading">
+          <h2>Request logs</h2>
+          <span>Latest gateway activity</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Key</th>
+                <th>Model</th>
+                <th>Provider</th>
+                <th>Status</th>
+                <th>Latency</th>
+                <th>Tokens</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(logs.data?.items ?? []).map((log) => (
+                <tr key={log.id}>
+                  <td>{dateTime(log.created_at)}</td>
+                  <td>{log.api_key_name}</td>
+                  <td>{log.public_model}</td>
+                  <td>{log.provider}</td>
+                  <td>{log.status_code}</td>
+                  <td>{integer(log.latency_ms)} ms</td>
+                  <td>{integer(log.total_tokens)}</td>
+                  <td>{usdFromMicro(log.cost_microusd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  );
+}
