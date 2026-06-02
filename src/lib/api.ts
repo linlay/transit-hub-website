@@ -6,6 +6,7 @@ import type {
   ModelPrice,
   Overview,
   ProviderSnapshot,
+  ProviderUsage,
   RequestLog,
   TrafficBucket,
 } from "./types";
@@ -70,6 +71,8 @@ export const api = {
     request<ModelPrice>(`/admin/model-prices/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deletePrice: (id: string) => request<{ status: string }>(`/admin/model-prices/${id}`, { method: "DELETE" }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
+  providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<ListResponse<ProviderUsage>>("/admin/providers/usage", { query }),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),
   createUser: (body: { username: string; password: string; status?: string }) =>
     request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(body) }),

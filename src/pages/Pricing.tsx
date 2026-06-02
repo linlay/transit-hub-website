@@ -23,6 +23,10 @@ export function Pricing() {
       protocol: String(form.get("protocol") ?? "openai"),
       public_model: String(form.get("public_model") ?? ""),
       input_cost_microusd_per_1m_tokens: Math.round(Number(form.get("input_usd") || 0) * 1_000_000),
+      input_cache_hit_cost_microusd_per_1m_tokens:
+        String(form.get("input_cache_hit_usd") ?? "").trim() === ""
+          ? null
+          : Math.round(Number(form.get("input_cache_hit_usd") || 0) * 1_000_000),
       output_cost_microusd_per_1m_tokens: Math.round(Number(form.get("output_usd") || 0) * 1_000_000),
       currency: "USD",
     });
@@ -44,7 +48,8 @@ export function Pricing() {
             <option value="anthropic">Anthropic</option>
           </select>
           <input name="public_model" placeholder="Public model" required />
-          <input name="input_usd" placeholder="Input USD / 1M" type="number" min="0" step="0.0001" />
+          <input name="input_usd" placeholder="Input miss USD / 1M" type="number" min="0" step="0.0001" />
+          <input name="input_cache_hit_usd" placeholder="Cache hit USD / 1M" type="number" min="0" step="0.0001" />
           <input name="output_usd" placeholder="Output USD / 1M" type="number" min="0" step="0.0001" />
           <button className="primary" type="submit">
             <Plus size={16} />
@@ -59,7 +64,8 @@ export function Pricing() {
               <tr>
                 <th>Protocol</th>
                 <th>Model</th>
-                <th>Input / 1M</th>
+                <th>Input miss / 1M</th>
+                <th>Cache hit / 1M</th>
                 <th>Output / 1M</th>
                 <th>Currency</th>
                 <th />
@@ -71,6 +77,7 @@ export function Pricing() {
                   <td>{price.protocol}</td>
                   <td>{price.public_model}</td>
                   <td>{usdFromMicro(price.input_cost_microusd_per_1m_tokens)}</td>
+                  <td>{price.input_cache_hit_cost_microusd_per_1m_tokens === null ? "n/a" : usdFromMicro(price.input_cache_hit_cost_microusd_per_1m_tokens)}</td>
                   <td>{usdFromMicro(price.output_cost_microusd_per_1m_tokens)}</td>
                   <td>{price.currency}</td>
                   <td>

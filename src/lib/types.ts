@@ -31,6 +31,10 @@ export type TrafficBucket = {
   request_tokens: number;
   response_tokens: number;
   total_tokens: number;
+  cache_hit_tokens: number;
+  cache_miss_tokens: number;
+  cache_total_tokens: number;
+  cache_hit_rate: number | null;
   cost_microusd: number;
   error_requests: number;
   average_latency_ms: number;
@@ -80,6 +84,10 @@ export type RequestLog = {
   request_tokens: number;
   response_tokens: number;
   total_tokens: number;
+  cache_hit_tokens: number;
+  cache_miss_tokens: number;
+  cache_total_tokens: number;
+  cache_hit_rate: number | null;
   cost_microusd: number;
   estimated: boolean;
   error_type: string;
@@ -105,10 +113,26 @@ export type ModelPrice = {
   protocol: string;
   public_model: string;
   input_cost_microusd_per_1m_tokens: number;
+  input_cache_hit_cost_microusd_per_1m_tokens: number | null;
   output_cost_microusd_per_1m_tokens: number;
   currency: string;
   created_at: string;
   updated_at: string;
+};
+
+export type ProviderUsage = {
+  provider: string;
+  requests: number;
+  request_tokens: number;
+  response_tokens: number;
+  total_tokens: number;
+  cache_hit_tokens: number;
+  cache_miss_tokens: number;
+  cache_total_tokens: number;
+  cache_hit_rate: number | null;
+  cost_microusd: number;
+  error_requests: number;
+  average_latency_ms: number;
 };
 
 export type ProviderSnapshot = {

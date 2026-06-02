@@ -1,19 +1,32 @@
-import { FormEvent } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
-import { dateTime, integer, usdFromMicro } from "../lib/format";
+import { dateTime, integer, nullablePercent, usdFromMicro } from "../lib/format";
 
 export function APIKeyDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [bucket, setBucket] = useState("day");
+  const [range, setRange] = useState("14d");
+  const trafficQuery = useMemo(() => {
+    const query: Record<string, string> = { api_key_id: id, bucket };
+    if (range !== "all") {
+      const days = Number(range.replace("d", ""));
+      const now = new Date();
+      query.from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+      query.to = now.toISOString();
+    }
+    return query;
+  }, [bucket, id, range]);
   const detail = useQuery({ queryKey: ["api-key", id], queryFn: () => api.apiKey(id), enabled: Boolean(id) });
   const usage = useQuery({ queryKey: ["api-key-usage", id], queryFn: () => api.apiKeyUsage(id), enabled: Boolean(id) });
+  const timeline = useQuery({ queryKey: ["api-key-traffic", id, bucket, range], queryFn: () => api.traffic(trafficQuery), enabled: Boolean(id) });
   const sessions = useQuery({ queryKey: ["api-key-sessions", id], queryFn: () => api.apiKeySessions(id, { include_stale: true }), enabled: Boolean(id) });
   const logs = useQuery({ queryKey: ["api-key-logs", id], queryFn: () => api.apiKeyLogs(id, { limit: 50 }), enabled: Boolean(id) });
   const update = useMutation({
@@ -57,6 +70,7 @@ export function APIKeyDetail() {
       <div className="metrics-grid">
         <MetricCard label="Requests" value={integer(summary?.requests ?? 0)} detail="Recorded calls" />
         <MetricCard label="Tokens" value={integer(summary?.total_tokens ?? 0)} detail="Prompt + completion" />
+        <MetricCard label="Cache hit" value={nullablePercent(summary?.cache_hit_rate)} detail={`${integer(summary?.cache_total_tokens ?? 0)} cache tokens`} />
         <MetricCard label="Cost" value={usdFromMicro(summary?.cost_microusd ?? 0)} detail="Estimated" />
         <MetricCard label="Active devices" value={integer(usage.data?.active_devices ?? 0)} detail="Current window" />
       </div>
@@ -64,17 +78,70 @@ export function APIKeyDetail() {
       <section className="panel">
         <div className="panel-heading">
           <h2>Traffic</h2>
-          <span>Recent daily calls</span>
+          <div className="panel-actions">
+            <select value={range} onChange={(event) => setRange(event.target.value)}>
+              <option value="7d">7 days</option>
+              <option value="14d">14 days</option>
+              <option value="30d">30 days</option>
+              <option value="all">All time</option>
+            </select>
+            <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
+              <option value="day">Daily</option>
+              <option value="hour">Hourly</option>
+            </select>
+          </div>
         </div>
         <div className="chart compact">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={usage.data?.recent_traffic ?? []}>
+            <ComposedChart data={timeline.data?.items ?? []}>
               <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis tickLine={false} axisLine={false} />
+              <YAxis yAxisId="requests" tickLine={false} axisLine={false} />
+              <YAxis yAxisId="tokens" orientation="right" tickLine={false} axisLine={false} />
               <Tooltip />
-              <Area type="monotone" dataKey="requests" stroke="#0a84ff" fill="#d8ecff" strokeWidth={2} />
-            </AreaChart>
+              <Legend />
+              <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
+              <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
+            </ComposedChart>
           </ResponsiveContainer>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bucket</th>
+                <th>Requests</th>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Total</th>
+                <th>Cache hit</th>
+                <th>Cache miss</th>
+                <th>Hit rate</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(timeline.data?.items ?? []).map((item) => (
+                <tr key={item.bucket}>
+                  <td>{item.bucket}</td>
+                  <td>{integer(item.requests)}</td>
+                  <td>{integer(item.request_tokens)}</td>
+                  <td>{integer(item.response_tokens)}</td>
+                  <td>{integer(item.total_tokens)}</td>
+                  <td>{integer(item.cache_hit_tokens)}</td>
+                  <td>{integer(item.cache_miss_tokens)}</td>
+                  <td>{nullablePercent(item.cache_hit_rate)}</td>
+                  <td>{usdFromMicro(item.cost_microusd)}</td>
+                </tr>
+              ))}
+              {!timeline.data?.items?.length ? (
+                <tr>
+                  <td colSpan={9} className="muted-cell">
+                    No traffic in this range.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -126,7 +193,9 @@ export function APIKeyDetail() {
                 <th>Model</th>
                 <th>Status</th>
                 <th>Device</th>
+                <th>Provider</th>
                 <th>Tokens</th>
+                <th>Cache</th>
                 <th>Cost</th>
               </tr>
             </thead>
@@ -137,7 +206,9 @@ export function APIKeyDetail() {
                   <td>{log.public_model}</td>
                   <td>{log.status_code}</td>
                   <td>{log.device_id || "none"}</td>
+                  <td>{log.provider || "none"}</td>
                   <td>{integer(log.total_tokens)}</td>
+                  <td>{nullablePercent(log.cache_hit_rate)}</td>
                   <td>{usdFromMicro(log.cost_microusd)}</td>
                 </tr>
               ))}

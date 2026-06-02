@@ -24,6 +24,11 @@ export function percent(value: number) {
   return `${Math.round((value || 0) * 100)}%`;
 }
 
+export function nullablePercent(value?: number | null) {
+  if (value === null || value === undefined) return "n/a";
+  return percent(value);
+}
+
 export function quotaRatio(used: number, quota: number) {
   if (!quota) return 0;
   return Math.min(1, used / quota);

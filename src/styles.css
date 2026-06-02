@@ -163,6 +163,12 @@ td small,
   gap: 14px;
 }
 
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .page-heading h1 {
   margin: 2px 0 0;
   font-size: 28px;
@@ -329,7 +335,7 @@ td small {
 }
 
 .inline-form {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
 }
 
 .settings-form {
@@ -417,6 +423,17 @@ td small {
   gap: 18px;
 }
 
+.provider-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.provider-metrics .metric {
+  min-height: 96px;
+}
+
 .login-screen {
   display: grid;
   min-height: 100vh;
@@ -461,6 +478,7 @@ td small {
 
   .inline-form,
   .settings-form,
+  .provider-metrics,
   .provider-grid {
     grid-template-columns: 1fr;
   }
@@ -492,6 +510,11 @@ td small {
 
   .page-heading,
   .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .panel-actions {
     align-items: stretch;
     flex-direction: column;
   }

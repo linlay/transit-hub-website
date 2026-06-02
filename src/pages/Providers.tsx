@@ -1,8 +1,14 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { MetricCard } from "../components/MetricCard";
 import { api } from "../lib/api";
+import { integer, nullablePercent, usdFromMicro } from "../lib/format";
+import type { ProviderUsage } from "../lib/types";
 
 export function Providers() {
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
+  const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: 30_000 });
+  const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
 
   return (
     <section className="page">
@@ -12,6 +18,55 @@ export function Providers() {
           <h1>Providers</h1>
         </div>
       </div>
+      <section className="panel">
+        <div className="panel-heading">
+          <h2>Provider usage</h2>
+          <span>All time</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Requests</th>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Total</th>
+                <th>Cache hit</th>
+                <th>Cache miss</th>
+                <th>Hit rate</th>
+                <th>Errors</th>
+                <th>Avg latency</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(usage.data?.items ?? []).map((item) => (
+                <tr key={item.provider}>
+                  <td>{item.provider}</td>
+                  <td>{integer(item.requests)}</td>
+                  <td>{integer(item.request_tokens)}</td>
+                  <td>{integer(item.response_tokens)}</td>
+                  <td>{integer(item.total_tokens)}</td>
+                  <td>{integer(item.cache_hit_tokens)}</td>
+                  <td>{integer(item.cache_miss_tokens)}</td>
+                  <td>{nullablePercent(item.cache_hit_rate)}</td>
+                  <td>{integer(item.error_requests)}</td>
+                  <td>{integer(item.average_latency_ms)} ms</td>
+                  <td>{usdFromMicro(item.cost_microusd)}</td>
+                </tr>
+              ))}
+              {!usage.data?.items?.length ? (
+                <tr>
+                  <td colSpan={11} className="muted-cell">
+                    No provider usage recorded yet.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
       {(providers.data?.providers ?? []).map((provider) => (
         <section className="panel" key={provider.name}>
           <div className="panel-heading">
@@ -20,6 +75,7 @@ export function Providers() {
               {provider.protocol} · {provider.base_url}
             </span>
           </div>
+          <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} />
           <div className="provider-grid">
             <div>
               <h3>Models</h3>
@@ -78,4 +134,32 @@ export function Providers() {
       ))}
     </section>
   );
+}
+
+function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
+  return (
+    <div className="provider-metrics">
+      <MetricCard label="Requests" value={integer(usage.requests)} detail={`${integer(usage.error_requests)} failed`} />
+      <MetricCard label="Tokens" value={integer(usage.total_tokens)} detail={`${integer(usage.request_tokens)} input`} />
+      <MetricCard label="Cache hit" value={nullablePercent(usage.cache_hit_rate)} detail={`${integer(usage.cache_total_tokens)} cache tokens`} />
+      <MetricCard label="Cost" value={usdFromMicro(usage.cost_microusd)} detail={`${integer(usage.average_latency_ms)} ms avg`} />
+    </div>
+  );
+}
+
+function emptyProviderUsage(provider: string): ProviderUsage {
+  return {
+    provider,
+    requests: 0,
+    request_tokens: 0,
+    response_tokens: 0,
+    total_tokens: 0,
+    cache_hit_tokens: 0,
+    cache_miss_tokens: 0,
+    cache_total_tokens: 0,
+    cache_hit_rate: null,
+    cost_microusd: 0,
+    error_requests: 0,
+    average_latency_ms: 0,
+  };
 }
