@@ -4,6 +4,7 @@ import { Save, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
+import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { dateTime, integer, nullablePercent, usdFromMicro } from "../lib/format";
@@ -51,8 +52,8 @@ export function APIKeyDetail() {
       name: String(form.get("name") ?? ""),
       description: String(form.get("description") ?? ""),
       status: String(form.get("status") ?? "active"),
-      request_quota: Number(form.get("request_quota") || 0),
-      token_quota: Number(form.get("token_quota") || 0),
+      request_quota: quotaValue(form, "request_quota"),
+      token_quota: quotaValue(form, "token_quota"),
       forced_expired: form.get("forced_expired") === "on",
     });
   }
@@ -242,14 +243,8 @@ export function APIKeyDetail() {
                 <option value="disabled">Disabled</option>
               </select>
             </label>
-            <label>
-              Request quota
-              <input name="request_quota" defaultValue={key.request_quota} min="0" type="number" />
-            </label>
-            <label>
-              Token quota
-              <input name="token_quota" defaultValue={key.token_quota} min="0" type="number" />
-            </label>
+            <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
+            <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
             <label className="check-row">
               <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
               Force expired

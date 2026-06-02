@@ -3,6 +3,8 @@ export type APIKey = {
   name: string;
   description: string;
   key_prefix: string;
+  source: "admin" | "jwt";
+  issuer_jti?: string;
   status: "active" | "disabled";
   expires_at?: string;
   forced_expired: boolean;
@@ -12,6 +14,21 @@ export type APIKey = {
   used_tokens: number;
   last_used_at?: string;
   deleted_at?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type JWTGrant = {
+  jti: string;
+  name: string;
+  description: string;
+  status: "active" | "disabled";
+  issue_quota: number;
+  issued_count: number;
+  issue_remaining: number;
+  issue_unlimited: boolean;
+  expires_at?: string;
+  last_issued_at?: string;
   created_at: string;
   updated_at: string;
 };

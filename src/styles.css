@@ -336,6 +336,12 @@ td small {
 
 .inline-form {
   grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  align-items: end;
+}
+
+.inline-form.grant-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  margin-bottom: 14px;
 }
 
 .settings-form {
@@ -343,7 +349,8 @@ td small {
 }
 
 .settings-form label,
-.login-panel label {
+.login-panel label,
+.quota-input > label {
   display: grid;
   gap: 6px;
   color: #505a65;
@@ -360,6 +367,50 @@ td small {
 .check-row input {
   width: 16px;
   height: 16px;
+}
+
+.quota-input {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.quota-input > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.quota-input input[type="number"] {
+  width: 100%;
+}
+
+.mini-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  color: #505a65;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mini-check input {
+  width: 16px;
+  height: 16px;
+}
+
+.table-edit {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.table-edit input {
+  width: 128px;
 }
 
 .search {
