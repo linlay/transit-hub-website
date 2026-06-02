@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Edit, Plus, Search } from "lucide-react";
+import { Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
@@ -18,7 +18,10 @@ export function JWTGrants() {
   const [status, setStatus] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<JWTGrant | null>(null);
+  const [viewing, setViewing] = useState<JWTGrant | null>(null);
   const [createdJWT, setCreatedJWT] = useState("");
+  const [createModelError, setCreateModelError] = useState("");
+  const [editModelError, setEditModelError] = useState("");
   const grants = useQuery({
     queryKey: ["jwt-grants", search, status],
     queryFn: () => api.jwtGrants({ search, status }),
@@ -32,6 +35,7 @@ export function JWTGrants() {
     mutationFn: api.createJWTGrant,
     onSuccess: (data) => {
       setCreatedJWT(data.jwt);
+      setCreateModelError("");
       queryClient.invalidateQueries({ queryKey: ["jwt-grants"] });
     },
   });
@@ -39,6 +43,19 @@ export function JWTGrants() {
     mutationFn: ({ jti, body }: { jti: string; body: Record<string, unknown> }) => api.updateJWTGrant(jti, body),
     onSuccess: () => {
       setEditing(null);
+      setEditModelError("");
+      queryClient.invalidateQueries({ queryKey: ["jwt-grants"] });
+    },
+  });
+  const viewGrant = useMutation({
+    mutationFn: api.jwtGrant,
+    onSuccess: (data) => setViewing(data),
+  });
+  const removeGrant = useMutation({
+    mutationFn: api.deleteJWTGrant,
+    onSuccess: () => {
+      setEditing(null);
+      setViewing(null);
       queryClient.invalidateQueries({ queryKey: ["jwt-grants"] });
     },
   });
@@ -50,19 +67,38 @@ export function JWTGrants() {
   function openCreateDialog() {
     createGrant.reset();
     setCreatedJWT("");
+    setCreateModelError("");
     setCreateOpen(true);
+  }
+
+  function openEditDialog(grant: JWTGrant) {
+    updateGrant.reset();
+    setEditModelError("");
+    setEditing(grant);
+  }
+
+  function openViewDialog(grant: JWTGrant) {
+    viewGrant.reset();
+    setViewing(null);
+    viewGrant.mutate(grant.jti);
   }
 
   function submitGrant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const allowedModels = form.getAll("allowed_models").map(String);
+    if (allowedModels.length === 0) {
+      setCreateModelError("Select at least one model.");
+      return;
+    }
+    setCreateModelError("");
     createGrant.mutate({
       name: String(form.get("name") ?? ""),
       description: String(form.get("description") ?? ""),
       issue_quota: quotaValue(form, "issue_quota"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
-      allowed_models: form.getAll("allowed_models").map(String),
+      allowed_models: allowedModels,
     });
   }
 
@@ -70,6 +106,12 @@ export function JWTGrants() {
     event.preventDefault();
     if (!editing) return;
     const form = new FormData(event.currentTarget);
+    const allowedModels = form.getAll("allowed_models").map(String);
+    if (allowedModels.length === 0) {
+      setEditModelError("Select at least one model.");
+      return;
+    }
+    setEditModelError("");
     updateGrant.mutate({
       jti: editing.jti,
       body: {
@@ -77,9 +119,15 @@ export function JWTGrants() {
         issue_quota: quotaValue(form, "issue_quota"),
         request_quota: quotaValue(form, "request_quota"),
         token_quota: quotaValue(form, "token_quota"),
-        allowed_models: form.getAll("allowed_models").map(String),
+        allowed_models: allowedModels,
       },
     });
+  }
+
+  function deleteGrant(grant: JWTGrant) {
+    if (window.confirm(`Delete ${grant.name}? Issued API keys will remain active.`)) {
+      removeGrant.mutate(grant.jti);
+    }
   }
 
   return (
@@ -142,15 +190,23 @@ export function JWTGrants() {
                     {grant.allowed_models.length ? (
                       <span className="model-summary">{grant.allowed_models.join(", ")}</span>
                     ) : (
-                      <span className="muted-cell">All models</span>
+                      <span className="muted-cell">No models allowed</span>
                     )}
                   </td>
                   <td>{dateTime(grant.expires_at)}</td>
                   <td>{dateTime(grant.last_issued_at)}</td>
                   <td>
-                    <button className="icon-button" onClick={() => setEditing(grant)} type="button">
-                      <Edit size={16} />
-                    </button>
+                    <div className="table-actions">
+                      <button className="icon-button" onClick={() => openViewDialog(grant)} title="View JWT" type="button">
+                        <Eye size={16} />
+                      </button>
+                      <button className="icon-button" onClick={() => openEditDialog(grant)} title="Edit" type="button">
+                        <Edit size={16} />
+                      </button>
+                      <button className="icon-button danger" onClick={() => deleteGrant(grant)} title="Delete" type="button">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -172,8 +228,8 @@ export function JWTGrants() {
             <input name="name" placeholder="Name" required />
             <input name="description" placeholder="Description" />
             <QuotaInput label="Issue quota" name="issue_quota" />
-            <QuotaInput label="Request quota" name="request_quota" initialValue={50} />
-            <QuotaInput label="Token quota" name="token_quota" initialValue={100000} />
+            <QuotaInput label="Request quota" name="request_quota" initialValue={500} />
+            <QuotaInput label="Token quota" name="token_quota" initialValue={2000000} />
             <ModelWhitelistInput models={providerModels} />
             {createdJWT ? (
               <div className="secret-box">
@@ -183,6 +239,7 @@ export function JWTGrants() {
                 </button>
               </div>
             ) : null}
+            {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {createGrant.error ? <span className="error-text">{createGrant.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">
@@ -208,6 +265,7 @@ export function JWTGrants() {
             <QuotaInput label="Request quota" name="request_quota" initialValue={editing.request_quota} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={editing.token_quota} />
             <ModelWhitelistInput models={providerModels} selected={editing.allowed_models} />
+            {editModelError ? <span className="error-text">{editModelError}</span> : null}
             {updateGrant.error ? <span className="error-text">{updateGrant.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setEditing(null)} type="button">
@@ -220,6 +278,31 @@ export function JWTGrants() {
           </form>
         </ModalDialog>
       ) : null}
+
+      {viewing ? (
+        <ModalDialog title="JWT" onClose={() => setViewing(null)}>
+          <div className="dialog-form">
+            <strong>{viewing.name}</strong>
+            {viewing.jwt ? (
+              <div className="secret-box">
+                <code>{viewing.jwt}</code>
+                <button className="icon-button" onClick={() => navigator.clipboard.writeText(viewing.jwt ?? "")} type="button">
+                  <Copy size={16} />
+                </button>
+              </div>
+            ) : (
+              <span className="muted-cell">JWT unavailable</span>
+            )}
+            <div className="dialog-actions">
+              <button className="icon-text" onClick={() => setViewing(null)} type="button">
+                Close
+              </button>
+            </div>
+          </div>
+        </ModalDialog>
+      ) : null}
+      {viewGrant.error ? <span className="error-text">{viewGrant.error.message}</span> : null}
+      {removeGrant.error ? <span className="error-text">{removeGrant.error.message}</span> : null}
     </section>
   );
 }

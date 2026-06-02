@@ -18,6 +18,7 @@ export function APIKeys() {
   const [issuerJTI, setIssuerJTI] = useState(params.get("issuer_jti") ?? "");
   const [createOpen, setCreateOpen] = useState(false);
   const [createdKey, setCreatedKey] = useState("");
+  const [createModelError, setCreateModelError] = useState("");
   const keys = useQuery({
     queryKey: ["api-keys", search, status, source, issuerJTI],
     queryFn: () => api.apiKeys({ search, status, source, issuer_jti: issuerJTI }),
@@ -31,6 +32,7 @@ export function APIKeys() {
     mutationFn: api.createAPIKey,
     onSuccess: (data) => {
       setCreatedKey(data.key);
+      setCreateModelError("");
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
@@ -42,18 +44,25 @@ export function APIKeys() {
   function openCreateDialog() {
     create.reset();
     setCreatedKey("");
+    setCreateModelError("");
     setCreateOpen(true);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const allowedModels = form.getAll("allowed_models").map(String);
+    if (allowedModels.length === 0) {
+      setCreateModelError("Select at least one model.");
+      return;
+    }
+    setCreateModelError("");
     create.mutate({
       name: String(form.get("name") ?? ""),
       description: String(form.get("description") ?? ""),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
-      allowed_models: form.getAll("allowed_models").map(String),
+      allowed_models: allowedModels,
     });
   }
 
@@ -170,6 +179,7 @@ export function APIKeys() {
                 </button>
               </div>
             ) : null}
+            {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {create.error ? <span className="error-text">{create.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">

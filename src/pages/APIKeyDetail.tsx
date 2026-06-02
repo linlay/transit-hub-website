@@ -16,6 +16,7 @@ export function APIKeyDetail() {
   const queryClient = useQueryClient();
   const [bucket, setBucket] = useState("day");
   const [range, setRange] = useState("14d");
+  const [modelError, setModelError] = useState("");
   const trafficQuery = useMemo(() => {
     const query: Record<string, string> = { api_key_id: id, bucket };
     if (range !== "all") {
@@ -35,6 +36,7 @@ export function APIKeyDetail() {
   const update = useMutation({
     mutationFn: (body: Record<string, unknown>) => api.updateAPIKey(id, body),
     onSuccess: () => {
+      setModelError("");
       queryClient.invalidateQueries({ queryKey: ["api-key", id] });
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
@@ -51,13 +53,19 @@ export function APIKeyDetail() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const allowedModels = form.getAll("allowed_models").map(String);
+    if (allowedModels.length === 0) {
+      setModelError("Select at least one model.");
+      return;
+    }
+    setModelError("");
     update.mutate({
       name: String(form.get("name") ?? ""),
       description: String(form.get("description") ?? ""),
       status: String(form.get("status") ?? "active"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
-      allowed_models: form.getAll("allowed_models").map(String),
+      allowed_models: allowedModels,
       forced_expired: form.get("forced_expired") === "on",
     });
   }
@@ -250,10 +258,13 @@ export function APIKeyDetail() {
             <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
             <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
             <ModelWhitelistInput key={`models-${key.id}-${key.allowed_models.join(",")}`} models={providerModels} selected={key.allowed_models} />
+            {key.allowed_models.length === 0 ? <span className="muted-cell full-row">No models allowed</span> : null}
             <label className="check-row">
               <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
               Force expired
             </label>
+            {modelError ? <span className="error-text">{modelError}</span> : null}
+            {update.error ? <span className="error-text">{update.error.message}</span> : null}
             <button className="primary" type="submit">
               <Save size={16} />
               Save

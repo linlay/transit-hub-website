@@ -56,10 +56,12 @@ export const api = {
   deleteAPIKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`, { method: "DELETE" }),
   jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<JWTGrant>>("/admin/jwt-grants", { query }),
+  jwtGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`),
   createJWTGrant: (body: { name: string; description?: string; issue_quota: number; request_quota: number; token_quota: number; allowed_models: string[] }) =>
     request<JWTGrant & { jwt: string }>("/admin/jwt-grants", { method: "POST", body: JSON.stringify(body) }),
   updateJWTGrant: (jti: string, body: Record<string, unknown>) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteJWTGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "DELETE" }),
   apiKeyUsage: (id: string) => request<{ key: APIKey; summary: TrafficBucket; recent_traffic: TrafficBucket[]; active_devices: number }>(`/admin/api-keys/${id}/usage`),
   apiKeyLogs: (id: string, query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<RequestLog>>(`/admin/api-keys/${id}/logs`, { query }),

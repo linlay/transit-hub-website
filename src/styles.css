@@ -284,8 +284,18 @@ td small {
   font-size: 12px;
 }
 
+.table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .muted-cell {
   color: #68717c;
+}
+
+.full-row {
+  grid-column: 1 / -1;
 }
 
 .pill {
