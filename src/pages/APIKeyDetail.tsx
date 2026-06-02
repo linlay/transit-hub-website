@@ -4,6 +4,7 @@ import { Save, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
+import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
@@ -26,6 +27,7 @@ export function APIKeyDetail() {
     return query;
   }, [bucket, id, range]);
   const detail = useQuery({ queryKey: ["api-key", id], queryFn: () => api.apiKey(id), enabled: Boolean(id) });
+  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers });
   const usage = useQuery({ queryKey: ["api-key-usage", id], queryFn: () => api.apiKeyUsage(id), enabled: Boolean(id) });
   const timeline = useQuery({ queryKey: ["api-key-traffic", id, bucket, range], queryFn: () => api.traffic(trafficQuery), enabled: Boolean(id) });
   const sessions = useQuery({ queryKey: ["api-key-sessions", id], queryFn: () => api.apiKeySessions(id, { include_stale: true }), enabled: Boolean(id) });
@@ -44,6 +46,7 @@ export function APIKeyDetail() {
 
   const key = detail.data;
   const summary = usage.data?.summary;
+  const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,6 +57,7 @@ export function APIKeyDetail() {
       status: String(form.get("status") ?? "active"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      allowed_models: form.getAll("allowed_models").map(String),
       forced_expired: form.get("forced_expired") === "on",
     });
   }
@@ -245,6 +249,7 @@ export function APIKeyDetail() {
             </label>
             <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
             <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
+            <ModelWhitelistInput key={`models-${key.id}-${key.allowed_models.join(",")}`} models={providerModels} selected={key.allowed_models} />
             <label className="check-row">
               <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
               Force expired

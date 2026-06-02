@@ -1,7 +1,8 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Plus, Save, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
@@ -21,6 +22,11 @@ export function APIKeys() {
     queryKey: ["jwt-grants"],
     queryFn: api.jwtGrants,
   });
+  const providers = useQuery({
+    queryKey: ["providers"],
+    queryFn: api.providers,
+  });
+  const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
   const create = useMutation({
     mutationFn: api.createAPIKey,
     onSuccess: (data) => {
@@ -52,6 +58,7 @@ export function APIKeys() {
       description: String(form.get("description") ?? ""),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      allowed_models: form.getAll("allowed_models").map(String),
     });
     event.currentTarget.reset();
   }
@@ -98,6 +105,7 @@ export function APIKeys() {
           <input name="description" placeholder="Description" />
           <QuotaInput label="Request quota" name="request_quota" />
           <QuotaInput label="Token quota" name="token_quota" />
+          <ModelWhitelistInput models={providerModels} />
           <button className="primary" disabled={create.isPending} type="submit">
             <Plus size={16} />
             Create

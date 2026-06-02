@@ -369,6 +369,52 @@ td small {
   height: 16px;
 }
 
+.model-picker {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.model-picker legend {
+  color: #505a65;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.model-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.model-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  max-width: 100%;
+  padding: 0 10px;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #17202a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.model-option input {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.model-option span {
+  overflow-wrap: anywhere;
+}
+
 .quota-input {
   display: grid;
   gap: 6px;

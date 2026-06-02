@@ -10,6 +10,7 @@ export type APIKey = {
   forced_expired: boolean;
   request_quota: number;
   token_quota: number;
+  allowed_models: string[];
   used_requests: number;
   used_tokens: number;
   last_used_at?: string;
