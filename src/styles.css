@@ -163,6 +163,16 @@ td small,
   gap: 14px;
 }
 
+.filters {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.filters > input,
+.filters > select {
+  width: 180px;
+}
+
 .panel-actions {
   display: flex;
   align-items: center;
@@ -263,6 +273,15 @@ td small {
 .table-link {
   color: #0a64d6;
   font-weight: 650;
+}
+
+.mono,
+.mono-link {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.mono-link {
+  font-size: 12px;
 }
 
 .muted-cell {
@@ -494,6 +513,67 @@ td small {
   white-space: normal;
 }
 
+.error-text {
+  border-radius: 8px;
+  background: #fff1f0;
+  color: #b42318;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.model-summary {
+  display: block;
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: rgba(23, 32, 42, 0.42);
+  padding: 28px;
+}
+
+.dialog {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 720px);
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #fff;
+  padding: 18px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+}
+
+.dialog-header,
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.dialog-form {
+  display: grid;
+  gap: 12px;
+}
+
+.dialog-actions {
+  justify-content: flex-end;
+}
+
 .progress-cell {
   display: grid;
   gap: 6px;
@@ -618,5 +698,20 @@ td small {
 
   .search {
     min-width: 0;
+  }
+
+  .filters > input,
+  .filters > select,
+  .dialog-actions > button {
+    width: 100%;
+  }
+
+  .dialog-backdrop {
+    padding: 16px;
+  }
+
+  .dialog-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
   }
 }

@@ -16,6 +16,7 @@ import { api } from "../lib/api";
 const nav = [
   { to: "/", label: "Dashboard", icon: Gauge },
   { to: "/api-keys", label: "API Keys", icon: KeyRound },
+  { to: "/jwt-grants", label: "JWT Grants", icon: KeyRound },
   { to: "/sessions", label: "Sessions", icon: Cable },
   { to: "/traffic", label: "Traffic", icon: Activity },
   { to: "/pricing", label: "Pricing", icon: BadgeDollarSign },

@@ -54,8 +54,9 @@ export const api = {
   updateAPIKey: (id: string, body: Partial<APIKey>) =>
     request<APIKey>(`/admin/api-keys/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteAPIKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`, { method: "DELETE" }),
-  jwtGrants: () => request<ListResponse<JWTGrant>>("/admin/jwt-grants"),
-  createJWTGrant: (body: { name: string; description?: string; issue_quota: number }) =>
+  jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<ListResponse<JWTGrant>>("/admin/jwt-grants", { query }),
+  createJWTGrant: (body: { name: string; description?: string; issue_quota: number; request_quota: number; token_quota: number; allowed_models: string[] }) =>
     request<JWTGrant & { jwt: string }>("/admin/jwt-grants", { method: "POST", body: JSON.stringify(body) }),
   updateJWTGrant: (jti: string, body: Record<string, unknown>) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: JSON.stringify(body) }),

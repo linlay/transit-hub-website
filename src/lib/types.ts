@@ -28,6 +28,9 @@ export type JWTGrant = {
   issued_count: number;
   issue_remaining: number;
   issue_unlimited: boolean;
+  request_quota: number;
+  token_quota: number;
+  allowed_models: string[];
   expires_at?: string;
   last_issued_at?: string;
   created_at: string;
