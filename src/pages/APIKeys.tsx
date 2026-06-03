@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Plus, Search, Trash2 } from "lucide-react";
+import { Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
@@ -21,6 +21,8 @@ export function APIKeys() {
   const [createdKey, setCreatedKey] = useState("");
   const [createModelError, setCreateModelError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
+  const [selecting, setSelecting] = useState(false);
+  const [selectedIDs, setSelectedIDs] = useState<Set<string>>(() => new Set());
   const keys = useQuery({
     queryKey: ["api-keys", search, status, source, issuerJTI],
     queryFn: () => api.apiKeys({ search, status, source, issuer_jti: issuerJTI }),
@@ -40,9 +42,22 @@ export function APIKeys() {
     },
   });
   const remove = useMutation({
-    mutationFn: api.deleteAPIKey,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api-keys"] }),
+    mutationFn: (id: string) => api.batchAPIKeys({ action: "delete", ids: [id] }),
+    onSuccess: () => {
+      setSelectedIDs(new Set());
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
   });
+  const batch = useMutation({
+    mutationFn: api.batchAPIKeys,
+    onSuccess: () => {
+      setSelectedIDs(new Set());
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
+  });
+  const visibleKeys = keys.data?.items ?? [];
+  const selectedCount = selectedIDs.size;
+  const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selectedIDs.has(key.id));
 
   function openCreateDialog() {
     create.reset();
@@ -75,6 +90,53 @@ export function APIKeys() {
     });
   }
 
+  function toggleSelection(id: string) {
+    setSelectedIDs((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleAllVisible() {
+    setSelectedIDs((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) {
+        visibleKeys.forEach((key) => next.delete(key.id));
+      } else {
+        visibleKeys.forEach((key) => next.add(key.id));
+      }
+      return next;
+    });
+  }
+
+  function batchSelected(action: "delete" | "inactive") {
+    const ids = Array.from(selectedIDs);
+    if (ids.length === 0) return;
+    const verb = action === "delete" ? "Delete" : "Inactive";
+    if (window.confirm(`${verb} ${ids.length} selected API keys?`)) {
+      batch.mutate({ action, ids });
+    }
+  }
+
+  function deleteByIssuerJTI() {
+    const value = issuerJTI.trim();
+    if (!value) return;
+    if (window.confirm(`Delete API keys issued by ${value}?`)) {
+      batch.mutate({ action: "delete", issuer_jti: value });
+    }
+  }
+
+  function inactiveKey(id: string, name: string) {
+    if (window.confirm(`Inactive ${name}?`)) {
+      batch.mutate({ action: "inactive", ids: [id] });
+    }
+  }
+
   return (
     <section className="page">
       <div className="page-heading">
@@ -105,11 +167,44 @@ export function APIKeys() {
             <option value="jwt">JWT</option>
           </select>
           <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder="Issuer JTI" />
+          <button
+            className="icon-text"
+            onClick={() => {
+              setSelecting((value) => !value);
+              setSelectedIDs(new Set());
+            }}
+            type="button"
+          >
+            {selecting ? "Cancel selection" : "Select keys"}
+          </button>
+          <button className="icon-text danger" disabled={!issuerJTI.trim() || batch.isPending} onClick={deleteByIssuerJTI} type="button">
+            <Trash2 size={16} />
+            Delete by Issuer JTI
+          </button>
         </div>
+        {selecting ? (
+          <div className="bulk-bar">
+            <span>{selectedCount} selected</span>
+            <button className="icon-text" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("inactive")} type="button">
+              <Ban size={16} />
+              Inactive selected
+            </button>
+            <button className="icon-text danger" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("delete")} type="button">
+              <Trash2 size={16} />
+              Delete selected
+            </button>
+          </div>
+        ) : null}
+        {batch.error ? <div className="error-text">{batch.error.message}</div> : null}
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
+                {selecting ? (
+                  <th className="select-cell">
+                    <input checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />
+                  </th>
+                ) : null}
                 <th>Name</th>
                 <th>Status</th>
                 <th>Source</th>
@@ -121,8 +216,13 @@ export function APIKeys() {
               </tr>
             </thead>
             <tbody>
-              {(keys.data?.items ?? []).map((key) => (
+              {visibleKeys.map((key) => (
                 <tr key={key.id}>
+                  {selecting ? (
+                    <td className="select-cell">
+                      <input checked={selectedIDs.has(key.id)} onChange={() => toggleSelection(key.id)} type="checkbox" />
+                    </td>
+                  ) : null}
                   <td>
                     <Link className="table-link" to={`/api-keys/${key.id}`}>
                       {key.name}
@@ -150,19 +250,27 @@ export function APIKeys() {
                   </td>
                   <td>{dateTime(key.last_used_at)}</td>
                   <td>
-                    <button
-                      className="icon-button danger"
-                      onClick={() => window.confirm(`Delete ${key.name}?`) && remove.mutate(key.id)}
-                      type="button"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="table-actions">
+                      {key.status === "active" ? (
+                        <button className="icon-button" onClick={() => inactiveKey(key.id, key.name)} title="Inactive" type="button">
+                          <Ban size={16} />
+                        </button>
+                      ) : null}
+                      <button
+                        className="icon-button danger"
+                        onClick={() => window.confirm(`Delete ${key.name}?`) && remove.mutate(key.id)}
+                        title="Delete"
+                        type="button"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {!keys.data?.items?.length ? (
                 <tr>
-                  <td colSpan={8} className="muted-cell">
+                  <td colSpan={selecting ? 9 : 8} className="muted-cell">
                     No API keys found.
                   </td>
                 </tr>

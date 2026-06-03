@@ -20,6 +20,7 @@ export function JWTGrants() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<JWTGrant | null>(null);
   const [viewing, setViewing] = useState<JWTGrant | null>(null);
+  const [deleting, setDeleting] = useState<JWTGrant | null>(null);
   const [createdJWT, setCreatedJWT] = useState("");
   const [createModelError, setCreateModelError] = useState("");
   const [editModelError, setEditModelError] = useState("");
@@ -56,11 +57,13 @@ export function JWTGrants() {
     onSuccess: (data) => setViewing(data),
   });
   const removeGrant = useMutation({
-    mutationFn: api.deleteJWTGrant,
+    mutationFn: ({ jti, deleteAPIKeys }: { jti: string; deleteAPIKeys: boolean }) => api.deleteJWTGrant(jti, { delete_api_keys: deleteAPIKeys }),
     onSuccess: () => {
       setEditing(null);
       setViewing(null);
+      setDeleting(null);
       queryClient.invalidateQueries({ queryKey: ["jwt-grants"] });
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
 
@@ -141,9 +144,8 @@ export function JWTGrants() {
   }
 
   function deleteGrant(grant: JWTGrant) {
-    if (window.confirm(`Delete ${grant.name}? Issued API keys will remain active.`)) {
-      removeGrant.mutate(grant.jti);
-    }
+    removeGrant.reset();
+    setDeleting(grant);
   }
 
   return (
@@ -320,7 +322,30 @@ export function JWTGrants() {
         </ModalDialog>
       ) : null}
       {viewGrant.error ? <span className="error-text">{viewGrant.error.message}</span> : null}
-      {removeGrant.error ? <span className="error-text">{removeGrant.error.message}</span> : null}
+
+      {deleting ? (
+        <ModalDialog title="Delete JWT grant" onClose={() => setDeleting(null)}>
+          <div className="dialog-form">
+            <p className="dialog-copy">
+              Delete <strong>{deleting.name}</strong>? Choose whether issued API keys should remain active.
+            </p>
+            {removeGrant.error ? <span className="error-text">{removeGrant.error.message}</span> : null}
+            <div className="dialog-actions">
+              <button className="icon-text" onClick={() => setDeleting(null)} type="button">
+                Cancel
+              </button>
+              <button className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: false })} type="button">
+                <Trash2 size={16} />
+                Grant only
+              </button>
+              <button className="primary" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: true })} type="button">
+                <Trash2 size={16} />
+                Grant and API keys
+              </button>
+            </div>
+          </div>
+        </ModalDialog>
+      ) : null}
     </section>
   );
 }

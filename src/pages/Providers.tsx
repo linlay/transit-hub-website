@@ -2,13 +2,17 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MetricCard } from "../components/MetricCard";
 import { api } from "../lib/api";
-import { integer, nullablePercent, usdFromMicro } from "../lib/format";
-import type { ProviderUsage } from "../lib/types";
+import { compactTokenCount, integer, nullablePercent, usdFromMicro } from "../lib/format";
+import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
 
 export function Providers() {
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: 30_000 });
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
+  const usageByAccount = useMemo(
+    () => new Map((usage.data?.account_items ?? []).map((item) => [`${item.provider}:${item.pool}:${item.account}`, item])),
+    [usage.data?.account_items],
+  );
 
   return (
     <section className="page">
@@ -45,11 +49,11 @@ export function Providers() {
                 <tr key={item.provider}>
                   <td>{item.provider}</td>
                   <td>{integer(item.requests)}</td>
-                  <td>{integer(item.request_tokens)}</td>
-                  <td>{integer(item.response_tokens)}</td>
-                  <td>{integer(item.total_tokens)}</td>
-                  <td>{integer(item.cache_hit_tokens)}</td>
-                  <td>{integer(item.cache_miss_tokens)}</td>
+                  <td>{compactTokenCount(item.request_tokens)}</td>
+                  <td>{compactTokenCount(item.response_tokens)}</td>
+                  <td>{compactTokenCount(item.total_tokens)}</td>
+                  <td>{compactTokenCount(item.cache_hit_tokens)}</td>
+                  <td>{compactTokenCount(item.cache_miss_tokens)}</td>
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
                   <td>{integer(item.error_requests)}</td>
                   <td>{integer(item.average_latency_ms)} ms</td>
@@ -110,20 +114,27 @@ export function Providers() {
                     <tr>
                       <th>Pool</th>
                       <th>Account</th>
+                      <th>Requests</th>
+                      <th>Tokens</th>
                       <th>Weight</th>
                       <th>Circuit</th>
                     </tr>
                   </thead>
                   <tbody>
                     {provider.pools.flatMap((pool) =>
-                      pool.accounts.map((account) => (
-                        <tr key={`${pool.name}:${account.name}`}>
-                          <td>{pool.name}</td>
-                          <td>{account.name}</td>
-                          <td>{account.weight}</td>
-                          <td>{String(account.circuit.state ?? "closed")}</td>
-                        </tr>
-                      )),
+                      pool.accounts.map((account) => {
+                        const accountUsage = usageByAccount.get(`${provider.name}:${pool.name}:${account.name}`) ?? emptyAccountUsage(provider.name, pool.name, account.name);
+                        return (
+                          <tr key={`${pool.name}:${account.name}`}>
+                            <td>{pool.name}</td>
+                            <td>{account.name}</td>
+                            <td>{integer(accountUsage.requests)}</td>
+                            <td>{compactTokenCount(accountUsage.total_tokens)}</td>
+                            <td>{account.weight}</td>
+                            <td>{String(account.circuit.state ?? "closed")}</td>
+                          </tr>
+                        );
+                      }),
                     )}
                   </tbody>
                 </table>
@@ -140,8 +151,8 @@ function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
   return (
     <div className="provider-metrics">
       <MetricCard label="Requests" value={integer(usage.requests)} detail={`${integer(usage.error_requests)} failed`} />
-      <MetricCard label="Tokens" value={integer(usage.total_tokens)} detail={`${integer(usage.request_tokens)} input`} />
-      <MetricCard label="Cache hit" value={nullablePercent(usage.cache_hit_rate)} detail={`${integer(usage.cache_total_tokens)} cache tokens`} />
+      <MetricCard label="Tokens" value={compactTokenCount(usage.total_tokens)} detail={`${compactTokenCount(usage.request_tokens)} input`} />
+      <MetricCard label="Cache hit" value={nullablePercent(usage.cache_hit_rate)} detail={`${compactTokenCount(usage.cache_total_tokens)} cache tokens`} />
       <MetricCard label="Cost" value={usdFromMicro(usage.cost_microusd)} detail={`${integer(usage.average_latency_ms)} ms avg`} />
     </div>
   );
@@ -161,5 +172,18 @@ function emptyProviderUsage(provider: string): ProviderUsage {
     cost_microusd: 0,
     error_requests: 0,
     average_latency_ms: 0,
+  };
+}
+
+function emptyAccountUsage(provider: string, pool: string, account: string): ProviderAccountUsage {
+  return {
+    provider,
+    pool,
+    account,
+    requests: 0,
+    request_tokens: 0,
+    response_tokens: 0,
+    total_tokens: 0,
+    error_requests: 0,
   };
 }

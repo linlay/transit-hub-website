@@ -29,6 +29,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
 input,
 select {
   height: 38px;
@@ -163,6 +168,14 @@ td small,
   gap: 14px;
 }
 
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .filters {
   justify-content: flex-start;
   flex-wrap: wrap;
@@ -177,6 +190,18 @@ td small,
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  color: #505a65;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .page-heading h1 {
@@ -290,6 +315,17 @@ td small {
   gap: 6px;
 }
 
+.select-cell {
+  width: 42px;
+  text-align: center;
+}
+
+.select-cell input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
 .muted-cell {
   color: #68717c;
 }
@@ -374,6 +410,32 @@ td small {
 }
 
 .settings-form {
+  gap: 18px;
+}
+
+.settings-group {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.settings-group h3 {
+  margin: 0;
+  color: #17202a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-grid.three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -545,6 +607,18 @@ td small {
   font-size: 13px;
 }
 
+.saved-text {
+  color: #187443;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dialog-copy {
+  margin: 0;
+  color: #505a65;
+  line-height: 1.5;
+}
+
 .model-summary {
   display: block;
   max-width: 260px;
@@ -679,6 +753,8 @@ td small {
 
   .inline-form,
   .settings-form,
+  .settings-grid.two,
+  .settings-grid.three,
   .provider-metrics,
   .provider-grid {
     grid-template-columns: 1fr;
@@ -715,6 +791,7 @@ td small {
     flex-direction: column;
   }
 
+  .page-actions,
   .panel-actions {
     align-items: stretch;
     flex-direction: column;

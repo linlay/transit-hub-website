@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Trash2 } from "lucide-react";
+import { Ban, Save, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
@@ -17,6 +17,7 @@ export function APIKeyDetail() {
   const [bucket, setBucket] = useState("day");
   const [range, setRange] = useState("14d");
   const [modelError, setModelError] = useState("");
+  const [savedMessage, setSavedMessage] = useState(false);
   const trafficQuery = useMemo(() => {
     const query: Record<string, string> = { api_key_id: id, bucket };
     if (range !== "all") {
@@ -37,6 +38,8 @@ export function APIKeyDetail() {
     mutationFn: (body: Record<string, unknown>) => api.updateAPIKey(id, body),
     onSuccess: () => {
       setModelError("");
+      setSavedMessage(true);
+      window.setTimeout(() => setSavedMessage(false), 1600);
       queryClient.invalidateQueries({ queryKey: ["api-key", id] });
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
@@ -44,6 +47,13 @@ export function APIKeyDetail() {
   const remove = useMutation({
     mutationFn: () => api.deleteAPIKey(id),
     onSuccess: () => navigate("/api-keys", { replace: true }),
+  });
+  const inactive = useMutation({
+    mutationFn: () => api.batchAPIKeys({ action: "inactive", ids: [id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-key", id] });
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+    },
   });
 
   const key = detail.data;
@@ -77,7 +87,21 @@ export function APIKeyDetail() {
           <span className="eyebrow">API Key</span>
           <h1>{key?.name ?? "Loading..."}</h1>
         </div>
-        {key ? <StatusPill active={key.status === "active"} label={key.status} /> : null}
+        {key ? (
+          <div className="page-actions">
+            <StatusPill active={key.status === "active"} label={key.status} />
+            {key.status === "active" ? (
+              <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm("Inactive this key?") && inactive.mutate()} type="button">
+                <Ban size={16} />
+                Inactive
+              </button>
+            ) : null}
+            <button className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm("Delete this key?") && remove.mutate()} type="button">
+              <Trash2 size={16} />
+              Delete
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="metrics-grid">
@@ -234,41 +258,54 @@ export function APIKeyDetail() {
         <section className="panel">
           <div className="panel-heading">
             <h2>Settings</h2>
-            <button className="icon-text danger" onClick={() => window.confirm("Delete this key?") && remove.mutate()} type="button">
-              <Trash2 size={16} />
-              Delete
-            </button>
+            <div className="panel-actions">
+              {savedMessage ? <span className="saved-text">Saved</span> : null}
+              <button className="primary" disabled={update.isPending} form="api-key-settings" type="submit">
+                <Save size={16} />
+                Save
+              </button>
+            </div>
           </div>
-          <form className="settings-form" onSubmit={submit}>
-            <label>
-              Name
-              <input name="name" defaultValue={key.name} />
-            </label>
-            <label>
-              Description
-              <input name="description" defaultValue={key.description} />
-            </label>
-            <label>
-              Status
-              <select name="status" defaultValue={key.status}>
-                <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
-              </select>
-            </label>
-            <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
-            <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
-            <ModelWhitelistInput key={`models-${key.id}-${key.allowed_models.join(",")}`} models={providerModels} selected={key.allowed_models} />
-            {key.allowed_models.length === 0 ? <span className="muted-cell full-row">No models allowed</span> : null}
-            <label className="check-row">
-              <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
-              Force expired
-            </label>
+          <form id="api-key-settings" className="settings-form" onSubmit={submit}>
+            <div className="settings-group">
+              <h3>Identity</h3>
+              <div className="settings-grid two">
+                <label>
+                  Name
+                  <input name="name" defaultValue={key.name} />
+                </label>
+                <label>
+                  Description
+                  <input name="description" defaultValue={key.description} />
+                </label>
+              </div>
+            </div>
+            <div className="settings-group">
+              <h3>Limits</h3>
+              <div className="settings-grid three">
+                <label>
+                  Status
+                  <select name="status" defaultValue={key.status}>
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </label>
+                <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
+                <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
+              </div>
+              <label className="check-row">
+                <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
+                Force expired
+              </label>
+            </div>
+            <div className="settings-group">
+              <h3>Models</h3>
+              <ModelWhitelistInput key={`models-${key.id}-${key.allowed_models.join(",")}`} models={providerModels} selected={key.allowed_models} />
+              {key.allowed_models.length === 0 ? <span className="muted-cell full-row">No models allowed</span> : null}
+            </div>
             {modelError ? <span className="error-text">{modelError}</span> : null}
             {update.error ? <span className="error-text">{update.error.message}</span> : null}
-            <button className="primary" type="submit">
-              <Save size={16} />
-              Save
-            </button>
+            {inactive.error ? <span className="error-text">{inactive.error.message}</span> : null}
           </form>
         </section>
       ) : null}

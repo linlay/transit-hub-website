@@ -1,5 +1,6 @@
 import type {
   AdminUser,
+  APIKeyBatchResult,
   APIKey,
   APISession,
   JWTGrant,
@@ -7,6 +8,7 @@ import type {
   ModelPrice,
   Overview,
   ProviderSnapshot,
+  ProviderUsageResponse,
   ProviderUsage,
   RequestLog,
   TrafficBucket,
@@ -54,6 +56,8 @@ export const api = {
   updateAPIKey: (id: string, body: Partial<APIKey>) =>
     request<APIKey>(`/admin/api-keys/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteAPIKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`, { method: "DELETE" }),
+  batchAPIKeys: (body: { action: "delete" | "inactive"; ids?: string[]; issuer_jti?: string }) =>
+    request<APIKeyBatchResult>("/admin/api-keys/batch", { method: "POST", body: JSON.stringify(body) }),
   jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<JWTGrant>>("/admin/jwt-grants", { query }),
   jwtGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`),
@@ -61,7 +65,8 @@ export const api = {
     request<JWTGrant & { jwt: string }>("/admin/jwt-grants", { method: "POST", body: JSON.stringify(body) }),
   updateJWTGrant: (jti: string, body: Record<string, unknown>) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: JSON.stringify(body) }),
-  deleteJWTGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "DELETE" }),
+  deleteJWTGrant: (jti: string, query?: { delete_api_keys?: boolean }) =>
+    request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "DELETE", query }),
   apiKeyUsage: (id: string) => request<{ key: APIKey; summary: TrafficBucket; recent_traffic: TrafficBucket[]; active_devices: number }>(`/admin/api-keys/${id}/usage`),
   apiKeyLogs: (id: string, query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<RequestLog>>(`/admin/api-keys/${id}/logs`, { query }),
@@ -81,7 +86,7 @@ export const api = {
   deletePrice: (id: string) => request<{ status: string }>(`/admin/model-prices/${id}`, { method: "DELETE" }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
   providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
-    request<ListResponse<ProviderUsage>>("/admin/providers/usage", { query }),
+    request<ProviderUsageResponse>("/admin/providers/usage", { query }),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),
   createUser: (body: { username: string; password: string; status?: string }) =>
     request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(body) }),

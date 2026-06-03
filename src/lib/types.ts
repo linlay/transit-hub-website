@@ -157,6 +157,17 @@ export type ProviderUsage = {
   average_latency_ms: number;
 };
 
+export type ProviderAccountUsage = {
+  provider: string;
+  pool: string;
+  account: string;
+  requests: number;
+  request_tokens: number;
+  response_tokens: number;
+  total_tokens: number;
+  error_requests: number;
+};
+
 export type ProviderSnapshot = {
   providers: Array<{
     name: string;
@@ -186,4 +197,14 @@ export type ListResponse<T> = {
   total?: number;
   limit?: number;
   offset?: number;
+};
+
+export type ProviderUsageResponse = ListResponse<ProviderUsage> & {
+  account_items: ProviderAccountUsage[];
+};
+
+export type APIKeyBatchResult = {
+  action: "delete" | "inactive";
+  matched: number;
+  updated: number;
 };
