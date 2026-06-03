@@ -7,6 +7,7 @@ import { ModelWhitelistInput, publicModelsFromProviders } from "../components/Mo
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
+import { copyText } from "../lib/clipboard";
 import { dateTime, integer, quotaRatio } from "../lib/format";
 
 export function APIKeys() {
@@ -19,6 +20,7 @@ export function APIKeys() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createdKey, setCreatedKey] = useState("");
   const [createModelError, setCreateModelError] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
   const keys = useQuery({
     queryKey: ["api-keys", search, status, source, issuerJTI],
     queryFn: () => api.apiKeys({ search, status, source, issuer_jti: issuerJTI }),
@@ -33,6 +35,7 @@ export function APIKeys() {
     onSuccess: (data) => {
       setCreatedKey(data.key);
       setCreateModelError("");
+      setCopyMessage("");
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
@@ -45,7 +48,13 @@ export function APIKeys() {
     create.reset();
     setCreatedKey("");
     setCreateModelError("");
+    setCopyMessage("");
     setCreateOpen(true);
+  }
+
+  async function copyCreatedKey() {
+    const copied = await copyText(createdKey);
+    setCopyMessage(copied ? "Copied." : "Copy failed. Select and copy the key manually.");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -174,11 +183,12 @@ export function APIKeys() {
             {createdKey ? (
               <div className="secret-box">
                 <code>{createdKey}</code>
-                <button className="icon-button" onClick={() => navigator.clipboard.writeText(createdKey)} type="button">
+                <button className="icon-button" onClick={copyCreatedKey} title="Copy API key" type="button">
                   <Copy size={16} />
                 </button>
               </div>
             ) : null}
+            {copyMessage ? <span className={copyMessage === "Copied." ? "muted-cell" : "error-text"}>{copyMessage}</span> : null}
             {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {create.error ? <span className="error-text">{create.error.message}</span> : null}
             <div className="dialog-actions">

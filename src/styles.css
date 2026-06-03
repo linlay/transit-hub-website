@@ -408,9 +408,23 @@ td small {
 }
 
 .model-picker legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: #505a65;
   font-size: 13px;
   font-weight: 600;
+}
+
+.model-picker-toggle {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #0a63c7;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .model-picker-options {

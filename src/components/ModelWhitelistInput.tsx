@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ProviderSnapshot } from "../lib/types";
 
 type ModelWhitelistInputProps = {
@@ -19,15 +20,52 @@ export function publicModelsFromProviders(snapshot?: ProviderSnapshot) {
 }
 
 export function ModelWhitelistInput({ models, selected = [] }: ModelWhitelistInputProps) {
-  const selectedModels = new Set(selected);
+  const [selectedModels, setSelectedModels] = useState(() => new Set(selected));
+  const allSelected = models.length > 0 && models.every((model) => selectedModels.has(model));
+  const modelKey = models.join("\0");
+  const selectedKey = selected.join("\0");
+
+  useEffect(() => {
+    setSelectedModels(new Set(selected));
+  }, [modelKey, selectedKey]);
+
+  function toggleModel(model: string, checked: boolean) {
+    setSelectedModels((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(model);
+      } else {
+        next.delete(model);
+      }
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelectedModels(allSelected ? new Set() : new Set(models));
+  }
+
   return (
     <fieldset className="model-picker">
-      <legend>Allowed models</legend>
+      <legend>
+        <span>Allowed models</span>
+        {models.length ? (
+          <button className="model-picker-toggle" onClick={toggleAll} type="button">
+            {allSelected ? "Clear all" : "Select all"}
+          </button>
+        ) : null}
+      </legend>
       {models.length ? (
         <div className="model-picker-options">
           {models.map((model) => (
             <label className="model-option" key={model}>
-              <input name="allowed_models" defaultChecked={selectedModels.has(model)} type="checkbox" value={model} />
+              <input
+                checked={selectedModels.has(model)}
+                name="allowed_models"
+                onChange={(event) => toggleModel(model, event.target.checked)}
+                type="checkbox"
+                value={model}
+              />
               <span>{model}</span>
             </label>
           ))}

@@ -7,6 +7,7 @@ import { ModelWhitelistInput, publicModelsFromProviders } from "../components/Mo
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
+import { copyText } from "../lib/clipboard";
 import type { JWTGrant } from "../lib/types";
 import { dateTime, integer } from "../lib/format";
 
@@ -22,6 +23,8 @@ export function JWTGrants() {
   const [createdJWT, setCreatedJWT] = useState("");
   const [createModelError, setCreateModelError] = useState("");
   const [editModelError, setEditModelError] = useState("");
+  const [createCopyMessage, setCreateCopyMessage] = useState("");
+  const [viewCopyMessage, setViewCopyMessage] = useState("");
   const grants = useQuery({
     queryKey: ["jwt-grants", search, status],
     queryFn: () => api.jwtGrants({ search, status }),
@@ -36,6 +39,7 @@ export function JWTGrants() {
     onSuccess: (data) => {
       setCreatedJWT(data.jwt);
       setCreateModelError("");
+      setCreateCopyMessage("");
       queryClient.invalidateQueries({ queryKey: ["jwt-grants"] });
     },
   });
@@ -68,6 +72,7 @@ export function JWTGrants() {
     createGrant.reset();
     setCreatedJWT("");
     setCreateModelError("");
+    setCreateCopyMessage("");
     setCreateOpen(true);
   }
 
@@ -80,7 +85,18 @@ export function JWTGrants() {
   function openViewDialog(grant: JWTGrant) {
     viewGrant.reset();
     setViewing(null);
+    setViewCopyMessage("");
     viewGrant.mutate(grant.jti);
+  }
+
+  async function copyCreatedJWT() {
+    const copied = await copyText(createdJWT);
+    setCreateCopyMessage(copied ? "Copied." : "Copy failed. Select and copy the JWT manually.");
+  }
+
+  async function copyViewingJWT() {
+    const copied = await copyText(viewing?.jwt ?? "");
+    setViewCopyMessage(copied ? "Copied." : "Copy failed. Select and copy the JWT manually.");
   }
 
   function submitGrant(event: FormEvent<HTMLFormElement>) {
@@ -234,11 +250,12 @@ export function JWTGrants() {
             {createdJWT ? (
               <div className="secret-box">
                 <code>{createdJWT}</code>
-                <button className="icon-button" onClick={() => navigator.clipboard.writeText(createdJWT)} type="button">
+                <button className="icon-button" onClick={copyCreatedJWT} title="Copy JWT" type="button">
                   <Copy size={16} />
                 </button>
               </div>
             ) : null}
+            {createCopyMessage ? <span className={createCopyMessage === "Copied." ? "muted-cell" : "error-text"}>{createCopyMessage}</span> : null}
             {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {createGrant.error ? <span className="error-text">{createGrant.error.message}</span> : null}
             <div className="dialog-actions">
@@ -286,13 +303,14 @@ export function JWTGrants() {
             {viewing.jwt ? (
               <div className="secret-box">
                 <code>{viewing.jwt}</code>
-                <button className="icon-button" onClick={() => navigator.clipboard.writeText(viewing.jwt ?? "")} type="button">
+                <button className="icon-button" onClick={copyViewingJWT} title="Copy JWT" type="button">
                   <Copy size={16} />
                 </button>
               </div>
             ) : (
               <span className="muted-cell">JWT unavailable</span>
             )}
+            {viewCopyMessage ? <span className={viewCopyMessage === "Copied." ? "muted-cell" : "error-text"}>{viewCopyMessage}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setViewing(null)} type="button">
                 Close
