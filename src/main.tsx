@@ -10,6 +10,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { JWTGrants } from "./pages/JWTGrants";
 import { Login } from "./pages/Login";
 import { Pricing } from "./pages/Pricing";
+import { ProviderTests } from "./pages/ProviderTests";
 import { Providers } from "./pages/Providers";
 import { Sessions } from "./pages/Sessions";
 import { Traffic } from "./pages/Traffic";
@@ -47,6 +48,7 @@ function App() {
             <Route path="/traffic" element={<Traffic />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/providers" element={<Providers />} />
+            <Route path="/provider-tests" element={<ProviderTests />} />
             <Route path="/users" element={<Users />} />
           </Route>
         </Routes>

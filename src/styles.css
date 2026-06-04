@@ -322,35 +322,6 @@ td small {
   min-width: 34px;
 }
 
-.test-result {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 24px;
-  border-radius: 999px;
-  padding: 0 8px;
-  background: #eef0f3;
-  color: #59636f;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.test-result.good {
-  background: #e7f7ed;
-  color: #187443;
-}
-
-.test-result.bad {
-  background: #fff1f0;
-  color: #b42318;
-}
-
-.test-result.muted {
-  background: #eef0f3;
-  color: #59636f;
-}
-
 .spin {
   animation: spin 0.9s linear infinite;
 }
@@ -483,6 +454,10 @@ td small {
 
 .settings-grid.three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-grid.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .settings-form label,
@@ -665,6 +640,139 @@ td small {
   line-height: 1.5;
 }
 
+.connectivity-target {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  border-top: 1px solid #edf0f3;
+  padding-top: 14px;
+}
+
+.connectivity-target div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.connectivity-target span,
+.connectivity-toast-details dt {
+  color: #68717c;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.connectivity-target strong,
+.connectivity-toast-details dd {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connectivity-toast {
+  position: fixed;
+  top: 82px;
+  right: 28px;
+  z-index: 40;
+  display: grid;
+  gap: 10px;
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid #dfe4ea;
+  border-left: 4px solid #68717c;
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+}
+
+.connectivity-toast.good {
+  border-left-color: #187443;
+}
+
+.connectivity-toast.bad {
+  border-left-color: #b42318;
+}
+
+.connectivity-toast-header,
+.connectivity-toast-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.connectivity-toast-header {
+  justify-content: space-between;
+}
+
+.connectivity-toast-title {
+  min-width: 0;
+}
+
+.connectivity-toast-title svg {
+  flex: 0 0 auto;
+}
+
+.connectivity-toast.good .connectivity-toast-title svg {
+  color: #187443;
+}
+
+.connectivity-toast.bad .connectivity-toast-title svg {
+  color: #b42318;
+}
+
+.connectivity-toast-title strong,
+.connectivity-toast-title span {
+  display: block;
+}
+
+.connectivity-toast-title strong {
+  font-size: 14px;
+}
+
+.connectivity-toast-title span,
+.connectivity-toast-endpoint {
+  color: #68717c;
+  font-size: 12px;
+}
+
+.connectivity-toast-status {
+  width: max-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #eef0f3;
+  padding: 4px 9px;
+  color: #59636f;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.connectivity-toast-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.connectivity-toast-endpoint,
+.connectivity-toast-error {
+  overflow: hidden;
+  border-radius: 8px;
+  padding: 9px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connectivity-toast-endpoint {
+  background: #f7f9fb;
+}
+
+.connectivity-toast-error {
+  background: #fff1f0;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .model-summary {
   display: block;
   max-width: 260px;
@@ -801,8 +909,10 @@ td small {
   .settings-form,
   .settings-grid.two,
   .settings-grid.three,
+  .settings-grid.four,
   .provider-metrics,
-  .provider-grid {
+  .provider-grid,
+  .connectivity-target {
     grid-template-columns: 1fr;
   }
 }
@@ -860,5 +970,10 @@ td small {
   .dialog-actions {
     align-items: stretch;
     flex-direction: column-reverse;
+  }
+
+  .connectivity-toast {
+    top: 74px;
+    right: 16px;
   }
 }

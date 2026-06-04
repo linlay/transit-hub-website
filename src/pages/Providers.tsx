@@ -1,52 +1,37 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Activity, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Activity, Loader2 } from "lucide-react";
+import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
 import { MetricCard } from "../components/MetricCard";
 import { api } from "../lib/api";
 import { compactTokenCount, integer, nullablePercent, usdFromMicro } from "../lib/format";
-import type { ProviderAccountUsage, ProviderConnectivityTestRequest, ProviderConnectivityTestResult, ProviderUsage } from "../lib/types";
-
-type ConnectivityTarget = ProviderConnectivityTestRequest & {
-  resultKey: string;
-};
+import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
+import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
 
 export function Providers() {
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: 30_000 });
-  const [connectivityResults, setConnectivityResults] = useState<Record<string, ProviderConnectivityTestResult>>({});
-  const [pendingConnectivityKey, setPendingConnectivityKey] = useState("");
+  const connectivity = useProviderConnectivityTest();
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
   const usageByAccount = useMemo(
     () => new Map((usage.data?.account_items ?? []).map((item) => [`${item.provider}:${item.pool}:${item.account}`, item])),
     [usage.data?.account_items],
   );
-  const connectivityTest = useMutation({
-    mutationFn: (target: ConnectivityTarget) => api.testProviderConnectivity(connectivityRequest(target)),
-    onMutate: (target) => {
-      setPendingConnectivityKey(target.resultKey);
-    },
-    onSuccess: (data, target) => {
-      setConnectivityResults((current) => ({ ...current, [target.resultKey]: data }));
-    },
-    onError: (error, target) => {
-      setConnectivityResults((current) => ({
-        ...current,
-        [target.resultKey]: failedConnectivityResult(target, error instanceof Error ? error.message : "Test failed"),
-      }));
-    },
-    onSettled: () => {
-      setPendingConnectivityKey("");
-    },
-  });
 
   function renderConnectivityAction(target: ConnectivityTarget, title: string) {
-    const pending = connectivityTest.isPending && pendingConnectivityKey === target.resultKey;
+    const pending = connectivity.isPending && connectivity.pendingKey === target.resultKey;
     return (
       <div className="connection-test">
-        <button className="icon-button" disabled={connectivityTest.isPending} onClick={() => connectivityTest.mutate(target)} title={title} type="button">
+        <button
+          aria-label={title}
+          className="icon-button"
+          disabled={connectivity.isPending}
+          onClick={() => connectivity.run({ ...target, label: title })}
+          title={title}
+          type="button"
+        >
           {pending ? <Loader2 className="spin" size={16} /> : <Activity size={16} />}
         </button>
-        <ConnectivityResult pending={pending} result={connectivityResults[target.resultKey]} />
       </div>
     );
   }
@@ -205,49 +190,9 @@ export function Providers() {
           </div>
         </section>
       ))}
+      <ConnectivityResultToast result={connectivity.toast?.result} label={connectivity.toast?.label} onClose={connectivity.dismissToast} />
     </section>
   );
-}
-
-function ConnectivityResult({ pending, result }: { pending: boolean; result?: ProviderConnectivityTestResult }) {
-  if (pending) {
-    return (
-      <span className="test-result muted">
-        <Loader2 className="spin" size={14} />
-        Testing
-      </span>
-    );
-  }
-  if (!result) return null;
-  const label = result.status_code > 0 ? `${result.status_code} · ${integer(result.latency_ms)} ms` : "Failed";
-  return (
-    <span className={`test-result ${result.ok ? "good" : "bad"}`} title={result.error || `${result.account} · ${result.endpoint}`}>
-      {result.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-      {label}
-    </span>
-  );
-}
-
-function connectivityRequest(target: ConnectivityTarget): ProviderConnectivityTestRequest {
-  const { resultKey: _resultKey, ...request } = target;
-  return request;
-}
-
-function failedConnectivityResult(target: ConnectivityTarget, message: string): ProviderConnectivityTestResult {
-  return {
-    ok: false,
-    provider: target.provider,
-    protocol: "",
-    public_model: target.public_model ?? "",
-    upstream_model: "",
-    pool: target.pool ?? "",
-    account: target.account ?? "",
-    endpoint: "",
-    status_code: 0,
-    latency_ms: 0,
-    error: message,
-    tested_at: new Date().toISOString(),
-  };
 }
 
 function ProviderMetrics({ usage }: { usage: ProviderUsage }) {

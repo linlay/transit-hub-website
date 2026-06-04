@@ -21,6 +21,7 @@ const nav = [
   { to: "/traffic", label: "Traffic", icon: Activity },
   { to: "/pricing", label: "Pricing", icon: BadgeDollarSign },
   { to: "/providers", label: "Providers", icon: ServerCog },
+  { to: "/provider-tests", label: "Connectivity", icon: Activity },
   { to: "/users", label: "Users", icon: Users },
 ];
 
