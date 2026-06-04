@@ -7,6 +7,7 @@ import type {
   ListResponse,
   ModelPrice,
   Overview,
+  PlaygroundChatRequest,
   ProviderConnectivityTestRequest,
   ProviderConnectivityTestResult,
   ProviderSnapshot,
@@ -22,13 +23,18 @@ type RequestOptions = RequestInit & {
   query?: Record<string, string | number | boolean | undefined>;
 };
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+function apiURL(path: string, query?: Record<string, string | number | boolean | undefined>) {
   const url = new URL(`${API_BASE}${path}`, window.location.origin);
-  for (const [key, value] of Object.entries(options.query ?? {})) {
+  for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined && value !== "") {
       url.searchParams.set(key, String(value));
     }
   }
+  return url;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const url = apiURL(path, options.query);
   const response = await fetch(url, {
     ...options,
     credentials: "include",
@@ -42,6 +48,27 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     throw new Error(payload.error ?? `Request failed: ${response.status}`);
   }
   return response.json() as Promise<T>;
+}
+
+async function requestStream(path: string, body: unknown, signal?: AbortSignal): Promise<Response> {
+  const response = await fetch(apiURL(path), {
+    method: "POST",
+    credentials: "include",
+    signal,
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.error ?? `Request failed: ${response.status}`);
+  }
+  if (!response.body) {
+    throw new Error("Streaming response is unavailable");
+  }
+  return response;
 }
 
 export const api = {
@@ -89,6 +116,8 @@ export const api = {
   providers: () => request<ProviderSnapshot>("/admin/providers"),
   testProviderConnectivity: (body: ProviderConnectivityTestRequest) =>
     request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: JSON.stringify(body) }),
+  playgroundChat: (body: PlaygroundChatRequest, signal?: AbortSignal) =>
+    requestStream("/admin/playground/chat", body, signal),
   providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ProviderUsageResponse>("/admin/providers/usage", { query }),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),

@@ -214,6 +214,38 @@ export type ProviderConnectivityTestResult = {
   tested_at: string;
 };
 
+export type PlaygroundChatRole = "system" | "user" | "assistant";
+
+export type PlaygroundChatMessage = {
+  role: PlaygroundChatRole;
+  content: string;
+};
+
+export type PlaygroundChatRequest = {
+  provider: string;
+  public_model: string;
+  pool?: string;
+  account?: string;
+  messages: PlaygroundChatMessage[];
+  temperature?: number;
+  max_tokens?: number;
+};
+
+export type PlaygroundChatMeta = {
+  provider: string;
+  protocol: string;
+  public_model: string;
+  upstream_model: string;
+  pool: string;
+  account: string;
+  endpoint: string;
+};
+
+export type PlaygroundChatDone = {
+  status_code: number;
+  latency_ms: number;
+};
+
 export type ListResponse<T> = {
   items: T[];
   total?: number;
