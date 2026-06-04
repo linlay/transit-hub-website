@@ -7,6 +7,8 @@ import type {
   ListResponse,
   ModelPrice,
   Overview,
+  ProviderConnectivityTestRequest,
+  ProviderConnectivityTestResult,
   ProviderSnapshot,
   ProviderUsageResponse,
   ProviderUsage,
@@ -85,6 +87,8 @@ export const api = {
     request<ModelPrice>(`/admin/model-prices/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deletePrice: (id: string) => request<{ status: string }>(`/admin/model-prices/${id}`, { method: "DELETE" }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
+  testProviderConnectivity: (body: ProviderConnectivityTestRequest) =>
+    request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: JSON.stringify(body) }),
   providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ProviderUsageResponse>("/admin/providers/usage", { query }),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),

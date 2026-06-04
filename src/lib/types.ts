@@ -192,6 +192,28 @@ export type ProviderSnapshot = {
   }>;
 };
 
+export type ProviderConnectivityTestRequest = {
+  provider: string;
+  public_model?: string;
+  pool?: string;
+  account?: string;
+};
+
+export type ProviderConnectivityTestResult = {
+  ok: boolean;
+  provider: string;
+  protocol: string;
+  public_model: string;
+  upstream_model: string;
+  pool: string;
+  account: string;
+  endpoint: string;
+  status_code: number;
+  latency_ms: number;
+  error?: string;
+  tested_at: string;
+};
+
 export type ListResponse<T> = {
   items: T[];
   total?: number;

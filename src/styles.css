@@ -315,6 +315,52 @@ td small {
   gap: 6px;
 }
 
+.connection-test {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 34px;
+}
+
+.test-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 8px;
+  background: #eef0f3;
+  color: #59636f;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.test-result.good {
+  background: #e7f7ed;
+  color: #187443;
+}
+
+.test-result.bad {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.test-result.muted {
+  background: #eef0f3;
+  color: #59636f;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .select-cell {
   width: 42px;
   text-align: center;

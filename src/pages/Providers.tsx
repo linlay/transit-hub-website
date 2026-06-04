@@ -1,18 +1,55 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Activity, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { MetricCard } from "../components/MetricCard";
 import { api } from "../lib/api";
 import { compactTokenCount, integer, nullablePercent, usdFromMicro } from "../lib/format";
-import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
+import type { ProviderAccountUsage, ProviderConnectivityTestRequest, ProviderConnectivityTestResult, ProviderUsage } from "../lib/types";
+
+type ConnectivityTarget = ProviderConnectivityTestRequest & {
+  resultKey: string;
+};
 
 export function Providers() {
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: 30_000 });
+  const [connectivityResults, setConnectivityResults] = useState<Record<string, ProviderConnectivityTestResult>>({});
+  const [pendingConnectivityKey, setPendingConnectivityKey] = useState("");
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
   const usageByAccount = useMemo(
     () => new Map((usage.data?.account_items ?? []).map((item) => [`${item.provider}:${item.pool}:${item.account}`, item])),
     [usage.data?.account_items],
   );
+  const connectivityTest = useMutation({
+    mutationFn: (target: ConnectivityTarget) => api.testProviderConnectivity(connectivityRequest(target)),
+    onMutate: (target) => {
+      setPendingConnectivityKey(target.resultKey);
+    },
+    onSuccess: (data, target) => {
+      setConnectivityResults((current) => ({ ...current, [target.resultKey]: data }));
+    },
+    onError: (error, target) => {
+      setConnectivityResults((current) => ({
+        ...current,
+        [target.resultKey]: failedConnectivityResult(target, error instanceof Error ? error.message : "Test failed"),
+      }));
+    },
+    onSettled: () => {
+      setPendingConnectivityKey("");
+    },
+  });
+
+  function renderConnectivityAction(target: ConnectivityTarget, title: string) {
+    const pending = connectivityTest.isPending && pendingConnectivityKey === target.resultKey;
+    return (
+      <div className="connection-test">
+        <button className="icon-button" disabled={connectivityTest.isPending} onClick={() => connectivityTest.mutate(target)} title={title} type="button">
+          {pending ? <Loader2 className="spin" size={16} /> : <Activity size={16} />}
+        </button>
+        <ConnectivityResult pending={pending} result={connectivityResults[target.resultKey]} />
+      </div>
+    );
+  }
 
   return (
     <section className="page">
@@ -74,10 +111,13 @@ export function Providers() {
       {(providers.data?.providers ?? []).map((provider) => (
         <section className="panel" key={provider.name}>
           <div className="panel-heading">
-            <h2>{provider.name}</h2>
-            <span>
-              {provider.protocol} · {provider.base_url}
-            </span>
+            <div>
+              <h2>{provider.name}</h2>
+              <span>
+                {provider.protocol} · {provider.base_url}
+              </span>
+            </div>
+            {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, "Test provider")}
           </div>
           <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} />
           <div className="provider-grid">
@@ -91,17 +131,27 @@ export function Providers() {
                       <th>Upstream</th>
                       <th>Pool</th>
                       <th>Override</th>
+                      <th>Test</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {provider.models.map((model) => (
-                      <tr key={model.public}>
-                        <td>{model.public}</td>
-                        <td>{model.upstream}</td>
-                        <td>{model.pool}</td>
-                        <td>{model.override_pool || "none"}</td>
-                      </tr>
-                    ))}
+                    {provider.models.map((model) => {
+                      const overridePool = model.override_pool && model.override_valid !== false ? model.override_pool : undefined;
+                      return (
+                        <tr key={model.public}>
+                          <td>{model.public}</td>
+                          <td>{model.upstream}</td>
+                          <td>{model.pool}</td>
+                          <td>{model.override_pool || "none"}</td>
+                          <td>
+                            {renderConnectivityAction(
+                              { provider: provider.name, public_model: model.public, pool: overridePool, resultKey: `model:${provider.name}:${model.public}` },
+                              "Test route",
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -118,11 +168,12 @@ export function Providers() {
                       <th>Tokens</th>
                       <th>Weight</th>
                       <th>Circuit</th>
+                      <th>Test</th>
                     </tr>
                   </thead>
                   <tbody>
                     {provider.pools.flatMap((pool) =>
-                      pool.accounts.map((account) => {
+                      pool.accounts.map((account, accountIndex) => {
                         const accountUsage = usageByAccount.get(`${provider.name}:${pool.name}:${account.name}`) ?? emptyAccountUsage(provider.name, pool.name, account.name);
                         return (
                           <tr key={`${pool.name}:${account.name}`}>
@@ -132,6 +183,17 @@ export function Providers() {
                             <td>{compactTokenCount(accountUsage.total_tokens)}</td>
                             <td>{account.weight}</td>
                             <td>{String(account.circuit.state ?? "closed")}</td>
+                            <td>
+                              <div className="table-actions">
+                                {accountIndex === 0
+                                  ? renderConnectivityAction({ provider: provider.name, pool: pool.name, resultKey: `pool:${provider.name}:${pool.name}` }, "Test pool")
+                                  : null}
+                                {renderConnectivityAction(
+                                  { provider: provider.name, pool: pool.name, account: account.name, resultKey: `account:${provider.name}:${pool.name}:${account.name}` },
+                                  "Test account",
+                                )}
+                              </div>
+                            </td>
                           </tr>
                         );
                       }),
@@ -145,6 +207,47 @@ export function Providers() {
       ))}
     </section>
   );
+}
+
+function ConnectivityResult({ pending, result }: { pending: boolean; result?: ProviderConnectivityTestResult }) {
+  if (pending) {
+    return (
+      <span className="test-result muted">
+        <Loader2 className="spin" size={14} />
+        Testing
+      </span>
+    );
+  }
+  if (!result) return null;
+  const label = result.status_code > 0 ? `${result.status_code} · ${integer(result.latency_ms)} ms` : "Failed";
+  return (
+    <span className={`test-result ${result.ok ? "good" : "bad"}`} title={result.error || `${result.account} · ${result.endpoint}`}>
+      {result.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+      {label}
+    </span>
+  );
+}
+
+function connectivityRequest(target: ConnectivityTarget): ProviderConnectivityTestRequest {
+  const { resultKey: _resultKey, ...request } = target;
+  return request;
+}
+
+function failedConnectivityResult(target: ConnectivityTarget, message: string): ProviderConnectivityTestResult {
+  return {
+    ok: false,
+    provider: target.provider,
+    protocol: "",
+    public_model: target.public_model ?? "",
+    upstream_model: "",
+    pool: target.pool ?? "",
+    account: target.account ?? "",
+    endpoint: "",
+    status_code: 0,
+    latency_ms: 0,
+    error: message,
+    tested_at: new Date().toISOString(),
+  };
 }
 
 function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
