@@ -150,11 +150,7 @@ export function JWTGrants() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Access</span>
-          <h1>JWT Grants</h1>
-        </div>
+      <div className="page-actions">
         <button className="primary" onClick={openCreateDialog} type="button">
           <Plus size={16} />
           Create grant
