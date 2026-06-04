@@ -30,12 +30,6 @@ export function Users() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Internal</span>
-          <h1>Users</h1>
-        </div>
-      </div>
       <section className="panel">
         <form className="inline-form" onSubmit={submit}>
           <input name="username" placeholder="Username" required />

@@ -35,12 +35,6 @@ export function Pricing() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Billing</span>
-          <h1>Pricing</h1>
-        </div>
-      </div>
       <section className="panel">
         <form className="inline-form" onSubmit={submit}>
           <select name="protocol" defaultValue="openai">

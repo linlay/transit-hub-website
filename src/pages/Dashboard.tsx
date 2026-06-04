@@ -10,12 +10,6 @@ export function Dashboard() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Operations</span>
-          <h1>Dashboard</h1>
-        </div>
-      </div>
       <div className="metrics-grid">
         <MetricCard label="Requests" value={compactNumber(data?.total_requests ?? 0)} detail="All time" />
         <MetricCard label="Tokens" value={compactNumber(data?.total_tokens ?? 0)} detail="Prompt + completion" />

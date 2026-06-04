@@ -16,12 +16,6 @@ export function Sessions() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Connections</span>
-          <h1>Sessions</h1>
-        </div>
-      </div>
       <section className="panel">
         <div className="toolbar">
           <label className="search">

@@ -38,12 +38,6 @@ export function Providers() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Routing</span>
-          <h1>Providers</h1>
-        </div>
-      </div>
       <section className="panel">
         <div className="panel-heading">
           <h2>Provider usage</h2>

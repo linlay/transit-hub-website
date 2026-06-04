@@ -1,7 +1,9 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
   BadgeDollarSign,
   Cable,
+  ChevronDown,
   Gauge,
   KeyRound,
   LogOut,
@@ -69,10 +71,7 @@ export function Layout() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <button className="icon-text sidebar-logout" onClick={() => logout.mutate()} type="button">
-            <LogOut size={16} />
-            {me.data?.user.username ?? "Admin"} · Logout
-          </button>
+          <UserMenu username={me.data?.user.username ?? "Admin"} onLogout={() => logout.mutate()} />
         </div>
       </aside>
       <main className="main">
@@ -81,6 +80,42 @@ export function Layout() {
         </header>
         <Outlet />
       </main>
+    </div>
+  );
+}
+
+function UserMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [open, handleClickOutside]);
+
+  return (
+    <div className="sidebar-user-menu" ref={menuRef}>
+      <button className="sidebar-user-trigger" onClick={() => setOpen((v) => !v)} type="button">
+        <LogOut size={16} />
+        <span className="trigger-label">{username}</span>
+        <ChevronDown size={14} />
+      </button>
+      {open ? (
+        <div className="sidebar-user-dropdown">
+          <button onClick={onLogout} type="button">
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

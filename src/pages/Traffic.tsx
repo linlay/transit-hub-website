@@ -11,17 +11,16 @@ export function Traffic() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Usage</span>
-          <h1>Traffic</h1>
-        </div>
-        <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
-          <option value="day">Daily</option>
-          <option value="hour">Hourly</option>
-        </select>
-      </div>
       <section className="panel">
+        <div className="panel-heading">
+          <h2>Traffic</h2>
+          <div className="panel-actions">
+            <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
+              <option value="day">Daily</option>
+              <option value="hour">Hourly</option>
+            </select>
+          </div>
+        </div>
         <div className="chart">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={traffic.data?.items ?? []}>

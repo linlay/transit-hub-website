@@ -177,12 +177,6 @@ export function Playground() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">Routing</span>
-          <h1>Playground</h1>
-        </div>
-      </div>
       <section className="panel playground-panel">
         <div className="panel-heading">
           <div>
