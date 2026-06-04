@@ -180,7 +180,7 @@ export function Playground() {
       <div className="page-heading">
         <div>
           <span className="eyebrow">Routing</span>
-          <h1>演练场</h1>
+          <h1>Playground</h1>
         </div>
       </div>
       <section className="panel playground-panel">

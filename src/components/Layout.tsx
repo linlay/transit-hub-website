@@ -9,7 +9,7 @@ import {
   ServerCog,
   Users,
 } from "lucide-react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
@@ -21,12 +21,23 @@ const nav = [
   { to: "/traffic", label: "Traffic", icon: Activity },
   { to: "/pricing", label: "Pricing", icon: BadgeDollarSign },
   { to: "/providers", label: "Providers", icon: ServerCog },
-  { to: "/playground", label: "演练场", icon: Activity },
+  { to: "/playground", label: "Playground", icon: Activity },
   { to: "/users", label: "Users", icon: Users },
 ];
 
+function currentPageLabel(pathname: string): string {
+  // Exact match first
+  const exact = nav.find((item) => item.to === pathname);
+  if (exact) return exact.label;
+  // Prefix match for detail pages (e.g. /api-keys/xxx → "API Keys")
+  const prefix = nav.find((item) => item.to !== "/" && pathname.startsWith(item.to + "/"));
+  if (prefix) return prefix.label;
+  return "";
+}
+
 export function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
   const logout = useMutation({
@@ -57,17 +68,16 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="sidebar-footer">
+          <button className="icon-text sidebar-logout" onClick={() => logout.mutate()} type="button">
+            <LogOut size={16} />
+            {me.data?.user.username ?? "Admin"} · Logout
+          </button>
+        </div>
       </aside>
       <main className="main">
         <header className="topbar">
-          <div>
-            <span className="eyebrow">Signed in</span>
-            <strong>{me.data?.user.username ?? "Admin"}</strong>
-          </div>
-          <button className="icon-text" onClick={() => logout.mutate()} type="button">
-            <LogOut size={16} />
-            Logout
-          </button>
+          <span className="topbar-page">{currentPageLabel(location.pathname)}</span>
         </header>
         <Outlet />
       </main>

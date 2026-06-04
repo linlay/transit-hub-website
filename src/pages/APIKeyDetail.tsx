@@ -82,28 +82,6 @@ export function APIKeyDetail() {
 
   return (
     <section className="page">
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">API Key</span>
-          <h1>{key?.name ?? "Loading..."}</h1>
-        </div>
-        {key ? (
-          <div className="page-actions">
-            <StatusPill active={key.status === "active"} label={key.status} />
-            {key.status === "active" ? (
-              <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm("Inactive this key?") && inactive.mutate()} type="button">
-                <Ban size={16} />
-                Inactive
-              </button>
-            ) : null}
-            <button className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm("Delete this key?") && remove.mutate()} type="button">
-              <Trash2 size={16} />
-              Delete
-            </button>
-          </div>
-        ) : null}
-      </div>
-
       <div className="metrics-grid">
         <MetricCard label="Requests" value={integer(summary?.requests ?? 0)} detail="Recorded calls" />
         <MetricCard label="Tokens" value={integer(summary?.total_tokens ?? 0)} detail="Prompt + completion" />
@@ -257,8 +235,22 @@ export function APIKeyDetail() {
       {key ? (
         <section className="panel">
           <div className="panel-heading">
-            <h2>Settings</h2>
+            <div>
+              <h2>{key.name}</h2>
+              <span className="eyebrow">Settings</span>
+            </div>
             <div className="panel-actions">
+              <StatusPill active={key.status === "active"} label={key.status} />
+              {key.status === "active" ? (
+                <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm("Inactive this key?") && inactive.mutate()} type="button">
+                  <Ban size={16} />
+                  Inactive
+                </button>
+              ) : null}
+              <button className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm("Delete this key?") && remove.mutate()} type="button">
+                <Trash2 size={16} />
+                Delete
+              </button>
               {savedMessage ? <span className="saved-text">Saved</span> : null}
               <button className="primary" disabled={update.isPending} form="api-key-settings" type="submit">
                 <Save size={16} />

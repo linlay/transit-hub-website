@@ -83,6 +83,8 @@ a {
   position: sticky;
   top: 0;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid #e5e8ec;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(18px);
@@ -96,8 +98,7 @@ a {
   padding: 0 8px 22px;
 }
 
-.brand strong,
-.topbar strong {
+.brand strong {
   display: block;
   font-size: 14px;
 }
@@ -143,6 +144,30 @@ td small,
   color: #0a64d6;
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #e5e8ec;
+}
+
+.sidebar-logout {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: transparent;
+  color: #56616d;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-logout:hover {
+  background: #eef0f3;
+}
+
 .main {
   min-width: 0;
 }
@@ -153,12 +178,18 @@ td small,
   z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 64px;
+  justify-content: flex-end;
+  height: 44px;
   border-bottom: 1px solid #e5e8ec;
   background: rgba(245, 246, 248, 0.86);
   backdrop-filter: blur(18px);
-  padding: 0 28px;
+  padding: 0 20px;
+}
+
+.topbar-page {
+  color: #17202a;
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .page {
@@ -681,7 +712,7 @@ td small {
 
 .connectivity-toast {
   position: fixed;
-  top: 82px;
+  top: 60px;
   right: 28px;
   z-index: 40;
   display: grid;
