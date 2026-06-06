@@ -8,7 +8,7 @@ import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
-import { dateTime, integer, quotaRatio } from "../lib/format";
+import { compactTokenCount, dateTime, integer, quotaRatio } from "../lib/format";
 
 export function APIKeys() {
   const queryClient = useQueryClient();
@@ -242,7 +242,7 @@ export function APIKeys() {
                     <Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} />
                   </td>
                   <td>
-                    <Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} />
+                    <Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${compactTokenCount(key.used_tokens)} / ${key.token_quota ? compactTokenCount(key.token_quota) : "∞"}`} title={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} />
                   </td>
                   <td>{dateTime(key.last_used_at)}</td>
                   <td>
@@ -311,13 +311,13 @@ export function APIKeys() {
   );
 }
 
-function Progress({ value, label }: { value: number; label: string }) {
+function Progress({ value, label, title: cellTitle }: { value: number; label: string; title?: string }) {
   return (
     <div className="progress-cell">
       <div className="progress">
         <span style={{ width: `${Math.round(value * 100)}%` }} />
       </div>
-      <small>{label}</small>
+      <small title={cellTitle}>{label}</small>
     </div>
   );
 }

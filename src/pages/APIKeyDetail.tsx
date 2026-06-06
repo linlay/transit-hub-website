@@ -8,7 +8,7 @@ import { ModelWhitelistInput, publicModelsFromProviders } from "../components/Mo
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
-import { dateTime, integer, nullablePercent, usdFromMicro } from "../lib/format";
+import { compactTokenCount, dateTime, integer, nullablePercent, usdFromMicro } from "../lib/format";
 
 export function APIKeyDetail() {
   const { id = "" } = useParams();
@@ -84,8 +84,8 @@ export function APIKeyDetail() {
     <section className="page">
       <div className="metrics-grid">
         <MetricCard label="Requests" value={integer(summary?.requests ?? 0)} detail="Recorded calls" />
-        <MetricCard label="Tokens" value={integer(summary?.total_tokens ?? 0)} detail="Prompt + completion" />
-        <MetricCard label="Cache hit" value={nullablePercent(summary?.cache_hit_rate)} detail={`${integer(summary?.cache_total_tokens ?? 0)} cache tokens`} />
+        <MetricCard label="Tokens" value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />
+        <MetricCard label="Cache hit" value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{compactTokenCount(summary?.cache_total_tokens ?? 0)} cache tokens</span>} />
         <MetricCard label="Cost" value={usdFromMicro(summary?.cost_microusd ?? 0)} detail="Estimated" />
         <MetricCard label="Active devices" value={integer(usage.data?.active_devices ?? 0)} detail="Current window" />
       </div>
@@ -139,11 +139,11 @@ export function APIKeyDetail() {
                 <tr key={item.bucket}>
                   <td>{item.bucket}</td>
                   <td>{integer(item.requests)}</td>
-                  <td>{integer(item.request_tokens)}</td>
-                  <td>{integer(item.response_tokens)}</td>
-                  <td>{integer(item.total_tokens)}</td>
-                  <td>{integer(item.cache_hit_tokens)}</td>
-                  <td>{integer(item.cache_miss_tokens)}</td>
+                  <td title={integer(item.request_tokens)}>{compactTokenCount(item.request_tokens)}</td>
+                  <td title={integer(item.response_tokens)}>{compactTokenCount(item.response_tokens)}</td>
+                  <td title={integer(item.total_tokens)}>{compactTokenCount(item.total_tokens)}</td>
+                  <td title={integer(item.cache_hit_tokens)}>{compactTokenCount(item.cache_hit_tokens)}</td>
+                  <td title={integer(item.cache_miss_tokens)}>{compactTokenCount(item.cache_miss_tokens)}</td>
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
                   <td>{usdFromMicro(item.cost_microusd)}</td>
                 </tr>
@@ -186,7 +186,7 @@ export function APIKeyDetail() {
                     <StatusPill active={session.active} />
                   </td>
                   <td>{integer(session.request_count)}</td>
-                  <td>{integer(session.token_count)}</td>
+                  <td title={integer(session.token_count)}>{compactTokenCount(session.token_count)}</td>
                   <td>{dateTime(session.last_seen_at)}</td>
                 </tr>
               ))}
@@ -222,7 +222,7 @@ export function APIKeyDetail() {
                   <td>{log.status_code}</td>
                   <td>{log.device_id || "none"}</td>
                   <td>{log.provider || "none"}</td>
-                  <td>{integer(log.total_tokens)}</td>
+                  <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
                   <td>{nullablePercent(log.cache_hit_rate)}</td>
                   <td>{usdFromMicro(log.cost_microusd)}</td>
                 </tr>

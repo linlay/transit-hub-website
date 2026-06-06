@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
 import { api } from "../lib/api";
-import { compactNumber, integer, percent, usdFromMicro } from "../lib/format";
+import { compactNumber, compactTokenCount, integer, percent, usdFromMicro } from "../lib/format";
 
 export function Dashboard() {
   const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: 30_000 });
@@ -12,7 +12,7 @@ export function Dashboard() {
     <section className="page">
       <div className="metrics-grid">
         <MetricCard label="Requests" value={compactNumber(data?.total_requests ?? 0)} detail="All time" />
-        <MetricCard label="Tokens" value={compactNumber(data?.total_tokens ?? 0)} detail="Prompt + completion" />
+        <MetricCard label="Tokens" value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />
         <MetricCard label="Cost" value={usdFromMicro(data?.total_cost_microusd ?? 0)} detail="Estimated" />
         <MetricCard label="Active devices" value={integer(data?.active_devices ?? 0)} detail="Last 5 minutes" />
         <MetricCard

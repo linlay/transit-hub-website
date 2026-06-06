@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
-import { dateTime, integer } from "../lib/format";
+import { compactTokenCount, dateTime, integer } from "../lib/format";
 
 export function Sessions() {
   const [search, setSearch] = useState("");
@@ -53,7 +53,7 @@ export function Sessions() {
                     <StatusPill active={session.active} />
                   </td>
                   <td>{integer(session.request_count)}</td>
-                  <td>{integer(session.token_count)}</td>
+                  <td title={integer(session.token_count)}>{compactTokenCount(session.token_count)}</td>
                   <td>{dateTime(session.last_seen_at)}</td>
                 </tr>
               ))}

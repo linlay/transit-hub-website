@@ -9,7 +9,7 @@ import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import type { JWTGrant } from "../lib/types";
-import { dateTime, integer } from "../lib/format";
+import { compactTokenCount, dateTime, integer } from "../lib/format";
 
 export function JWTGrants() {
   const queryClient = useQueryClient();
@@ -198,7 +198,7 @@ export function JWTGrants() {
                   </td>
                   <td>
                     <span>{grant.request_quota || "∞"} requests</span>
-                    <small>{grant.token_quota ? `${integer(grant.token_quota)} tokens` : "∞ tokens"}</small>
+                    <small title={grant.token_quota ? integer(grant.token_quota) : "∞"}>{grant.token_quota ? `${compactTokenCount(grant.token_quota)} tokens` : "∞ tokens"}</small>
                   </td>
                   <td>
                     {grant.allowed_models.length ? (
