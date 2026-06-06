@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../lib/api";
-import { compactTokenCount, dateTime, integer, usdFromMicro } from "../lib/format";
+import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
 
 export function Traffic() {
   const [bucket, setBucket] = useState("day");
@@ -61,7 +61,7 @@ export function Traffic() {
                   <td>{log.status_code}</td>
                   <td>{integer(log.latency_ms)} ms</td>
                   <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
-                  <td>{usdFromMicro(log.cost_microusd)}</td>
+                  <td>{formatCurrency(log.cost_micro)}</td>
                 </tr>
               ))}
             </tbody>

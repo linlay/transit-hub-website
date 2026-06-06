@@ -2,7 +2,7 @@ import { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { api } from "../lib/api";
-import { usdFromMicro } from "../lib/format";
+import { formatCurrency } from "../lib/format";
 
 const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
 
@@ -24,12 +24,12 @@ export function Pricing() {
     create.mutate({
       protocol: String(form.get("protocol") ?? "openai"),
       public_model: String(form.get("public_model") ?? ""),
-      input_cost_microusd_per_1m_tokens: Math.round(Number(form.get("input_usd") || 0) * 1_000_000),
-      input_cache_hit_cost_microusd_per_1m_tokens:
-        String(form.get("input_cache_hit_usd") ?? "").trim() === ""
+      input_cost_micro_per_1m_tokens: Math.round(Number(form.get("input_cost") || 0) * 1_000_000),
+      input_cache_hit_cost_micro_per_1m_tokens:
+        String(form.get("input_cache_hit_cost") ?? "").trim() === ""
           ? null
-          : Math.round(Number(form.get("input_cache_hit_usd") || 0) * 1_000_000),
-      output_cost_microusd_per_1m_tokens: Math.round(Number(form.get("output_usd") || 0) * 1_000_000),
+          : Math.round(Number(form.get("input_cache_hit_cost") || 0) * 1_000_000),
+      output_cost_micro_per_1m_tokens: Math.round(Number(form.get("output_cost") || 0) * 1_000_000),
       currency: CURRENCY,
     });
     event.currentTarget.reset();
@@ -44,9 +44,9 @@ export function Pricing() {
             <option value="anthropic">Anthropic</option>
           </select>
           <input name="public_model" placeholder="Public model" required />
-          <input name="input_usd" placeholder={`Input miss ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
-          <input name="input_cache_hit_usd" placeholder={`Cache hit ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
-          <input name="output_usd" placeholder={`Output ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
+          <input name="input_cost" placeholder={`Input miss ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
+          <input name="input_cache_hit_cost" placeholder={`Cache hit ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
+          <input name="output_cost" placeholder={`Output ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
           <button className="primary" type="submit">
             <Plus size={16} />
             Save
@@ -72,9 +72,9 @@ export function Pricing() {
                 <tr key={price.id}>
                   <td>{price.protocol}</td>
                   <td>{price.public_model}</td>
-                  <td>{usdFromMicro(price.input_cost_microusd_per_1m_tokens)}</td>
-                  <td>{price.input_cache_hit_cost_microusd_per_1m_tokens === null ? "n/a" : usdFromMicro(price.input_cache_hit_cost_microusd_per_1m_tokens)}</td>
-                  <td>{usdFromMicro(price.output_cost_microusd_per_1m_tokens)}</td>
+                  <td>{formatCurrency(price.input_cost_micro_per_1m_tokens)}</td>
+                  <td>{price.input_cache_hit_cost_micro_per_1m_tokens === null ? "n/a" : formatCurrency(price.input_cache_hit_cost_micro_per_1m_tokens)}</td>
+                  <td>{formatCurrency(price.output_cost_micro_per_1m_tokens)}</td>
                   <td>{price.currency}</td>
                   <td>
                     <button className="icon-button danger" onClick={() => remove.mutate(price.id)} type="button">

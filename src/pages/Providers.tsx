@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
 import { MetricCard } from "../components/MetricCard";
 import { api } from "../lib/api";
-import { compactTokenCount, integer, nullablePercent, usdFromMicro } from "../lib/format";
+import { compactTokenCount, integer, nullablePercent, formatCurrency } from "../lib/format";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
 import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
 
@@ -17,6 +17,37 @@ export function Providers() {
     () => new Map((usage.data?.account_items ?? []).map((item) => [`${item.provider}:${item.pool}:${item.account}`, item])),
     [usage.data?.account_items],
   );
+
+  type SortKey = "total_tokens" | "cache_hit_tokens" | "cache_miss_tokens" | null;
+  type SortDir = "asc" | "desc";
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      if (sortDir === "asc") {
+        setSortDir("desc");
+      } else {
+        setSortKey(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const sortedItems = useMemo(() => {
+    if (!sortKey) return usage.data?.items ?? [];
+    const items = [...(usage.data?.items ?? [])];
+    items.sort((a, b) => {
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      const cmp = aVal - bVal;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return items;
+  }, [usage.data?.items, sortKey, sortDir]);
 
   function renderConnectivityAction(target: ConnectivityTarget, title: string) {
     const pending = connectivity.isPending && connectivity.pendingKey === target.resultKey;
@@ -51,9 +82,30 @@ export function Providers() {
                 <th>Requests</th>
                 <th>Input</th>
                 <th>Output</th>
-                <th>Total</th>
-                <th>Cache hit</th>
-                <th>Cache miss</th>
+                <th className="sortable" onClick={() => toggleSort("total_tokens")}>
+                  Total
+                  {sortKey === "total_tokens" ? (
+                    sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  ) : (
+                    <ArrowUpDown size={14} />
+                  )}
+                </th>
+                <th className="sortable" onClick={() => toggleSort("cache_hit_tokens")}>
+                  Cache hit
+                  {sortKey === "cache_hit_tokens" ? (
+                    sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  ) : (
+                    <ArrowUpDown size={14} />
+                  )}
+                </th>
+                <th className="sortable" onClick={() => toggleSort("cache_miss_tokens")}>
+                  Cache miss
+                  {sortKey === "cache_miss_tokens" ? (
+                    sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  ) : (
+                    <ArrowUpDown size={14} />
+                  )}
+                </th>
                 <th>Hit rate</th>
                 <th>Errors</th>
                 <th>Avg latency</th>
@@ -61,7 +113,7 @@ export function Providers() {
               </tr>
             </thead>
             <tbody>
-              {(usage.data?.items ?? []).map((item) => (
+              {sortedItems.map((item) => (
                 <tr key={item.provider}>
                   <td>{item.provider}</td>
                   <td>{integer(item.requests)}</td>
@@ -73,7 +125,7 @@ export function Providers() {
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
                   <td>{integer(item.error_requests)}</td>
                   <td>{integer(item.average_latency_ms)} ms</td>
-                  <td>{usdFromMicro(item.cost_microusd)}</td>
+                  <td>{formatCurrency(item.cost_micro)}</td>
                 </tr>
               ))}
               {!usage.data?.items?.length ? (
@@ -195,7 +247,7 @@ function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
       <MetricCard label="Requests" value={integer(usage.requests)} detail={`${integer(usage.error_requests)} failed`} />
       <MetricCard label="Tokens" value={compactTokenCount(usage.total_tokens)} detail={`${compactTokenCount(usage.request_tokens)} input`} />
       <MetricCard label="Cache hit" value={nullablePercent(usage.cache_hit_rate)} detail={`${compactTokenCount(usage.cache_total_tokens)} cache tokens`} />
-      <MetricCard label="Cost" value={usdFromMicro(usage.cost_microusd)} detail={`${integer(usage.average_latency_ms)} ms avg`} />
+      <MetricCard label="Cost" value={formatCurrency(usage.cost_micro)} detail={`${integer(usage.average_latency_ms)} ms avg`} />
     </div>
   );
 }
@@ -211,7 +263,7 @@ function emptyProviderUsage(provider: string): ProviderUsage {
     cache_miss_tokens: 0,
     cache_total_tokens: 0,
     cache_hit_rate: null,
-    cost_microusd: 0,
+    cost_micro: 0,
     error_requests: 0,
     average_latency_ms: 0,
   };

@@ -57,7 +57,7 @@ export type TrafficBucket = {
   cache_miss_tokens: number;
   cache_total_tokens: number;
   cache_hit_rate: number | null;
-  cost_microusd: number;
+  cost_micro: number;
   error_requests: number;
   average_latency_ms: number;
 };
@@ -67,7 +67,7 @@ export type Overview = {
   total_tokens: number;
   request_tokens: number;
   response_tokens: number;
-  total_cost_microusd: number;
+  total_cost_micro: number;
   error_requests: number;
   average_latency_ms: number;
   active_devices: number;
@@ -110,7 +110,7 @@ export type RequestLog = {
   cache_miss_tokens: number;
   cache_total_tokens: number;
   cache_hit_rate: number | null;
-  cost_microusd: number;
+  cost_micro: number;
   estimated: boolean;
   error_type: string;
   created_at: string;
@@ -134,9 +134,9 @@ export type ModelPrice = {
   id: string;
   protocol: string;
   public_model: string;
-  input_cost_microusd_per_1m_tokens: number;
-  input_cache_hit_cost_microusd_per_1m_tokens: number | null;
-  output_cost_microusd_per_1m_tokens: number;
+  input_cost_micro_per_1m_tokens: number;
+  input_cache_hit_cost_micro_per_1m_tokens: number | null;
+  output_cost_micro_per_1m_tokens: number;
   currency: string;
   created_at: string;
   updated_at: string;
@@ -152,7 +152,7 @@ export type ProviderUsage = {
   cache_miss_tokens: number;
   cache_total_tokens: number;
   cache_hit_rate: number | null;
-  cost_microusd: number;
+  cost_micro: number;
   error_requests: number;
   average_latency_ms: number;
 };

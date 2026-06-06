@@ -8,7 +8,7 @@ import { ModelWhitelistInput, publicModelsFromProviders } from "../components/Mo
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
-import { compactTokenCount, dateTime, integer, nullablePercent, usdFromMicro } from "../lib/format";
+import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency } from "../lib/format";
 
 export function APIKeyDetail() {
   const { id = "" } = useParams();
@@ -86,7 +86,7 @@ export function APIKeyDetail() {
         <MetricCard label="Requests" value={integer(summary?.requests ?? 0)} detail="Recorded calls" />
         <MetricCard label="Tokens" value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />
         <MetricCard label="Cache hit" value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{compactTokenCount(summary?.cache_total_tokens ?? 0)} cache tokens</span>} />
-        <MetricCard label="Cost" value={usdFromMicro(summary?.cost_microusd ?? 0)} detail="Estimated" />
+        <MetricCard label="Cost" value={formatCurrency(summary?.cost_micro ?? 0)} detail="Estimated" />
         <MetricCard label="Active devices" value={integer(usage.data?.active_devices ?? 0)} detail="Current window" />
       </div>
 
@@ -145,7 +145,7 @@ export function APIKeyDetail() {
                   <td title={integer(item.cache_hit_tokens)}>{compactTokenCount(item.cache_hit_tokens)}</td>
                   <td title={integer(item.cache_miss_tokens)}>{compactTokenCount(item.cache_miss_tokens)}</td>
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
-                  <td>{usdFromMicro(item.cost_microusd)}</td>
+                  <td>{formatCurrency(item.cost_micro)}</td>
                 </tr>
               ))}
               {!timeline.data?.items?.length ? (
@@ -224,7 +224,7 @@ export function APIKeyDetail() {
                   <td>{log.provider || "none"}</td>
                   <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
                   <td>{nullablePercent(log.cache_hit_rate)}</td>
-                  <td>{usdFromMicro(log.cost_microusd)}</td>
+                  <td>{formatCurrency(log.cost_micro)}</td>
                 </tr>
               ))}
             </tbody>

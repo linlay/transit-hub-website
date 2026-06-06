@@ -13,7 +13,7 @@ export function integer(value: number) {
   return new Intl.NumberFormat("zh-CN").format(value || 0);
 }
 
-export function usdFromMicro(value: number) {
+export function formatCurrency(value: number) {
   return new Intl.NumberFormat(CURRENCY_LOCALE, { style: "currency", currency: CURRENCY, maximumFractionDigits: 4 }).format((value || 0) / 1_000_000);
 }
 
