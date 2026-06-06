@@ -1,3 +1,6 @@
+const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
+const CURRENCY_LOCALE = CURRENCY === "CNY" ? "zh-CN" : "en-US";
+
 export function compactNumber(value: number) {
   return new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 }).format(value || 0);
 }
@@ -11,7 +14,7 @@ export function integer(value: number) {
 }
 
 export function usdFromMicro(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 4 }).format((value || 0) / 1_000_000);
+  return new Intl.NumberFormat(CURRENCY_LOCALE, { style: "currency", currency: CURRENCY, maximumFractionDigits: 4 }).format((value || 0) / 1_000_000);
 }
 
 export function dateTime(value?: string) {
