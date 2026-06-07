@@ -396,18 +396,27 @@ th {
 }
 
 th.sortable {
-  display: inline-flex;
-  align-items: center;
   cursor: pointer;
   user-select: none;
-  gap: 4px;
 }
 
 th.sortable:hover {
   color: #17202a;
 }
 
-th.sortable svg {
+.sort-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sort-header svg {
   flex: 0 0 auto;
 }
 

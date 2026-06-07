@@ -235,17 +235,23 @@ export function APIKeys() {
                 <th>Status</th>
                 <th>Source</th>
                 <th>Issuer JTI</th>
-                <th className="sortable" onClick={() => toggleSort("used_requests")}>
-                  Requests
-                  {sortIcon("used_requests")}
+                <th className="sortable">
+                  <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
+                    Requests
+                    {sortIcon("used_requests")}
+                  </button>
                 </th>
-                <th className="sortable" onClick={() => toggleSort("used_tokens")}>
-                  Tokens
-                  {sortIcon("used_tokens")}
+                <th className="sortable">
+                  <button className="sort-header" type="button" onClick={() => toggleSort("used_tokens")}>
+                    Tokens
+                    {sortIcon("used_tokens")}
+                  </button>
                 </th>
-                <th className="sortable" onClick={() => toggleSort("last_used_at")}>
-                  Last used
-                  {sortIcon("last_used_at")}
+                <th className="sortable">
+                  <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
+                    Last used
+                    {sortIcon("last_used_at")}
+                  </button>
                 </th>
                 <th />
               </tr>

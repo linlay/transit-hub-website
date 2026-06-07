@@ -82,29 +82,35 @@ export function Providers() {
                 <th>Requests</th>
                 <th>Input</th>
                 <th>Output</th>
-                <th className="sortable" onClick={() => toggleSort("total_tokens")}>
-                  Total
-                  {sortKey === "total_tokens" ? (
-                    sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  ) : (
-                    <ArrowUpDown size={14} />
-                  )}
+                <th className="sortable">
+                  <button className="sort-header" type="button" onClick={() => toggleSort("total_tokens")}>
+                    Total
+                    {sortKey === "total_tokens" ? (
+                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                    ) : (
+                      <ArrowUpDown size={14} />
+                    )}
+                  </button>
                 </th>
-                <th className="sortable" onClick={() => toggleSort("cache_hit_tokens")}>
-                  Cache hit
-                  {sortKey === "cache_hit_tokens" ? (
-                    sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  ) : (
-                    <ArrowUpDown size={14} />
-                  )}
+                <th className="sortable">
+                  <button className="sort-header" type="button" onClick={() => toggleSort("cache_hit_tokens")}>
+                    Cache hit
+                    {sortKey === "cache_hit_tokens" ? (
+                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                    ) : (
+                      <ArrowUpDown size={14} />
+                    )}
+                  </button>
                 </th>
-                <th className="sortable" onClick={() => toggleSort("cache_miss_tokens")}>
-                  Cache miss
-                  {sortKey === "cache_miss_tokens" ? (
-                    sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                  ) : (
-                    <ArrowUpDown size={14} />
-                  )}
+                <th className="sortable">
+                  <button className="sort-header" type="button" onClick={() => toggleSort("cache_miss_tokens")}>
+                    Cache miss
+                    {sortKey === "cache_miss_tokens" ? (
+                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                    ) : (
+                      <ArrowUpDown size={14} />
+                    )}
+                  </button>
                 </th>
                 <th>Hit rate</th>
                 <th>Errors</th>
