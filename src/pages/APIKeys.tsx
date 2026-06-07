@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
@@ -9,10 +9,13 @@ import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import { compactTokenCount, dateTime, integer, quotaRatio } from "../lib/format";
+import type { APIKey } from "../lib/types";
 
 export function APIKeys() {
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
+  type SortKey = "used_requests" | "used_tokens" | "last_used_at" | null;
+  type SortDir = "asc" | "desc";
   const [search, setSearch] = useState(params.get("search") ?? "");
   const [status, setStatus] = useState("all");
   const [source, setSource] = useState(params.get("source") ?? "all");
@@ -23,6 +26,8 @@ export function APIKeys() {
   const [copyMessage, setCopyMessage] = useState("");
   const [selecting, setSelecting] = useState(false);
   const [selectedIDs, setSelectedIDs] = useState<Set<string>>(() => new Set());
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const keys = useQuery({
     queryKey: ["api-keys", search, status, source, issuerJTI],
     queryFn: () => api.apiKeys({ search, status, source, issuer_jti: issuerJTI }),
@@ -55,9 +60,34 @@ export function APIKeys() {
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
-  const visibleKeys = keys.data?.items ?? [];
+  const visibleKeys = useMemo(() => {
+    const items = [...(keys.data?.items ?? [])];
+    if (!sortKey) return items;
+
+    items.sort((a, b) => compareAPIKeys(a, b, sortKey, sortDir));
+    return items;
+  }, [keys.data?.items, sortKey, sortDir]);
   const selectedCount = selectedIDs.size;
   const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selectedIDs.has(key.id));
+
+  function toggleSort(key: Exclude<SortKey, null>) {
+    if (sortKey === key) {
+      if (sortDir === "asc") {
+        setSortDir("desc");
+      } else {
+        setSortKey(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  function sortIcon(key: Exclude<SortKey, null>) {
+    if (sortKey !== key) return <ArrowUpDown size={14} />;
+    return sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
+  }
 
   function openCreateDialog() {
     create.reset();
@@ -205,9 +235,18 @@ export function APIKeys() {
                 <th>Status</th>
                 <th>Source</th>
                 <th>Issuer JTI</th>
-                <th>Requests</th>
-                <th>Tokens</th>
-                <th>Last used</th>
+                <th className="sortable" onClick={() => toggleSort("used_requests")}>
+                  Requests
+                  {sortIcon("used_requests")}
+                </th>
+                <th className="sortable" onClick={() => toggleSort("used_tokens")}>
+                  Tokens
+                  {sortIcon("used_tokens")}
+                </th>
+                <th className="sortable" onClick={() => toggleSort("last_used_at")}>
+                  Last used
+                  {sortIcon("last_used_at")}
+                </th>
                 <th />
               </tr>
             </thead>
@@ -309,6 +348,27 @@ export function APIKeys() {
       ) : null}
     </section>
   );
+}
+
+function compareAPIKeys(a: APIKey, b: APIKey, key: "used_requests" | "used_tokens" | "last_used_at", dir: "asc" | "desc") {
+  let cmp = 0;
+  if (key === "last_used_at") {
+    cmp = compareOptionalTime(a.last_used_at, b.last_used_at);
+  } else {
+    cmp = a[key] - b[key];
+  }
+
+  if (cmp === 0) {
+    cmp = a.name.localeCompare(b.name);
+  }
+  return dir === "asc" ? cmp : -cmp;
+}
+
+function compareOptionalTime(a?: string, b?: string) {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return new Date(a).getTime() - new Date(b).getTime();
 }
 
 function Progress({ value, label, title: cellTitle }: { value: number; label: string; title?: string }) {
