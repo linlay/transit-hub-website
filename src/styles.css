@@ -396,6 +396,8 @@ th {
 }
 
 th.sortable {
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
   user-select: none;
   gap: 4px;
