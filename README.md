@@ -98,3 +98,4 @@ docker compose ps
 - `/admin` 返回 502：确认 server compose 的服务名是 `transit-hub`，监听地址为 `:8080`。
 - 宿主机 80 端口冲突：修改 website `compose.yml` 的 `ports` 映射，或交给外部反代接入。
 - Cookie 无法保持登录：检查访问域名、HTTPS、`COOKIE_SECURE` 和后端 CORS 配置是否匹配。
+# tunnel-hub-website
