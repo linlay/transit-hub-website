@@ -17,7 +17,7 @@ import type {
   TrafficBucket,
 } from "./types";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/transit";
 
 type RequestOptions = RequestInit & {
   query?: Record<string, string | number | boolean | undefined>;

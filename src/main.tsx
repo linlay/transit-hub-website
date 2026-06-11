@@ -36,7 +36,7 @@ function RequireAuth() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={import.meta.env.VITE_BASE_PATH ?? "/"}>
+      <BrowserRouter basename={import.meta.env.VITE_BASE_PATH ?? "/transit"}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<RequireAuth />}>
