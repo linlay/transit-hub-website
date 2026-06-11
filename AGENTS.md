@@ -6,6 +6,7 @@ Transit Hub Website 是 Transit Hub 的管理后台前端，使用 React、Vite�
 
 生产环境中，website 是唯一对外暴露的入口。浏览器访问 website，前端以同源 `/admin` 调用管理 API；Nginx 在容器内把 `/admin` 反向代理到同一 Docker network 内的 `transit-hub:8080`。
 
+
 ## 目录结构
 
 ```text
