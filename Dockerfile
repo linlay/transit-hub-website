@@ -1,4 +1,4 @@
-FROM harbor.gtjaqh.io/library/node:22-alpine AS builder
+FROM harbor.gtjaqh.io/library/node:22 AS builder
 
 WORKDIR /app
 
