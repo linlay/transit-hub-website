@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { api } from "./lib/api";
+import { APP_BASE_URL } from "./lib/env";
 import { APIKeyDetail } from "./pages/APIKeyDetail";
 import { APIKeys } from "./pages/APIKeys";
 import { Dashboard } from "./pages/Dashboard";
@@ -36,7 +37,7 @@ function RequireAuth() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={import.meta.env.VITE_BASE_PATH ?? "/transit"}>
+      <BrowserRouter basename={APP_BASE_URL}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<RequireAuth />}>

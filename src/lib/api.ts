@@ -16,8 +16,9 @@ import type {
   RequestLog,
   TrafficBucket,
 } from "./types";
+import { API_BASE_URL } from "./env";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/transit";
+const API_BASE = API_BASE_URL;
 
 type RequestOptions = RequestInit & {
   query?: Record<string, string | number | boolean | undefined>;
