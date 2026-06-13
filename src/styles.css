@@ -688,6 +688,31 @@ td small {
   width: 100%;
 }
 
+.rate-limit-editor {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rate-limit-header,
+.rate-limit-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) repeat(3, minmax(96px, 1fr));
+  gap: 8px;
+  align-items: center;
+}
+
+.rate-limit-header {
+  color: #68717c;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.rate-limit-row input[type="number"] {
+  width: 100%;
+}
+
 .mini-check {
   display: inline-flex;
   align-items: center;
@@ -1147,6 +1172,8 @@ td small {
   .settings-grid.two,
   .settings-grid.three,
   .settings-grid.four,
+  .rate-limit-header,
+  .rate-limit-row,
   .provider-metrics,
   .provider-grid,
   .connectivity-target {

@@ -82,6 +82,7 @@ WEBSITE_HTTP_PORT=127.0.0.1:8081
 ```dotenv
 VITE_BASE_URL=/transit-hub
 VITE_API_BASE_URL=/transit-hub
+VITE_CURRENCY=CNY
 ```
 
 然后重新构建容器：

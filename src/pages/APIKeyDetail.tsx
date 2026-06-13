@@ -6,9 +6,11 @@ import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, 
 import { MetricCard } from "../components/MetricCard";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
+import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
-import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency } from "../lib/format";
+import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency, quotaRatio } from "../lib/format";
+import type { RateLimitUsage } from "../lib/types";
 
 export function APIKeyDetail() {
   const { id = "" } = useParams();
@@ -75,6 +77,7 @@ export function APIKeyDetail() {
       status: String(form.get("status") ?? "active"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
       forced_expired: form.get("forced_expired") === "on",
     });
@@ -89,6 +92,8 @@ export function APIKeyDetail() {
         <MetricCard label="Cost" value={formatCurrency(summary?.cost_micro ?? 0)} detail="Estimated" />
         <MetricCard label="Active devices" value={integer(usage.data?.active_devices ?? 0)} detail="Current window" />
       </div>
+
+      <RateLimitUsagePanel items={usage.data?.rate_limit_usage ?? []} />
 
       <section className="panel">
         <div className="panel-heading">
@@ -285,6 +290,7 @@ export function APIKeyDetail() {
                 <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
                 <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
               </div>
+              <RateLimitEditor key={`rate-limits-${key.id}-${JSON.stringify(key.rate_limits)}`} name="rate_limits" initialValue={key.rate_limits} />
               <label className="check-row">
                 <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
                 Force expired
@@ -303,4 +309,82 @@ export function APIKeyDetail() {
       ) : null}
     </section>
   );
+}
+
+function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
+  if (!items.length) return null;
+
+  return (
+    <section className="panel">
+      <div className="panel-heading">
+        <h2>Rate limits</h2>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Window</th>
+              <th>Requests</th>
+              <th>Tokens</th>
+              <th>Cost</th>
+              <th>Resets</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.window}>
+                <td>{windowLabel(item.window)}</td>
+                <td>
+                  <LimitProgress value={quotaRatio(item.requests, item.request_quota)} label={`${integer(item.requests)} / ${quotaLabel(item.request_quota)}`} />
+                </td>
+                <td>
+                  <LimitProgress
+                    value={quotaRatio(item.tokens, item.token_quota)}
+                    label={`${compactTokenCount(item.tokens)} / ${item.token_quota ? compactTokenCount(item.token_quota) : "∞"}`}
+                    title={`${integer(item.tokens)} / ${item.token_quota ? integer(item.token_quota) : "∞"}`}
+                  />
+                </td>
+                <td>
+                  <LimitProgress value={quotaRatio(item.cost_micro, item.cost_quota_micro)} label={`${formatCurrency(item.cost_micro)} / ${item.cost_quota_micro ? formatCurrency(item.cost_quota_micro) : "∞"}`} />
+                </td>
+                <td>{dateTime(item.resets_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function LimitProgress({ value, label, title }: { value: number; label: string; title?: string }) {
+  return (
+    <div className="progress-cell">
+      <div className="progress">
+        <span style={{ width: `${Math.round(value * 100)}%` }} />
+      </div>
+      <small title={title}>{label}</small>
+    </div>
+  );
+}
+
+function quotaLabel(value: number) {
+  return value ? integer(value) : "∞";
+}
+
+function windowLabel(window: string) {
+  switch (window) {
+    case "1h":
+      return "1 hour";
+    case "5h":
+      return "5 hours";
+    case "1d":
+      return "1 day";
+    case "7d":
+      return "7 days";
+    case "30d":
+      return "30 days";
+    default:
+      return window;
+  }
 }

@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
+import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
@@ -117,6 +118,7 @@ export function JWTGrants() {
       issue_quota: quotaValue(form, "issue_quota"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
     });
   }
@@ -138,6 +140,7 @@ export function JWTGrants() {
         issue_quota: quotaValue(form, "issue_quota"),
         request_quota: quotaValue(form, "request_quota"),
         token_quota: quotaValue(form, "token_quota"),
+        rate_limits: rateLimitValue(form, "rate_limits"),
         allowed_models: allowedModels,
       },
     });
@@ -199,6 +202,7 @@ export function JWTGrants() {
                   <td>
                     <span>{grant.request_quota || "∞"} requests</span>
                     <small title={grant.token_quota ? integer(grant.token_quota) : "∞"}>{grant.token_quota ? `${compactTokenCount(grant.token_quota)} tokens` : "∞ tokens"}</small>
+                    <small>{grant.rate_limits.length ? `${grant.rate_limits.length} windows` : "No windows"}</small>
                   </td>
                   <td>
                     {grant.allowed_models.length ? (
@@ -244,6 +248,7 @@ export function JWTGrants() {
             <QuotaInput label="Issue quota" name="issue_quota" />
             <QuotaInput label="Request quota" name="request_quota" initialValue={500} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={2000000} />
+            <RateLimitEditor name="rate_limits" />
             <ModelWhitelistInput models={providerModels} />
             {createdJWT ? (
               <div className="secret-box">
@@ -279,6 +284,7 @@ export function JWTGrants() {
             <QuotaInput label="Issue quota" name="issue_quota" initialValue={editing.issue_quota} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={editing.request_quota} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={editing.token_quota} />
+            <RateLimitEditor key={`rate-limits-${editing.jti}-${JSON.stringify(editing.rate_limits)}`} name="rate_limits" initialValue={editing.rate_limits} />
             <ModelWhitelistInput models={providerModels} selected={editing.allowed_models} />
             {editModelError ? <span className="error-text">{editModelError}</span> : null}
             {updateGrant.error ? <span className="error-text">{updateGrant.error.message}</span> : null}

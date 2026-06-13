@@ -13,6 +13,8 @@ import type {
   ProviderSnapshot,
   ProviderUsageResponse,
   ProviderUsage,
+  RateLimit,
+  RateLimitUsage,
   RequestLog,
   TrafficBucket,
 } from "./types";
@@ -91,13 +93,13 @@ export const api = {
   jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<JWTGrant>>("/admin/jwt-grants", { query }),
   jwtGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`),
-  createJWTGrant: (body: { name: string; description?: string; issue_quota: number; request_quota: number; token_quota: number; allowed_models: string[] }) =>
+  createJWTGrant: (body: { name: string; description?: string; issue_quota: number; request_quota: number; token_quota: number; allowed_models: string[]; rate_limits?: RateLimit[] }) =>
     request<JWTGrant & { jwt: string }>("/admin/jwt-grants", { method: "POST", body: JSON.stringify(body) }),
   updateJWTGrant: (jti: string, body: Record<string, unknown>) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteJWTGrant: (jti: string, query?: { delete_api_keys?: boolean }) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "DELETE", query }),
-  apiKeyUsage: (id: string) => request<{ key: APIKey; summary: TrafficBucket; recent_traffic: TrafficBucket[]; active_devices: number }>(`/admin/api-keys/${id}/usage`),
+  apiKeyUsage: (id: string) => request<{ key: APIKey; summary: TrafficBucket; recent_traffic: TrafficBucket[]; active_devices: number; rate_limit_usage: RateLimitUsage[] }>(`/admin/api-keys/${id}/usage`),
   apiKeyLogs: (id: string, query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<RequestLog>>(`/admin/api-keys/${id}/logs`, { query }),
   apiKeySessions: (id: string, query?: Record<string, string | number | boolean | undefined>) =>

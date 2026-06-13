@@ -1,3 +1,27 @@
+export type RateLimitWindow = "1h" | "5h" | "1d" | "7d" | "30d";
+
+export type RateLimit = {
+  window: RateLimitWindow;
+  request_quota: number;
+  token_quota: number;
+  cost_quota_micro: number;
+};
+
+export type RateLimitUsage = {
+  window: RateLimitWindow;
+  starts_at: string;
+  resets_at: string;
+  requests: number;
+  request_quota: number;
+  request_remaining: number;
+  tokens: number;
+  token_quota: number;
+  token_remaining: number;
+  cost_micro: number;
+  cost_quota_micro: number;
+  cost_remaining_micro: number;
+};
+
 export type APIKey = {
   id: string;
   name: string;
@@ -11,6 +35,7 @@ export type APIKey = {
   request_quota: number;
   token_quota: number;
   allowed_models: string[];
+  rate_limits: RateLimit[];
   used_requests: number;
   used_tokens: number;
   last_used_at?: string;
@@ -31,6 +56,7 @@ export type JWTGrant = {
   request_quota: number;
   token_quota: number;
   allowed_models: string[];
+  rate_limits: RateLimit[];
   jwt?: string;
   expires_at?: string;
   last_issued_at?: string;

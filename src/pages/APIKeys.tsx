@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
+import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
@@ -116,6 +117,7 @@ export function APIKeys() {
       description: String(form.get("description") ?? ""),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
     });
   }
@@ -328,6 +330,7 @@ export function APIKeys() {
             <input name="description" placeholder="Description" />
             <QuotaInput label="Request quota" name="request_quota" />
             <QuotaInput label="Token quota" name="token_quota" />
+            <RateLimitEditor name="rate_limits" />
             <ModelWhitelistInput models={providerModels} />
             {createdKey ? (
               <div className="secret-box">

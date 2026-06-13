@@ -1,4 +1,4 @@
-const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
+export const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
 const CURRENCY_LOCALE = CURRENCY === "CNY" ? "zh-CN" : "en-US";
 
 export function compactNumber(value: number) {
