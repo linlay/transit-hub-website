@@ -1,4 +1,4 @@
-FROM harbor.gtjaqh.io/library/node:22 AS builder
+FROM node:22 AS builder
 
 ARG VITE_BASE_URL=/
 ARG VITE_API_BASE_URL=
@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM harbor.gtjaqh.io/library/nginx:1.25-alpine
+FROM nginx:1.25-alpine
 
 ARG VITE_BASE_URL=/
 ARG VITE_API_BASE_URL=
