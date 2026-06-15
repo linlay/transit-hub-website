@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
 import { MetricCard } from "../components/MetricCard";
+import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactTokenCount, integer, nullablePercent, formatCurrency } from "../lib/format";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
@@ -69,6 +70,10 @@ export function Providers() {
 
   return (
     <section className="page">
+      <div className="page-actions">
+        <RefreshButton isRefreshing={providers.isFetching || usage.isFetching} onClick={() => Promise.all([providers.refetch(), usage.refetch()])} />
+      </div>
+
       <section className="panel">
         <div className="panel-heading">
           <h2>Provider usage</h2>

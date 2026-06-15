@@ -6,6 +6,7 @@ import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
+import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
@@ -172,6 +173,7 @@ export function APIKeys() {
   return (
     <section className="page">
       <div className="page-actions">
+        <RefreshButton isRefreshing={keys.isFetching} onClick={() => keys.refetch()} />
         <button className="primary" onClick={openCreateDialog} type="button">
           <Plus size={16} />
           Create key

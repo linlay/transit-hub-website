@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
+import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { compactTokenCount, dateTime, integer } from "../lib/format";
@@ -16,6 +17,10 @@ export function Sessions() {
 
   return (
     <section className="page">
+      <div className="page-actions">
+        <RefreshButton isRefreshing={sessions.isFetching} onClick={() => sessions.refetch()} />
+      </div>
+
       <section className="panel">
         <div className="toolbar">
           <label className="search">

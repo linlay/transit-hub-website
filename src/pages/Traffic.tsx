@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
 
@@ -11,6 +12,10 @@ export function Traffic() {
 
   return (
     <section className="page">
+      <div className="page-actions">
+        <RefreshButton isRefreshing={traffic.isFetching || logs.isFetching} onClick={() => Promise.all([traffic.refetch(), logs.refetch()])} />
+      </div>
+
       <section className="panel">
         <div className="panel-heading">
           <h2>Traffic</h2>
