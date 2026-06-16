@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bot, Loader2, RotateCcw, Send, Square, User } from "lucide-react";
+import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { PlaygroundChatDone, PlaygroundChatMessage, PlaygroundChatMeta, ProviderSnapshot } from "../lib/types";
 
 type ProviderItem = ProviderSnapshot["providers"][number];
@@ -14,7 +16,7 @@ type ChatMessage = PlaygroundChatMessage & {
 let messageSequence = 0;
 
 export function Playground() {
-  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
+  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const providerList = providers.data?.providers ?? [];
   const abortRef = useRef<AbortController>();
   const activeRunRef = useRef(0);
@@ -183,10 +185,13 @@ export function Playground() {
             <h2>目标配置</h2>
             <span>{targetSummary(meta, providerName, publicModel, inferredPoolName, accountName, done)}</span>
           </div>
-          <button className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button">
-            <RotateCcw size={16} />
-            清空
-          </button>
+          <div className="panel-actions">
+            <RefreshButton isRefreshing={providers.isFetching} onClick={() => providers.refetch()} />
+            <button className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button">
+              <RotateCcw size={16} />
+              清空
+            </button>
+          </div>
         </div>
         {providers.isError ? <div className="error-text">Provider 加载失败。</div> : null}
         <div className="settings-form">

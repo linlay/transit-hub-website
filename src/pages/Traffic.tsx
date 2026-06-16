@@ -4,11 +4,12 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function Traffic() {
   const [bucket, setBucket] = useState("day");
-  const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }) });
-  const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }) });
+  const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
 
   return (
     <section className="page">

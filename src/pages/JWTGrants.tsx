@@ -12,6 +12,7 @@ import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import type { JWTGrant } from "../lib/types";
 import { compactTokenCount, dateTime, integer } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function JWTGrants() {
   const queryClient = useQueryClient();
@@ -31,10 +32,12 @@ export function JWTGrants() {
   const grants = useQuery({
     queryKey: ["jwt-grants", search, status],
     queryFn: () => api.jwtGrants({ search, status }),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const providers = useQuery({
     queryKey: ["providers"],
     queryFn: api.providers,
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
   const createGrant = useMutation({
@@ -155,7 +158,7 @@ export function JWTGrants() {
   return (
     <section className="page">
       <div className="page-actions">
-        <RefreshButton isRefreshing={grants.isFetching} onClick={() => grants.refetch()} />
+        <RefreshButton isRefreshing={grants.isFetching || providers.isFetching} onClick={() => Promise.all([grants.refetch(), providers.refetch()])} />
         <button className="primary" onClick={openCreateDialog} type="button">
           <Plus size={16} />
           Create grant

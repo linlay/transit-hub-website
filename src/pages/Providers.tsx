@@ -6,12 +6,13 @@ import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactTokenCount, integer, nullablePercent, formatCurrency } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
 import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
 
 export function Providers() {
-  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
-  const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: 30_000 });
+  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const connectivity = useProviderConnectivityTest();
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
   const usageByAccount = useMemo(

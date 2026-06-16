@@ -1,15 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
+import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactNumber, compactTokenCount, integer, percent, formatCurrency } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function Dashboard() {
-  const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: 30_000 });
+  const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const data = overview.data;
 
   return (
     <section className="page">
+      <div className="page-actions">
+        <RefreshButton isRefreshing={overview.isFetching} onClick={() => overview.refetch()} />
+      </div>
+
       <div className="metrics-grid">
         <MetricCard label="Requests" value={compactNumber(data?.total_requests ?? 0)} detail="All time" />
         <MetricCard label="Tokens" value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />

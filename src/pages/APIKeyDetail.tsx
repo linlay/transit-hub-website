@@ -7,9 +7,11 @@ import { MetricCard } from "../components/MetricCard";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
+import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency, quotaRatio } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { RateLimitUsage } from "../lib/types";
 
 export function APIKeyDetail() {
@@ -20,22 +22,27 @@ export function APIKeyDetail() {
   const [range, setRange] = useState("14d");
   const [modelError, setModelError] = useState("");
   const [savedMessage, setSavedMessage] = useState(false);
-  const trafficQuery = useMemo(() => {
-    const query: Record<string, string> = { api_key_id: id, bucket };
-    if (range !== "all") {
-      const days = Number(range.replace("d", ""));
-      const now = new Date();
-      query.from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
-      query.to = now.toISOString();
-    }
-    return query;
-  }, [bucket, id, range]);
-  const detail = useQuery({ queryKey: ["api-key", id], queryFn: () => api.apiKey(id), enabled: Boolean(id) });
-  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers });
-  const usage = useQuery({ queryKey: ["api-key-usage", id], queryFn: () => api.apiKeyUsage(id), enabled: Boolean(id) });
-  const timeline = useQuery({ queryKey: ["api-key-traffic", id, bucket, range], queryFn: () => api.traffic(trafficQuery), enabled: Boolean(id) });
-  const sessions = useQuery({ queryKey: ["api-key-sessions", id], queryFn: () => api.apiKeySessions(id, { include_stale: true }), enabled: Boolean(id) });
-  const logs = useQuery({ queryKey: ["api-key-logs", id], queryFn: () => api.apiKeyLogs(id, { limit: 50 }), enabled: Boolean(id) });
+  const detail = useQuery({ queryKey: ["api-key", id], queryFn: () => api.apiKey(id), enabled: Boolean(id), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const usage = useQuery({ queryKey: ["api-key-usage", id], queryFn: () => api.apiKeyUsage(id), enabled: Boolean(id), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const timeline = useQuery({
+    queryKey: ["api-key-traffic", id, bucket, range],
+    queryFn: () => api.traffic(apiKeyTrafficQuery(id, bucket, range)),
+    enabled: Boolean(id),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
+  });
+  const sessions = useQuery({
+    queryKey: ["api-key-sessions", id],
+    queryFn: () => api.apiKeySessions(id, { include_stale: true }),
+    enabled: Boolean(id),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
+  });
+  const logs = useQuery({
+    queryKey: ["api-key-logs", id],
+    queryFn: () => api.apiKeyLogs(id, { limit: 50 }),
+    enabled: Boolean(id),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
+  });
   const update = useMutation({
     mutationFn: (body: Record<string, unknown>) => api.updateAPIKey(id, body),
     onSuccess: () => {
@@ -61,6 +68,7 @@ export function APIKeyDetail() {
   const key = detail.data;
   const summary = usage.data?.summary;
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
+  const isRefreshing = detail.isFetching || providers.isFetching || usage.isFetching || timeline.isFetching || sessions.isFetching || logs.isFetching;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,8 +91,16 @@ export function APIKeyDetail() {
     });
   }
 
+  function refreshDetail() {
+    return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), logs.refetch()]);
+  }
+
   return (
     <section className="page">
+      <div className="page-actions">
+        <RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} />
+      </div>
+
       <div className="metrics-grid">
         <MetricCard label="Requests" value={integer(summary?.requests ?? 0)} detail="Recorded calls" />
         <MetricCard label="Tokens" value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />
@@ -309,6 +325,17 @@ export function APIKeyDetail() {
       ) : null}
     </section>
   );
+}
+
+function apiKeyTrafficQuery(id: string, bucket: string, range: string) {
+  const query: Record<string, string> = { api_key_id: id, bucket };
+  if (range !== "all") {
+    const days = Number(range.replace("d", ""));
+    const now = new Date();
+    query.from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+    query.to = now.toISOString();
+  }
+  return query;
 }
 
 function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {

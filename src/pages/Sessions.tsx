@@ -5,6 +5,7 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { compactTokenCount, dateTime, integer } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function Sessions() {
   const [search, setSearch] = useState("");
@@ -12,7 +13,7 @@ export function Sessions() {
   const sessions = useQuery({
     queryKey: ["sessions", search, includeStale],
     queryFn: () => api.sessions({ search, include_stale: includeStale }),
-    refetchInterval: 30_000,
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
 
   return (

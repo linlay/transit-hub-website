@@ -4,12 +4,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { formatCurrency } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
 
 export function Pricing() {
   const queryClient = useQueryClient();
-  const prices = useQuery({ queryKey: ["prices"], queryFn: api.prices });
+  const prices = useQuery({ queryKey: ["prices"], queryFn: api.prices, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const create = useMutation({
     mutationFn: api.createPrice,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prices"] }),

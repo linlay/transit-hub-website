@@ -11,6 +11,7 @@ import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import { compactTokenCount, dateTime, integer, quotaRatio } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { APIKey } from "../lib/types";
 
 export function APIKeys() {
@@ -33,10 +34,12 @@ export function APIKeys() {
   const keys = useQuery({
     queryKey: ["api-keys", search, status, source, issuerJTI],
     queryFn: () => api.apiKeys({ search, status, source, issuer_jti: issuerJTI }),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const providers = useQuery({
     queryKey: ["providers"],
     queryFn: api.providers,
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
   const create = useMutation({
@@ -173,7 +176,7 @@ export function APIKeys() {
   return (
     <section className="page">
       <div className="page-actions">
-        <RefreshButton isRefreshing={keys.isFetching} onClick={() => keys.refetch()} />
+        <RefreshButton isRefreshing={keys.isFetching || providers.isFetching} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
         <button className="primary" onClick={openCreateDialog} type="button">
           <Plus size={16} />
           Create key

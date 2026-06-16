@@ -5,10 +5,11 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { dateTime } from "../lib/format";
+import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function Users() {
   const queryClient = useQueryClient();
-  const users = useQuery({ queryKey: ["users"], queryFn: api.users });
+  const users = useQuery({ queryKey: ["users"], queryFn: api.users, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const create = useMutation({
     mutationFn: api.createUser,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
