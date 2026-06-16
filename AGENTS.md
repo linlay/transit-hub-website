@@ -18,16 +18,17 @@ src/lib/env.ts            VITE_BASE_URL / VITE_API_BASE_URL 规范化工具。
 src/lib/types.ts          后端响应和页面数据类型。
 src/lib/format.ts         展示格式化工具。
 src/styles.css            全局样式。
-vite.config.ts            Vite 构建和开发配置，开发态按 API 前缀代理到 localhost:8080。
-Dockerfile                生产镜像，多阶段构建后由 Nginx 托管静态文件，并注入构建时 baseUrl。
-scripts/prepare-nginx.sh  根据构建时 baseUrl 安装静态文件并生成 Nginx 配置。
+vite.config.ts            Vite 构建和开发配置，生产静态资源按相对路径构建，开发态按 API 前缀代理到 localhost:8080。
+Dockerfile                生产镜像，多阶段构建后由 Nginx 托管静态文件，启动时渲染运行时 baseUrl。
+scripts/prepare-nginx.sh  根据运行时 baseUrl 安装静态文件、生成 runtime-config.js 并生成 Nginx 配置。
+scripts/prepare-nginx.test.sh  prepare-nginx.sh 的运行时 base path 回归测试。
 compose.yml               website 容器部署入口。
 ```
 
 ## 开发约定
 
 - 保持前端 API 路径使用同源相对路径，生产环境不要硬编码后端域名。
-- 页面基础路径统一使用 `VITE_BASE_URL`，默认 `/`；子路径部署时在 `.env` 中设置后重新 build。
+- 页面基础路径统一使用运行时 `VITE_BASE_URL`，默认 `/`；子路径部署时在运行时环境变量中设置后重启容器。
 - 只在 API 前缀需要与 `VITE_BASE_URL` 不一致时设置 `VITE_API_BASE_URL`。
 - 新增页面时优先复用现有 Layout、MetricCard、StatusPill 和 EmptyState 组件。
 - 新增后端字段时同步更新 `src/lib/types.ts`，并让页面展示逻辑兼容缺省值。
@@ -36,8 +37,8 @@ compose.yml               website 容器部署入口。
 
 ## API 访问约定
 
-- 开发态：`npm run dev`，Vite 将构建时 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 `http://localhost:8080`。
-- 生产态：Nginx 将构建时 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 Docker network 内的 `http://transit-hub:8080`。
+- 开发态：`npm run dev`，Vite 将 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 `http://localhost:8080`。
+- 生产态：容器启动时生成 `runtime-config.js`，Nginx 将运行时 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 Docker network 内的 `http://transit-hub:8080`。
 - 登录态依赖后端 HttpOnly Cookie，前端请求统一使用 `credentials: "include"`。
 - 管理后台不直接调用公开代理接口 `/v1/chat/completions` 或 `/v1/messages`。
 
@@ -52,5 +53,5 @@ compose.yml               website 容器部署入口。
 
 - 不要提交 `.env`、`.env.*`、真实密钥、构建产物 `dist/` 或 `node_modules/`；`.env.example` 是唯一可提交的 env 示例。
 - 不要把生产 API 地址写入前端源码；优先使用同源相对 API 路径。
-- 修改部署文件后至少运行 `npm run build` 和 `docker compose build`。
+- 修改部署文件后至少运行 `sh scripts/prepare-nginx.test.sh`、`npm run build` 和 `docker compose build`。
 - 如果 website 前面还有外部 HTTPS 反代，后端 `.env` 应根据实际域名设置 `CORS_ALLOWED_ORIGINS`，HTTPS Cookie 场景设置 `COOKIE_SECURE=true`。

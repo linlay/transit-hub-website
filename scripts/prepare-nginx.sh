@@ -5,6 +5,10 @@ DIST_SOURCE="${DIST_SOURCE:-/tmp/dist}"
 HTML_ROOT="${HTML_ROOT:-/usr/share/nginx/html}"
 NGINX_CONF="${NGINX_CONF:-/etc/nginx/conf.d/default.conf}"
 
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
 normalize_path_prefix() {
   raw="$(printf '%s' "${1:-/}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
   [ -n "$raw" ] || raw="/"
@@ -134,6 +138,32 @@ EOF
 EOF
 }
 
+write_runtime_config() {
+  runtime_api_base="${VITE_API_BASE_URL:-}"
+  if [ -z "$(printf '%s' "$runtime_api_base" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" ]; then
+    runtime_api_base="$APP_BASE_PATH"
+  fi
+
+  cat > "$INSTALL_PATH/runtime-config.js" <<EOF
+window.__TRANSIT_HUB_CONFIG__ = {
+  baseUrl: "$(json_escape "$APP_BASE_PATH")",
+  apiBaseUrl: "$(json_escape "$runtime_api_base")"
+};
+EOF
+}
+
+rewrite_index_base() {
+  index_file="$INSTALL_PATH/index.html"
+  [ -f "$index_file" ] || return 0
+
+  base_href="$APP_BASE_PATH/"
+  [ "$APP_BASE_PATH" = "/" ] && base_href="/"
+
+  tmp_file="$index_file.tmp"
+  sed "s#<base href=\"[^\"]*\" data-runtime-base />#<base href=\"$base_href\" data-runtime-base />#" "$index_file" > "$tmp_file"
+  mv "$tmp_file" "$index_file"
+}
+
 APP_BASE_PATH="$(normalize_path_prefix "${VITE_BASE_URL:-/}")"
 API_PREFIX="$(resolve_api_prefix)"
 if [ "$API_PREFIX" = "/" ]; then
@@ -151,6 +181,8 @@ fi
 
 mkdir -p "$INSTALL_PATH" "$(dirname "$NGINX_CONF")"
 cp -a "$DIST_SOURCE"/. "$INSTALL_PATH"/
+rewrite_index_base
+write_runtime_config
 
 {
   cat <<'EOF'

@@ -22,7 +22,7 @@ npm run dev
 http://localhost:5173
 ```
 
-开发态 Vite 会把构建时 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 `http://localhost:8080`。如果本地后端监听端口不同，请同步调整 `vite.config.ts`。
+开发态 Vite 会把当前 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 `http://localhost:8080`。如果本地后端监听端口不同，请同步调整 `vite.config.ts`。
 
 ## 构建
 
@@ -30,7 +30,7 @@ http://localhost:5173
 npm run build
 ```
 
-构建产物输出到 `dist/`，生产容器会使用同一条构建命令生成静态文件。前端基础路径是构建时配置，默认部署在根路径 `/`；如果要部署到子路径，请在构建前设置：
+构建产物输出到 `dist/`，生产容器会使用同一条构建命令生成静态文件。前端静态资源使用相对路径构建，因此同一镜像可以部署在根路径或子路径。生产基础路径由容器运行时环境变量决定，默认部署在根路径 `/`；如果要部署到子路径，请在启动容器时设置：
 
 ```dotenv
 VITE_BASE_URL=/transit-hub
@@ -85,13 +85,13 @@ VITE_API_BASE_URL=/transit-hub
 VITE_CURRENCY=CNY
 ```
 
-然后重新构建容器：
+然后重启或重新部署容器：
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
-`.env` 不会被复制进镜像上下文；`compose.yml` 会把这些值作为 build args 传给 Dockerfile。镜像打好后再修改 `.env` 不会改变已生成的前端静态资源，需要重新 build。
+`.env` 不会被复制进镜像上下文；`compose.yml` 会把这些值作为运行时环境变量传给容器。容器启动时会生成 `runtime-config.js`、改写 HTML `<base>`，并生成 Nginx location。镜像打好后再修改 `.env` 不需要重新 build，但需要重启或重新部署容器让运行时配置重新生成。
 
 ## 发布检查
 
@@ -122,7 +122,7 @@ docker compose ps
 
 - 页面能打开但登录失败：确认 server 容器已启动，并且与 website 在 `transit-hub-net` 中。
 - `/admin` 或 `/transit-hub/admin` 返回 502：确认 server compose 的服务名是 `transit-hub`，监听地址为 `:8080`。
-- 子路径页面刷新 404：确认 `.env` 中的 `VITE_BASE_URL` 已在 `docker compose up -d --build` 时参与构建。
+- 子路径页面刷新 404：确认容器运行时环境变量中有正确的 `VITE_BASE_URL`，并且修改后已经重启或重新部署容器。
 - 宿主机 80 端口冲突：修改 website `compose.yml` 的 `ports` 映射，或交给外部反代接入。
 - Cookie 无法保持登录：检查访问域名、HTTPS、`COOKIE_SECURE` 和后端 CORS 配置是否匹配。
 # tunnel-hub-website
