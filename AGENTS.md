@@ -49,6 +49,7 @@ compose.yml               website 容器部署入口。
 
 - website 和 server 使用同一个 external Podman network：`transit-hub-net`。
 - 单虚拟机 Podman Compose 部署中，`TRANSIT_HUB_UPSTREAM` 按实际 server 服务名和端口填写；示例可用 `http://transit-hub:8080`。
+- 后端容器名固定为 `transit-hub-server`，website 容器名固定为 `transit-hub-website`。
 - 对外只暴露 website 的 HTTP/HTTPS 入口；server 不映射宿主机端口。
 - 首次部署前需要执行 `podman network create transit-hub-net`。
 

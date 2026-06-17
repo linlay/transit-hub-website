@@ -77,6 +77,8 @@ cd /path/to/transit-hub-website
 podman compose up -d --build
 ```
 
+website 镜像名固定为 `transit-hub-website`，容器名固定为 `transit-hub-website`。
+
 默认 `compose.yml` 将宿主机 `80` 端口映射到 website 容器 `80` 端口：
 
 ```yaml
@@ -148,7 +150,7 @@ podman network inspect transit-hub-net
 podman compose ps
 ```
 
-确认 `transit-hub` 和 `transit-hub-website` 都在 `transit-hub-net` 中，并且外部只访问 website 暴露端口。
+确认后端容器 `transit-hub-server` 和 website 容器 `transit-hub-website` 都在 `transit-hub-net` 中，并且外部只访问 website 暴露端口。website 会通过网络内服务名 `transit-hub:8080` 访问后端。
 
 ## API 与登录
 

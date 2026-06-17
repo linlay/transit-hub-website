@@ -1,5 +1,7 @@
 services:
   transit-hub-website:
+    image: transit-hub-website
+    container_name: transit-hub-website
     build:
       context: .
       dockerfile: Dockerfile
