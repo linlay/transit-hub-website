@@ -12,11 +12,6 @@ function normalizeBaseUrl(value: string | undefined): string {
   return withoutTrailingSlash || "/";
 }
 
-function normalizeViteBase(value: string | undefined): string {
-  const baseUrl = normalizeBaseUrl(value);
-  return baseUrl === "/" ? "/" : `${baseUrl}/`;
-}
-
 function normalizeApiBaseUrl(value: string | undefined, fallbackBaseUrl: string): string {
   const raw = value?.trim();
   if (!raw) return fallbackBaseUrl === "/" ? "" : fallbackBaseUrl;
@@ -39,7 +34,7 @@ export default defineConfig(({ mode }) => {
   const rewriteProxyPath = (path: string) => (stripApiBaseUrl ? path.replace(stripApiBaseUrl, "") : path);
 
   return {
-    base: normalizeViteBase(baseUrl),
+    base: "./",
     plugins: [react()],
     server: {
       port: 5173,

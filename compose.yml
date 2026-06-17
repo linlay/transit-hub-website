@@ -3,9 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        VITE_BASE_URL: ${VITE_BASE_URL:-/}
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    environment:
+      VITE_BASE_URL: ${VITE_BASE_URL:-/}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+      NGINX_BASE_URL: ${NGINX_BASE_URL:-}
+      NGINX_API_BASE_URL: ${NGINX_API_BASE_URL:-}
+      TRANSIT_HUB_UPSTREAM: ${TRANSIT_HUB_UPSTREAM:-}
     ports:
       - "${WEBSITE_HTTP_PORT:-80}:80"
     networks:

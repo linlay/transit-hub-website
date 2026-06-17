@@ -1,9 +1,5 @@
-FROM node:22 AS builder
-
-ARG VITE_BASE_URL=/
-ARG VITE_API_BASE_URL=
-ENV VITE_BASE_URL=${VITE_BASE_URL}
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+# FROM node:22 AS builder
+FROM harbor.gtjaqh.io/library/node:22 AS builder
 
 WORKDIR /app
 
@@ -13,15 +9,14 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.25-alpine
+# FROM nginx:1.25-alpine
+FROM harbor.gtjaqh.io/library/nginx:1.25-alpine
 
-ARG VITE_BASE_URL=/
-ARG VITE_API_BASE_URL=
-ENV VITE_BASE_URL=${VITE_BASE_URL}
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_BASE_URL=/
+ENV VITE_API_BASE_URL=
 
-COPY scripts/prepare-nginx.sh /usr/local/bin/prepare-nginx
+COPY scripts/prepare-nginx.sh /docker-entrypoint.d/40-prepare-transit-hub.sh
 COPY --from=builder /app/dist /tmp/dist
-RUN chmod +x /usr/local/bin/prepare-nginx && /usr/local/bin/prepare-nginx
+RUN chmod +x /docker-entrypoint.d/40-prepare-transit-hub.sh
 
 EXPOSE 80

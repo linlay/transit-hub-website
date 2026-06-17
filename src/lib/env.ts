@@ -26,5 +26,21 @@ export function normalizeApiBaseUrl(value: string | undefined, fallbackBaseUrl: 
   return baseUrl === "/" ? "" : baseUrl;
 }
 
-export const APP_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_BASE_URL);
-export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL, APP_BASE_URL);
+type RuntimeConfig = {
+  baseUrl?: string;
+  apiBaseUrl?: string;
+};
+
+declare global {
+  interface Window {
+    __TRANSIT_HUB_CONFIG__?: RuntimeConfig;
+  }
+}
+
+const runtimeConfig = typeof window === "undefined" ? {} : window.__TRANSIT_HUB_CONFIG__ ?? {};
+
+export const APP_BASE_URL = normalizeBaseUrl(runtimeConfig.baseUrl ?? import.meta.env.VITE_BASE_URL);
+export const API_BASE_URL = normalizeApiBaseUrl(
+  runtimeConfig.apiBaseUrl ?? import.meta.env.VITE_API_BASE_URL,
+  APP_BASE_URL,
+);
