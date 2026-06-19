@@ -5,6 +5,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { api } from "./lib/api";
 import { APP_BASE_URL } from "./lib/env";
+import { I18nProvider, useI18n } from "./lib/i18n";
+import { ThemeProvider } from "./lib/theme";
 import { APIKeyDetail } from "./pages/APIKeyDetail";
 import { APIKeys } from "./pages/APIKeys";
 import { Dashboard } from "./pages/Dashboard";
@@ -28,34 +30,39 @@ const queryClient = new QueryClient({
 });
 
 function RequireAuth() {
+  const { t } = useI18n();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
-  if (me.isLoading) return <div className="boot">Loading Transit Hub...</div>;
+  if (me.isLoading) return <div className="boot">{t("Loading Transit Hub...")}</div>;
   if (me.isError) return <Navigate to="/login" replace />;
   return <Layout />;
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={APP_BASE_URL}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<RequireAuth />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/api-keys" element={<APIKeys />} />
-            <Route path="/api-keys/:id" element={<APIKeyDetail />} />
-            <Route path="/jwt-grants" element={<JWTGrants />} />
-            <Route path="/sessions" element={<Sessions />} />
-            <Route path="/traffic" element={<Traffic />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/providers" element={<Providers />} />
-            <Route path="/playground" element={<Playground />} />
-            <Route path="/provider-tests" element={<Navigate to="/playground" replace />} />
-            <Route path="/users" element={<Users />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <I18nProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter basename={APP_BASE_URL}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<RequireAuth />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/api-keys" element={<APIKeys />} />
+                <Route path="/api-keys/:id" element={<APIKeyDetail />} />
+                <Route path="/jwt-grants" element={<JWTGrants />} />
+                <Route path="/sessions" element={<Sessions />} />
+                <Route path="/traffic" element={<Traffic />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/providers" element={<Providers />} />
+                <Route path="/playground" element={<Playground />} />
+                <Route path="/provider-tests" element={<Navigate to="/playground" replace />} />
+                <Route path="/users" element={<Users />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 

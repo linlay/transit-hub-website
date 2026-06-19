@@ -5,9 +5,11 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { compactTokenCount, dateTime, integer } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function Sessions() {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [includeStale, setIncludeStale] = useState(false);
   const sessions = useQuery({
@@ -26,24 +28,24 @@ export function Sessions() {
         <div className="toolbar">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search device, source, key" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search device, source, key")} />
           </label>
           <label className="check-row">
             <input checked={includeStale} onChange={(event) => setIncludeStale(event.target.checked)} type="checkbox" />
-            Include stale
+            {t("Include stale")}
           </label>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>API key</th>
-                <th>Device</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Requests</th>
-                <th>Tokens</th>
-                <th>Last seen</th>
+                <th>{t("API key")}</th>
+                <th>{t("Device")}</th>
+                <th>{t("Source")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Requests")}</th>
+                <th>{t("Tokens")}</th>
+                <th>{t("Last seen")}</th>
               </tr>
             </thead>
             <tbody>
@@ -63,6 +65,13 @@ export function Sessions() {
                   <td>{dateTime(session.last_seen_at)}</td>
                 </tr>
               ))}
+              {!sessions.data?.items?.length ? (
+                <tr>
+                  <td colSpan={7} className="muted-cell">
+                    {t("No sessions match the current filters.")}
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bot, Loader2, RotateCcw, Send, Square, User } from "lucide-react";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { PlaygroundChatDone, PlaygroundChatMessage, PlaygroundChatMeta, ProviderSnapshot } from "../lib/types";
 
@@ -16,6 +17,7 @@ type ChatMessage = PlaygroundChatMessage & {
 let messageSequence = 0;
 
 export function Playground() {
+  const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const providerList = providers.data?.providers ?? [];
   const abortRef = useRef<AbortController>();
@@ -132,7 +134,7 @@ export function Playground() {
           const delta = stringValue(payload, "content");
           if (delta) appendAssistantContent(assistantID, delta);
         } else if (name === "error") {
-          const message = stringValue(payload, "error") || "Playground request failed";
+          const message = stringValue(payload, "error") || t("Playground request failed");
           setError(message);
           markAssistantError(assistantID, message);
         } else if (name === "done") {
@@ -141,7 +143,7 @@ export function Playground() {
       });
     } catch (caught) {
       if (activeRunRef.current === runID) {
-        const message = controller.signal.aborted ? "Stopped." : caught instanceof Error ? caught.message : "Playground request failed";
+        const message = controller.signal.aborted ? t("Stopped.") : caught instanceof Error ? caught.message : t("Playground request failed");
         setError(controller.signal.aborted ? "" : message);
         markAssistantError(assistantID, message);
       }
@@ -182,22 +184,22 @@ export function Playground() {
       <section className="panel playground-panel">
         <div className="panel-heading">
           <div>
-            <h2>目标配置</h2>
-            <span>{targetSummary(meta, providerName, publicModel, inferredPoolName, accountName, done)}</span>
+            <h2>{t("Target configuration")}</h2>
+            <span>{targetSummary(meta, providerName, publicModel, inferredPoolName, accountName, done, t)}</span>
           </div>
           <div className="panel-actions">
             <RefreshButton isRefreshing={providers.isFetching} onClick={() => providers.refetch()} />
             <button className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button">
               <RotateCcw size={16} />
-              清空
+              {t("Clear")}
             </button>
           </div>
         </div>
-        {providers.isError ? <div className="error-text">Provider 加载失败。</div> : null}
+        {providers.isError ? <div className="error-text">{t("Provider loading failed.")}</div> : null}
         <div className="settings-form">
           <div className="settings-grid four">
             <label>
-              Provider
+              {t("Provider")}
               <select
                 disabled={providers.isLoading || providerList.length === 0}
                 onChange={(event) => {
@@ -210,7 +212,7 @@ export function Playground() {
                 }}
                 value={providerName}
               >
-                <option value="">选择 Provider</option>
+                <option value="">{t("Select provider")}</option>
                 {providerList.map((provider) => (
                   <option key={provider.name} value={provider.name}>
                     {provider.name}
@@ -219,7 +221,7 @@ export function Playground() {
               </select>
             </label>
             <label>
-              模型
+              {t("Model")}
               <select
                 disabled={!selectedProvider}
                 onChange={(event) => {
@@ -229,7 +231,7 @@ export function Playground() {
                 }}
                 value={publicModel}
               >
-                <option value="">选择模型</option>
+                <option value="">{t("Select model")}</option>
                 {selectedProvider?.models.map((model) => (
                   <option key={model.public} value={model.public}>
                     {model.public}
@@ -238,7 +240,7 @@ export function Playground() {
               </select>
             </label>
             <label>
-              号池
+              {t("Pool")}
               <select
                 disabled={!selectedProvider}
                 onChange={(event) => {
@@ -248,7 +250,7 @@ export function Playground() {
                 }}
                 value={poolName}
               >
-                <option value="">路由号池</option>
+                <option value="">{t("Route pool")}</option>
                 {selectedProvider?.pools.map((pool) => (
                   <option key={pool.name} value={pool.name}>
                     {pool.name}
@@ -257,7 +259,7 @@ export function Playground() {
               </select>
             </label>
             <label>
-              账号
+              {t("Account")}
               <select
                 disabled={!selectedPool}
                 onChange={(event) => {
@@ -266,7 +268,7 @@ export function Playground() {
                 }}
                 value={accountName}
               >
-                <option value="">任意账号</option>
+                <option value="">{t("Any account")}</option>
                 {selectedPool?.accounts.map((account) => (
                   <option key={account.name} value={account.name}>
                     {account.name}
@@ -277,15 +279,15 @@ export function Playground() {
           </div>
           <div className="settings-grid three">
             <label>
-              System
+              {t("System prompt")}
               <textarea rows={3} onChange={(event) => setSystemPrompt(event.target.value)} value={systemPrompt} />
             </label>
             <label>
-              Temperature
+              {t("Temperature")}
               <input min={0} max={2} onChange={(event) => setTemperature(Number(event.target.value))} step={0.1} type="number" value={temperature} />
             </label>
             <label>
-              Max tokens
+              {t("Max tokens")}
               <input min={1} onChange={(event) => setMaxTokens(Number(event.target.value))} step={1} type="number" value={maxTokens} />
             </label>
           </div>
@@ -294,7 +296,7 @@ export function Playground() {
       <section className="panel playground-chat">
         <div className="playground-messages">
           {messages.length === 0 ? (
-            <div className="playground-empty">还没有消息。</div>
+            <div className="playground-empty">{t("No messages yet.")}</div>
           ) : (
             messages.map((message) => <ChatBubble key={message.id} message={message} />)
           )}
@@ -310,7 +312,7 @@ export function Playground() {
                 event.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder="输入消息"
+            placeholder={t("Type a message")}
             rows={3}
             value={input}
           />
@@ -318,12 +320,12 @@ export function Playground() {
             {isStreaming ? (
               <button className="icon-text" onClick={stopStreaming} type="button">
                 <Square size={16} />
-                停止
+                {t("Stop")}
               </button>
             ) : null}
             <button className="primary" disabled={!providerName || !publicModel || !input.trim() || isStreaming} type="submit">
               {isStreaming ? <Loader2 className="spin" size={16} /> : <Send size={16} />}
-              发送
+              {t("Send")}
             </button>
           </div>
         </form>
@@ -333,12 +335,13 @@ export function Playground() {
 }
 
 function ChatBubble({ message }: { message: ChatMessage }) {
+  const { t } = useI18n();
   const assistant = message.role === "assistant";
   return (
     <article className={`playground-message ${assistant ? "assistant" : "user"} ${message.error ? "error" : ""}`}>
       <div className="playground-avatar">{assistant ? <Bot size={17} /> : <User size={17} />}</div>
       <div className="playground-bubble">
-        <span>{assistant ? "Assistant" : "You"}</span>
+        <span>{assistant ? t("Assistant") : t("You")}</span>
         <p>{message.content || (message.pending ? "..." : "")}</p>
       </div>
     </article>
@@ -365,10 +368,11 @@ function targetSummary(
   pool: string,
   account: string,
   done: PlaygroundChatDone | null,
+  t: (key: string) => string,
 ) {
   const current = meta
     ? `${meta.provider} · ${meta.public_model} · ${meta.pool} · ${meta.account}`
-    : `${provider || "none"} · ${model || "none"} · ${pool || "route"} · ${account || "any"}`;
+    : `${provider || t("none")} · ${model || t("none")} · ${pool || t("route")} · ${account || t("any")}`;
   if (!done?.status_code) return current;
   return `${current} · ${done.status_code} · ${done.latency_ms} ms`;
 }

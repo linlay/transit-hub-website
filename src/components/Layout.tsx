@@ -7,13 +7,19 @@ import {
   Gauge,
   KeyRound,
   LogOut,
+  Moon,
+  Monitor,
   RadioTower,
   ServerCog,
+  Sun,
+  Languages,
   Users,
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { useI18n } from "../lib/i18n";
+import { useTheme, type ThemePreference } from "../lib/theme";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Gauge },
@@ -38,6 +44,8 @@ function currentPageLabel(pathname: string): string {
 }
 
 export function Layout() {
+  const { locale, setLocale, t } = useI18n();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -58,25 +66,42 @@ export function Layout() {
             <RadioTower size={20} />
           </div>
           <div>
-            <strong>Transit Hub</strong>
-            <span>Admin Console</span>
+            <strong>{t("Transit Hub")}</strong>
+            <span>{t("Admin Console")}</span>
           </div>
         </div>
         <nav>
           {nav.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.to === "/"}>
               <item.icon size={18} />
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </NavLink>
           ))}
         </nav>
         <div className="sidebar-footer">
-          <UserMenu username={me.data?.user.username ?? "Admin"} onLogout={() => logout.mutate()} />
+          <UserMenu username={me.data?.user.username ?? t("Admin")} onLogout={() => logout.mutate()} />
         </div>
       </aside>
       <main className="main">
         <header className="topbar">
-          <span className="topbar-page">{currentPageLabel(location.pathname)}</span>
+          <span className="topbar-page">{t(currentPageLabel(location.pathname))}</span>
+          <div className="topbar-controls">
+            <label className="topbar-select">
+              <Languages size={15} />
+              <select aria-label={t("Language")} value={locale} onChange={(event) => setLocale(event.target.value === "zh-CN" ? "zh-CN" : "en-US")}>
+                <option value="zh-CN">中文</option>
+                <option value="en-US">English</option>
+              </select>
+            </label>
+            <label className="topbar-select">
+              {themeIcon(theme)}
+              <select aria-label={t("Theme")} value={theme} onChange={(event) => setTheme(event.target.value as ThemePreference)}>
+                <option value="system">{t("System")}</option>
+                <option value="light">{t("Light")}</option>
+                <option value="dark">{t("Dark")}</option>
+              </select>
+            </label>
+          </div>
         </header>
         <Outlet />
       </main>
@@ -85,6 +110,7 @@ export function Layout() {
 }
 
 function UserMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -112,10 +138,16 @@ function UserMenu({ username, onLogout }: { username: string; onLogout: () => vo
         <div className="sidebar-user-dropdown">
           <button onClick={onLogout} type="button">
             <LogOut size={16} />
-            Logout
+            {t("Logout")}
           </button>
         </div>
       ) : null}
     </div>
   );
+}
+
+function themeIcon(theme: ThemePreference) {
+  if (theme === "light") return <Sun size={15} />;
+  if (theme === "dark") return <Moon size={15} />;
+  return <Monitor size={15} />;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "./api";
+import { useI18n } from "./i18n";
 import type { ProviderConnectivityTestRequest, ProviderConnectivityTestResult } from "./types";
 
 export type ConnectivityTarget = ProviderConnectivityTestRequest & {
@@ -14,6 +15,7 @@ export type ConnectivityToastState = {
 };
 
 export function useProviderConnectivityTest() {
+  const { t } = useI18n();
   const hideTimer = useRef<number>();
   const [pendingKey, setPendingKey] = useState("");
   const [toast, setToast] = useState<ConnectivityToastState | null>(null);
@@ -30,7 +32,7 @@ export function useProviderConnectivityTest() {
     if (hideTimer.current) {
       window.clearTimeout(hideTimer.current);
     }
-    setToast({ result, label: label ?? "Connectivity test" });
+    setToast({ result, label: label ?? t("Connectivity test") });
     hideTimer.current = window.setTimeout(() => setToast(null), 2_000);
   }
 
@@ -50,7 +52,7 @@ export function useProviderConnectivityTest() {
       showToast(data, target.label);
     },
     onError: (error, target) => {
-      showToast(failedConnectivityResult(target, error instanceof Error ? error.message : "Test failed"), target.label);
+      showToast(failedConnectivityResult(target, error instanceof Error ? error.message : t("Test failed")), target.label);
     },
     onSettled: () => {
       setPendingKey("");

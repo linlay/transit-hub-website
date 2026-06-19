@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CURRENCY } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import type { RateLimit, RateLimitWindow } from "../lib/types";
 
 const WINDOWS: Array<{ value: RateLimitWindow; label: string }> = [
@@ -16,6 +17,7 @@ type RateLimitEditorProps = {
 };
 
 export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProps) {
+  const { t } = useI18n();
   const initialByWindow = useMemo(() => new Map(initialValue.map((limit) => [limit.window, limit])), [initialValue]);
   const [enabled, setEnabled] = useState<Set<RateLimitWindow>>(() => new Set(initialValue.map((limit) => limit.window)));
 
@@ -34,9 +36,9 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
   return (
     <div className="rate-limit-editor">
       <div className="rate-limit-header">
-        <span>Window</span>
-        <span>Requests</span>
-        <span>Tokens</span>
+        <span>{t("Window")}</span>
+        <span>{t("Requests")}</span>
+        <span>{t("Tokens")}</span>
         <span>{CURRENCY}</span>
       </div>
       {WINDOWS.map((window) => {
@@ -46,7 +48,7 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
           <div className="rate-limit-row" key={window.value}>
             <label className="mini-check">
               <input checked={checked} name={`${name}_${window.value}_enabled`} onChange={(event) => toggle(window.value, event.target.checked)} type="checkbox" />
-              {window.label}
+              {t(window.label)}
             </label>
             <input defaultValue={positiveValue(limit?.request_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_request_quota`} placeholder="∞" type="number" />
             <input defaultValue={positiveValue(limit?.token_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_token_quota`} placeholder="∞" type="number" />

@@ -12,9 +12,11 @@ import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import type { JWTGrant } from "../lib/types";
 import { compactTokenCount, dateTime, integer } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function JWTGrants() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
   const searchParam = params.get("search") ?? "";
@@ -99,12 +101,12 @@ export function JWTGrants() {
 
   async function copyCreatedJWT() {
     const copied = await copyText(createdJWT);
-    setCreateCopyMessage(copied ? "Copied." : "Copy failed. Select and copy the JWT manually.");
+    setCreateCopyMessage(copied ? t("Copied.") : t("Copy failed. Select and copy the JWT manually."));
   }
 
   async function copyViewingJWT() {
     const copied = await copyText(viewing?.jwt ?? "");
-    setViewCopyMessage(copied ? "Copied." : "Copy failed. Select and copy the JWT manually.");
+    setViewCopyMessage(copied ? t("Copied.") : t("Copy failed. Select and copy the JWT manually."));
   }
 
   function submitGrant(event: FormEvent<HTMLFormElement>) {
@@ -112,7 +114,7 @@ export function JWTGrants() {
     const form = new FormData(event.currentTarget);
     const allowedModels = form.getAll("allowed_models").map(String);
     if (allowedModels.length === 0) {
-      setCreateModelError("Select at least one model.");
+      setCreateModelError(t("Select at least one model."));
       return;
     }
     setCreateModelError("");
@@ -133,7 +135,7 @@ export function JWTGrants() {
     const form = new FormData(event.currentTarget);
     const allowedModels = form.getAll("allowed_models").map(String);
     if (allowedModels.length === 0) {
-      setEditModelError("Select at least one model.");
+      setEditModelError(t("Select at least one model."));
       return;
     }
     setEditModelError("");
@@ -161,7 +163,7 @@ export function JWTGrants() {
         <RefreshButton isRefreshing={grants.isFetching || providers.isFetching} onClick={() => Promise.all([grants.refetch(), providers.refetch()])} />
         <button className="primary" onClick={openCreateDialog} type="button">
           <Plus size={16} />
-          Create grant
+          {t("Create grant")}
         </button>
       </div>
 
@@ -169,25 +171,25 @@ export function JWTGrants() {
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search grants" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search grants")} />
           </label>
           <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="disabled">Disabled</option>
+            <option value="all">{t("All statuses")}</option>
+            <option value="active">{t("Active")}</option>
+            <option value="disabled">{t("Disabled")}</option>
           </select>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Issued</th>
-                <th>Default limits</th>
-                <th>Models</th>
-                <th>Expires</th>
-                <th>Last issued</th>
+                <th>{t("Name")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Issued")}</th>
+                <th>{t("Default limits")}</th>
+                <th>{t("Models")}</th>
+                <th>{t("Expires")}</th>
+                <th>{t("Last issued")}</th>
                 <th />
               </tr>
             </thead>
@@ -199,34 +201,34 @@ export function JWTGrants() {
                     <small className="mono">{grant.jti}</small>
                   </td>
                   <td>
-                    <StatusPill active={grant.status === "active"} label={grant.status} />
+                    <StatusPill active={grant.status === "active"} label={grant.status === "active" ? "Active" : "Disabled"} />
                   </td>
                   <td>
                     {integer(grant.issued_count)} / {grant.issue_unlimited ? "∞" : integer(grant.issue_quota)}
                   </td>
                   <td>
-                    <span>{grant.request_quota || "∞"} requests</span>
-                    <small title={grant.token_quota ? integer(grant.token_quota) : "∞"}>{grant.token_quota ? `${compactTokenCount(grant.token_quota)} tokens` : "∞ tokens"}</small>
-                    <small>{grant.rate_limits.length ? `${grant.rate_limits.length} windows` : "No windows"}</small>
+                    <span>{t("{count} requests", { count: grant.request_quota || "∞" })}</span>
+                    <small title={grant.token_quota ? integer(grant.token_quota) : "∞"}>{grant.token_quota ? t("{count} tokens", { count: compactTokenCount(grant.token_quota) }) : t("{count} tokens", { count: "∞" })}</small>
+                    <small>{grant.rate_limits.length ? t("{count} windows", { count: grant.rate_limits.length }) : t("No windows")}</small>
                   </td>
                   <td>
                     {grant.allowed_models.length ? (
                       <span className="model-summary">{grant.allowed_models.join(", ")}</span>
                     ) : (
-                      <span className="muted-cell">No models allowed</span>
+                      <span className="muted-cell">{t("No models allowed")}</span>
                     )}
                   </td>
                   <td>{dateTime(grant.expires_at)}</td>
                   <td>{dateTime(grant.last_issued_at)}</td>
                   <td>
                     <div className="table-actions">
-                      <button className="icon-button" onClick={() => openViewDialog(grant)} title="View JWT" type="button">
+                      <button className="icon-button" onClick={() => openViewDialog(grant)} title={t("View JWT")} type="button">
                         <Eye size={16} />
                       </button>
-                      <button className="icon-button" onClick={() => openEditDialog(grant)} title="Edit" type="button">
+                      <button className="icon-button" onClick={() => openEditDialog(grant)} title={t("Edit")} type="button">
                         <Edit size={16} />
                       </button>
-                      <button className="icon-button danger" onClick={() => deleteGrant(grant)} title="Delete" type="button">
+                      <button className="icon-button danger" onClick={() => deleteGrant(grant)} title={t("Delete")} type="button">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -236,7 +238,7 @@ export function JWTGrants() {
               {!grants.data?.items?.length ? (
                 <tr>
                   <td colSpan={8} className="muted-cell">
-                    No JWT grants found.
+                    {t("No JWT grants found.")}
                   </td>
                 </tr>
               ) : null}
@@ -248,8 +250,8 @@ export function JWTGrants() {
       {createOpen ? (
         <ModalDialog title="Create JWT grant" onClose={() => setCreateOpen(false)}>
           <form className="dialog-form" onSubmit={submitGrant}>
-            <input name="name" placeholder="Name" required />
-            <input name="description" placeholder="Description" />
+            <input name="name" placeholder={t("Name")} required />
+            <input name="description" placeholder={t("Description")} />
             <QuotaInput label="Issue quota" name="issue_quota" />
             <QuotaInput label="Request quota" name="request_quota" initialValue={500} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={2000000} />
@@ -258,7 +260,7 @@ export function JWTGrants() {
             {createdJWT ? (
               <div className="secret-box">
                 <code>{createdJWT}</code>
-                <button className="icon-button" onClick={copyCreatedJWT} title="Copy JWT" type="button">
+                <button className="icon-button" onClick={copyCreatedJWT} title={t("Copy JWT")} type="button">
                   <Copy size={16} />
                 </button>
               </div>
@@ -268,11 +270,11 @@ export function JWTGrants() {
             {createGrant.error ? <span className="error-text">{createGrant.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">
-                Close
+                {t("Close")}
               </button>
               <button className="primary" disabled={createGrant.isPending} type="submit">
                 <Plus size={16} />
-                Create
+                {t("Create")}
               </button>
             </div>
           </form>
@@ -283,8 +285,8 @@ export function JWTGrants() {
         <ModalDialog title="Edit JWT grant" onClose={() => setEditing(null)}>
           <form key={editing.jti} className="dialog-form" onSubmit={submitGrantPatch}>
             <select name="status" defaultValue={editing.status}>
-              <option value="active">Active</option>
-              <option value="disabled">Disabled</option>
+              <option value="active">{t("Active")}</option>
+              <option value="disabled">{t("Disabled")}</option>
             </select>
             <QuotaInput label="Issue quota" name="issue_quota" initialValue={editing.issue_quota} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={editing.request_quota} />
@@ -295,10 +297,10 @@ export function JWTGrants() {
             {updateGrant.error ? <span className="error-text">{updateGrant.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setEditing(null)} type="button">
-                Close
+                {t("Close")}
               </button>
               <button className="primary" disabled={updateGrant.isPending} type="submit">
-                Save
+                {t("Save")}
               </button>
             </div>
           </form>
@@ -317,12 +319,12 @@ export function JWTGrants() {
                 </button>
               </div>
             ) : (
-              <span className="muted-cell">JWT unavailable</span>
+              <span className="muted-cell">{t("JWT unavailable")}</span>
             )}
             {viewCopyMessage ? <span className={viewCopyMessage === "Copied." ? "muted-cell" : "error-text"}>{viewCopyMessage}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setViewing(null)} type="button">
-                Close
+                {t("Close")}
               </button>
             </div>
           </div>
@@ -334,20 +336,20 @@ export function JWTGrants() {
         <ModalDialog title="Delete JWT grant" onClose={() => setDeleting(null)}>
           <div className="dialog-form">
             <p className="dialog-copy">
-              Delete <strong>{deleting.name}</strong>? Choose whether issued API keys should remain active.
+              {t("Delete")} <strong>{deleting.name}</strong>? {t("Choose whether issued API keys should remain active.")}
             </p>
             {removeGrant.error ? <span className="error-text">{removeGrant.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setDeleting(null)} type="button">
-                Cancel
+                {t("Cancel")}
               </button>
               <button className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: false })} type="button">
                 <Trash2 size={16} />
-                Grant only
+                {t("Grant only")}
               </button>
               <button className="primary" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: true })} type="button">
                 <Trash2 size={16} />
-                Grant and API keys
+                {t("Grant and API keys")}
               </button>
             </div>
           </div>

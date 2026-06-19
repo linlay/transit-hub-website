@@ -3,8 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RadioTower } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 
 export function Login() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
@@ -29,13 +31,13 @@ export function Login() {
           <RadioTower size={24} />
         </div>
         <h1>Transit Hub</h1>
-        <p>Sign in with your internal admin account.</p>
+        <p>{t("Sign in with your internal admin account.")}</p>
         <label>
-          Username
+          {t("Username")}
           <input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" />
         </label>
         <label>
-          Password
+          {t("Password")}
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -45,7 +47,7 @@ export function Login() {
         </label>
         {login.error ? <div className="form-error">{login.error.message}</div> : null}
         <button className="primary" disabled={login.isPending} type="submit">
-          {login.isPending ? "Signing in..." : "Sign in"}
+          {login.isPending ? t("Signing in...") : t("Sign in")}
         </button>
       </form>
     </main>

@@ -11,10 +11,12 @@ import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import { compactTokenCount, dateTime, integer, quotaRatio } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { APIKey } from "../lib/types";
 
 export function APIKeys() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
   type SortKey = "used_requests" | "used_tokens" | "last_used_at" | null;
@@ -104,7 +106,7 @@ export function APIKeys() {
 
   async function copyCreatedKey() {
     const copied = await copyText(createdKey);
-    setCopyMessage(copied ? "Copied." : "Copy failed. Select and copy the key manually.");
+    setCopyMessage(copied ? t("Copied.") : t("Copy failed. Select and copy the key manually."));
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -112,7 +114,7 @@ export function APIKeys() {
     const form = new FormData(event.currentTarget);
     const allowedModels = form.getAll("allowed_models").map(String);
     if (allowedModels.length === 0) {
-      setCreateModelError("Select at least one model.");
+      setCreateModelError(t("Select at least one model."));
       return;
     }
     setCreateModelError("");
@@ -153,8 +155,7 @@ export function APIKeys() {
   function batchSelected(action: "delete" | "inactive") {
     const ids = Array.from(selectedIDs);
     if (ids.length === 0) return;
-    const verb = action === "delete" ? "Delete" : "Inactive";
-    if (window.confirm(`${verb} ${ids.length} selected API keys?`)) {
+    if (window.confirm(t(action === "delete" ? "Delete {count} selected API keys?" : "Inactive {count} selected API keys?", { count: ids.length }))) {
       batch.mutate({ action, ids });
     }
   }
@@ -162,13 +163,13 @@ export function APIKeys() {
   function deleteByIssuerJTI() {
     const value = issuerJTI.trim();
     if (!value) return;
-    if (window.confirm(`Delete API keys issued by ${value}?`)) {
+    if (window.confirm(t("Delete API keys issued by {value}?", { value }))) {
       batch.mutate({ action: "delete", issuer_jti: value });
     }
   }
 
   function inactiveKey(id: string, name: string) {
-    if (window.confirm(`Inactive ${name}?`)) {
+    if (window.confirm(t("Inactive {name}?", { name }))) {
       batch.mutate({ action: "inactive", ids: [id] });
     }
   }
@@ -179,7 +180,7 @@ export function APIKeys() {
         <RefreshButton isRefreshing={keys.isFetching || providers.isFetching} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
         <button className="primary" onClick={openCreateDialog} type="button">
           <Plus size={16} />
-          Create key
+          {t("Create key")}
         </button>
       </div>
 
@@ -187,19 +188,19 @@ export function APIKeys() {
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search keys" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search keys")} />
           </label>
           <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="disabled">Disabled</option>
+            <option value="all">{t("All statuses")}</option>
+            <option value="active">{t("Active")}</option>
+            <option value="disabled">{t("Disabled")}</option>
           </select>
           <select value={source} onChange={(event) => setSource(event.target.value)}>
-            <option value="all">All sources</option>
-            <option value="admin">Admin</option>
+            <option value="all">{t("All sources")}</option>
+            <option value="admin">{t("Admin")}</option>
             <option value="jwt">JWT</option>
           </select>
-          <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder="Issuer JTI" />
+          <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer JTI")} />
           <button
             className="icon-text"
             onClick={() => {
@@ -208,23 +209,23 @@ export function APIKeys() {
             }}
             type="button"
           >
-            {selecting ? "Cancel selection" : "Select keys"}
+            {selecting ? t("Cancel selection") : t("Select keys")}
           </button>
           <button className="icon-text danger" disabled={!issuerJTI.trim() || batch.isPending} onClick={deleteByIssuerJTI} type="button">
             <Trash2 size={16} />
-            Delete by Issuer JTI
+            {t("Delete by Issuer JTI")}
           </button>
         </div>
         {selecting ? (
           <div className="bulk-bar">
-            <span>{selectedCount} selected</span>
+            <span>{t("Selected {count}", { count: selectedCount })}</span>
             <button className="icon-text" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("inactive")} type="button">
               <Ban size={16} />
-              Inactive selected
+              {t("Inactive selected")}
             </button>
             <button className="icon-text danger" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("delete")} type="button">
               <Trash2 size={16} />
-              Delete selected
+              {t("Delete selected")}
             </button>
           </div>
         ) : null}
@@ -238,25 +239,25 @@ export function APIKeys() {
                     <input checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />
                   </th>
                 ) : null}
-                <th>Name</th>
-                <th>Status</th>
-                <th>Source</th>
-                <th>Issuer JTI</th>
+                <th>{t("Name")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Source")}</th>
+                <th>{t("Issuer JTI")}</th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
-                    Requests
+                    {t("Requests")}
                     {sortIcon("used_requests")}
                   </button>
                 </th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("used_tokens")}>
-                    Tokens
+                    {t("Tokens")}
                     {sortIcon("used_tokens")}
                   </button>
                 </th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
-                    Last used
+                    {t("Last used")}
                     {sortIcon("last_used_at")}
                   </button>
                 </th>
@@ -278,9 +279,9 @@ export function APIKeys() {
                     <small>{key.key_prefix}</small>
                   </td>
                   <td>
-                    <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status} />
+                    <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
                   </td>
-                  <td>{key.source}</td>
+                  <td>{key.source === "admin" ? t("Admin") : "JWT"}</td>
                   <td>
                     {key.issuer_jti ? (
                       <Link className="table-link mono-link" to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>
@@ -300,14 +301,14 @@ export function APIKeys() {
                   <td>
                     <div className="table-actions">
                       {key.status === "active" ? (
-                        <button className="icon-button" onClick={() => inactiveKey(key.id, key.name)} title="Inactive" type="button">
+                        <button className="icon-button" onClick={() => inactiveKey(key.id, key.name)} title={t("Inactive")} type="button">
                           <Ban size={16} />
                         </button>
                       ) : null}
                       <button
                         className="icon-button danger"
-                        onClick={() => window.confirm(`Delete ${key.name}?`) && remove.mutate(key.id)}
-                        title="Delete"
+                        onClick={() => window.confirm(t("Delete {name}?", { name: key.name })) && remove.mutate(key.id)}
+                        title={t("Delete")}
                         type="button"
                       >
                         <Trash2 size={16} />
@@ -319,7 +320,7 @@ export function APIKeys() {
               {!keys.data?.items?.length ? (
                 <tr>
                   <td colSpan={selecting ? 9 : 8} className="muted-cell">
-                    No API keys found.
+                    {t("No API keys found.")}
                   </td>
                 </tr>
               ) : null}
@@ -329,10 +330,10 @@ export function APIKeys() {
       </section>
 
       {createOpen ? (
-        <ModalDialog title="Create API key" onClose={() => setCreateOpen(false)}>
+        <ModalDialog title="Create API Key" onClose={() => setCreateOpen(false)}>
           <form className="dialog-form" onSubmit={submit}>
-            <input name="name" placeholder="Name" required />
-            <input name="description" placeholder="Description" />
+            <input name="name" placeholder={t("Name")} required />
+            <input name="description" placeholder={t("Description")} />
             <QuotaInput label="Request quota" name="request_quota" />
             <QuotaInput label="Token quota" name="token_quota" />
             <RateLimitEditor name="rate_limits" />
@@ -340,7 +341,7 @@ export function APIKeys() {
             {createdKey ? (
               <div className="secret-box">
                 <code>{createdKey}</code>
-                <button className="icon-button" onClick={copyCreatedKey} title="Copy API key" type="button">
+                <button className="icon-button" onClick={copyCreatedKey} title={t("Copy API key")} type="button">
                   <Copy size={16} />
                 </button>
               </div>
@@ -350,11 +351,11 @@ export function APIKeys() {
             {create.error ? <span className="error-text">{create.error.message}</span> : null}
             <div className="dialog-actions">
               <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">
-                Close
+                {t("Close")}
               </button>
               <button className="primary" disabled={create.isPending} type="submit">
                 <Plus size={16} />
-                Create
+                {t("Create")}
               </button>
             </div>
           </form>

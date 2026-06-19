@@ -1,5 +1,6 @@
 import { CheckCircle2, X, XCircle } from "lucide-react";
 import { integer } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import type { ProviderConnectivityTestResult } from "../lib/types";
 
 type ConnectivityResultToastProps = {
@@ -9,10 +10,11 @@ type ConnectivityResultToastProps = {
 };
 
 export function ConnectivityResultToast({ label, result, onClose }: ConnectivityResultToastProps) {
+  const { t } = useI18n();
   if (!result) return null;
 
-  const title = result.ok ? "Connected" : "Connection failed";
-  const status = result.status_code > 0 ? `${result.status_code} · ${integer(result.latency_ms)} ms` : "Failed";
+  const title = result.ok ? t("Connected") : t("Connection failed");
+  const status = result.status_code > 0 ? `${result.status_code} · ${integer(result.latency_ms)} ms` : t("Failed");
 
   return (
     <div className={`connectivity-toast ${result.ok ? "good" : "bad"}`} role="status">
@@ -21,30 +23,30 @@ export function ConnectivityResultToast({ label, result, onClose }: Connectivity
           {result.ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
           <div>
             <strong>{title}</strong>
-            <span>{label ?? "Connectivity test"}</span>
+            <span>{label ?? t("Connectivity test")}</span>
           </div>
         </div>
-        <button aria-label="Close result" className="icon-button" onClick={onClose} type="button">
+        <button aria-label={t("Close result")} className="icon-button" onClick={onClose} type="button">
           <X size={14} />
         </button>
       </div>
       <div className="connectivity-toast-status">{status}</div>
       <dl className="connectivity-toast-details">
         <div>
-          <dt>Provider</dt>
-          <dd>{result.provider || "none"}</dd>
+          <dt>{t("Provider")}</dt>
+          <dd>{result.provider || t("none")}</dd>
         </div>
         <div>
-          <dt>Model</dt>
-          <dd>{result.public_model || "none"}</dd>
+          <dt>{t("Model")}</dt>
+          <dd>{result.public_model || t("none")}</dd>
         </div>
         <div>
-          <dt>Pool</dt>
-          <dd>{result.pool || "none"}</dd>
+          <dt>{t("Pool")}</dt>
+          <dd>{result.pool || t("none")}</dd>
         </div>
         <div>
-          <dt>Account</dt>
-          <dd>{result.account || "none"}</dd>
+          <dt>{t("Account")}</dt>
+          <dd>{result.account || t("none")}</dd>
         </div>
       </dl>
       {result.endpoint ? (

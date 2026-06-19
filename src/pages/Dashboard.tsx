@@ -1,75 +1,92 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactNumber, compactTokenCount, integer, percent, formatCurrency } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
+import type { TrafficBucketName } from "../lib/types";
 
 export function Dashboard() {
+  const { t } = useI18n();
+  const [bucket, setBucket] = useState<TrafficBucketName>("day");
   const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const traffic = useQuery({
+    queryKey: ["dashboard-traffic", bucket],
+    queryFn: () => api.traffic(dashboardTrafficQuery(bucket)),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
+  });
   const data = overview.data;
+  const trafficItems = traffic.data?.items ?? [];
 
   return (
     <section className="page">
       <div className="page-actions">
-        <RefreshButton isRefreshing={overview.isFetching} onClick={() => overview.refetch()} />
+        <RefreshButton isRefreshing={overview.isFetching || traffic.isFetching} onClick={() => Promise.all([overview.refetch(), traffic.refetch()])} />
       </div>
 
       <div className="metrics-grid">
-        <MetricCard label="Requests" value={compactNumber(data?.total_requests ?? 0)} detail="All time" />
-        <MetricCard label="Tokens" value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />
-        <MetricCard label="Cost" value={formatCurrency(data?.total_cost_micro ?? 0)} detail="Estimated" />
-        <MetricCard label="Active devices" value={integer(data?.active_devices ?? 0)} detail="Last 5 minutes" />
+        <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t("All time")} />
+        <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
+        <MetricCard label={t("Cost")} value={formatCurrency(data?.total_cost_micro ?? 0)} detail={t("Estimated")} />
+        <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
         <MetricCard
-          label="Error rate"
+          label={t("Error rate")}
           value={percent(data?.total_requests ? (data.error_requests || 0) / data.total_requests : 0)}
-          detail={`${integer(data?.error_requests ?? 0)} failed`}
+          detail={t("{count} failed", { count: integer(data?.error_requests ?? 0) })}
         />
         <MetricCard
-          label="API keys"
+          label={t("API keys")}
           value={integer(data?.api_keys.active ?? 0)}
-          detail={`${integer(data?.api_keys.disabled ?? 0)} disabled`}
+          detail={t("{count} disabled", { count: integer(data?.api_keys.disabled ?? 0) })}
         />
       </div>
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Recent traffic</h2>
-          <span>Requests by day</span>
+          <div>
+            <h2>{t("Recent traffic")}</h2>
+            <span>{t("Requests and tokens by {bucket}", { bucket: t(bucket) })}</span>
+          </div>
+          <div className="panel-actions">
+            <select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
+              <option value="hour">{t("Hourly")}</option>
+              <option value="day">{t("Daily")}</option>
+              <option value="month">{t("Monthly")}</option>
+            </select>
+          </div>
         </div>
         <div className="chart">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data?.recent_traffic ?? []}>
-              <defs>
-                <linearGradient id="requests" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0a84ff" stopOpacity={0.32} />
-                  <stop offset="95%" stopColor="#0a84ff" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
+            <ComposedChart data={trafficItems}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis tickLine={false} axisLine={false} />
-              <Tooltip />
-              <Area type="monotone" dataKey="requests" stroke="#0a84ff" fill="url(#requests)" strokeWidth={2} />
-            </AreaChart>
+              <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
+              <Tooltip formatter={(value: number, name: string) => [name === "total_tokens" ? compactTokenCount(value) : integer(value), name === "total_tokens" ? t("Tokens") : t("Requests")]} />
+              <Legend formatter={(value) => (value === "total_tokens" ? t("Tokens") : t("Requests"))} />
+              <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
+              <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </section>
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Quota watch</h2>
-          <span>Keys above 80% of request or token quota</span>
+          <h2>{t("Quota watch")}</h2>
+          <span>{t("Keys above 80% of request or token quota")}</span>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Prefix</th>
-                <th>Request use</th>
-                <th>Token use</th>
+                <th>{t("Name")}</th>
+                <th>{t("Prefix")}</th>
+                <th>{t("Request use")}</th>
+                <th>{t("Token use")}</th>
               </tr>
             </thead>
             <tbody>
@@ -84,7 +101,7 @@ export function Dashboard() {
               {!data?.risk_keys?.length ? (
                 <tr>
                   <td colSpan={4} className="muted-cell">
-                    No risky keys right now.
+                    {t("No risky keys right now.")}
                   </td>
                 </tr>
               ) : null}
@@ -94,4 +111,17 @@ export function Dashboard() {
       </section>
     </section>
   );
+}
+
+function dashboardTrafficQuery(bucket: TrafficBucketName) {
+  const now = new Date();
+  const from = new Date(now);
+  if (bucket === "hour") {
+    from.setHours(from.getHours() - 24);
+  } else if (bucket === "month") {
+    from.setMonth(from.getMonth() - 12);
+  } else {
+    from.setDate(from.getDate() - 14);
+  }
+  return { bucket, from: from.toISOString(), to: now.toISOString() };
 }

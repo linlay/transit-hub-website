@@ -6,11 +6,13 @@ import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactTokenCount, integer, nullablePercent, formatCurrency } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
 import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
 
 export function Providers() {
+  const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const connectivity = useProviderConnectivityTest();
@@ -77,20 +79,20 @@ export function Providers() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Provider usage</h2>
-          <span>All time</span>
+          <h2>{t("Provider usage")}</h2>
+          <span>{t("All time")}</span>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Provider</th>
-                <th>Requests</th>
-                <th>Input</th>
-                <th>Output</th>
+                <th>{t("Provider")}</th>
+                <th>{t("Requests")}</th>
+                <th>{t("Input")}</th>
+                <th>{t("Output")}</th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("total_tokens")}>
-                    Total
+                    {t("Total")}
                     {sortKey === "total_tokens" ? (
                       sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
                     ) : (
@@ -100,7 +102,7 @@ export function Providers() {
                 </th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("cache_hit_tokens")}>
-                    Cache hit
+                    {t("Cache hit")}
                     {sortKey === "cache_hit_tokens" ? (
                       sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
                     ) : (
@@ -110,7 +112,7 @@ export function Providers() {
                 </th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("cache_miss_tokens")}>
-                    Cache miss
+                    {t("Cache miss")}
                     {sortKey === "cache_miss_tokens" ? (
                       sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
                     ) : (
@@ -118,10 +120,10 @@ export function Providers() {
                     )}
                   </button>
                 </th>
-                <th>Hit rate</th>
-                <th>Errors</th>
-                <th>Avg latency</th>
-                <th>Cost</th>
+                <th>{t("Hit rate")}</th>
+                <th>{t("Errors")}</th>
+                <th>{t("Avg latency")}</th>
+                <th>{t("Cost")}</th>
               </tr>
             </thead>
             <tbody>
@@ -143,7 +145,7 @@ export function Providers() {
               {!usage.data?.items?.length ? (
                 <tr>
                   <td colSpan={11} className="muted-cell">
-                    No provider usage recorded yet.
+                    {t("No provider usage recorded yet.")}
                   </td>
                 </tr>
               ) : null}
@@ -160,21 +162,21 @@ export function Providers() {
                 {provider.protocol} · {provider.base_url}
               </span>
             </div>
-            {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, "Test provider")}
+            {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, t("Test provider"))}
           </div>
           <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} />
           <div className="provider-grid">
             <div>
-              <h3>Models</h3>
+              <h3>{t("Models")}</h3>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Public</th>
-                      <th>Upstream</th>
-                      <th>Pool</th>
-                      <th>Override</th>
-                      <th>Test</th>
+                      <th>{t("Public")}</th>
+                      <th>{t("Upstream")}</th>
+                      <th>{t("Pool")}</th>
+                      <th>{t("Override")}</th>
+                      <th>{t("Test")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -185,11 +187,11 @@ export function Providers() {
                           <td>{model.public}</td>
                           <td>{model.upstream}</td>
                           <td>{model.pool}</td>
-                          <td>{model.override_pool || "none"}</td>
+                          <td>{model.override_pool || t("none")}</td>
                           <td>
                             {renderConnectivityAction(
                               { provider: provider.name, public_model: model.public, pool: overridePool, resultKey: `model:${provider.name}:${model.public}` },
-                              "Test route",
+                              t("Test route"),
                             )}
                           </td>
                         </tr>
@@ -200,18 +202,18 @@ export function Providers() {
               </div>
             </div>
             <div>
-              <h3>Pools</h3>
+              <h3>{t("Pools")}</h3>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Pool</th>
-                      <th>Account</th>
-                      <th>Requests</th>
-                      <th>Tokens</th>
-                      <th>Weight</th>
-                      <th>Circuit</th>
-                      <th>Test</th>
+                      <th>{t("Pool")}</th>
+                      <th>{t("Account")}</th>
+                      <th>{t("Requests")}</th>
+                      <th>{t("Tokens")}</th>
+                      <th>{t("Weight")}</th>
+                      <th>{t("Circuit")}</th>
+                      <th>{t("Test")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -229,11 +231,11 @@ export function Providers() {
                             <td>
                               <div className="table-actions">
                                 {accountIndex === 0
-                                  ? renderConnectivityAction({ provider: provider.name, pool: pool.name, resultKey: `pool:${provider.name}:${pool.name}` }, "Test pool")
+                                  ? renderConnectivityAction({ provider: provider.name, pool: pool.name, resultKey: `pool:${provider.name}:${pool.name}` }, t("Test pool"))
                                   : null}
                                 {renderConnectivityAction(
                                   { provider: provider.name, pool: pool.name, account: account.name, resultKey: `account:${provider.name}:${pool.name}:${account.name}` },
-                                  "Test account",
+                                  t("Test account"),
                                 )}
                               </div>
                             </td>
@@ -254,12 +256,14 @@ export function Providers() {
 }
 
 function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
+  const { t } = useI18n();
+
   return (
     <div className="provider-metrics">
-      <MetricCard label="Requests" value={integer(usage.requests)} detail={`${integer(usage.error_requests)} failed`} />
-      <MetricCard label="Tokens" value={compactTokenCount(usage.total_tokens)} detail={`${compactTokenCount(usage.request_tokens)} input`} />
-      <MetricCard label="Cache hit" value={nullablePercent(usage.cache_hit_rate)} detail={`${compactTokenCount(usage.cache_total_tokens)} cache tokens`} />
-      <MetricCard label="Cost" value={formatCurrency(usage.cost_micro)} detail={`${integer(usage.average_latency_ms)} ms avg`} />
+      <MetricCard label={t("Requests")} value={integer(usage.requests)} detail={t("{count} failed", { count: integer(usage.error_requests) })} />
+      <MetricCard label={t("Tokens")} value={compactTokenCount(usage.total_tokens)} detail={t("{count} input", { count: compactTokenCount(usage.request_tokens) })} />
+      <MetricCard label={t("Cache hit")} value={nullablePercent(usage.cache_hit_rate)} detail={t("{count} cache tokens", { count: compactTokenCount(usage.cache_total_tokens) })} />
+      <MetricCard label={t("Cost")} value={formatCurrency(usage.cost_micro)} detail={t("{count} ms avg", { count: integer(usage.average_latency_ms) })} />
     </div>
   );
 }

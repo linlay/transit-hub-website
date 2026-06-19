@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
-import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
+import { compactNumber, compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
+import type { TrafficBucketName } from "../lib/types";
 
 export function Traffic() {
-  const [bucket, setBucket] = useState("day");
+  const { t } = useI18n();
+  const [bucket, setBucket] = useState<TrafficBucketName>("day");
   const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
 
@@ -19,42 +22,46 @@ export function Traffic() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Traffic</h2>
+          <h2>{t("Traffic")}</h2>
           <div className="panel-actions">
-            <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
-              <option value="day">Daily</option>
-              <option value="hour">Hourly</option>
+            <select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
+              <option value="day">{t("Daily")}</option>
+              <option value="hour">{t("Hourly")}</option>
+              <option value="month">{t("Monthly")}</option>
             </select>
           </div>
         </div>
         <div className="chart">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={traffic.data?.items ?? []}>
+            <ComposedChart data={traffic.data?.items ?? []}>
               <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis tickLine={false} axisLine={false} />
-              <Tooltip />
-              <Bar dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
-            </BarChart>
+              <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
+              <Tooltip formatter={(value: number, name: string) => [name === "total_tokens" ? compactTokenCount(value) : integer(value), name === "total_tokens" ? t("Tokens") : t("Requests")]} />
+              <Legend formatter={(value) => (value === "total_tokens" ? t("Tokens") : t("Requests"))} />
+              <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
+              <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </section>
       <section className="panel">
         <div className="panel-heading">
-          <h2>Request logs</h2>
-          <span>Latest gateway activity</span>
+          <h2>{t("Request logs")}</h2>
+          <span>{t("Latest gateway activity")}</span>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Key</th>
-                <th>Model</th>
-                <th>Provider</th>
-                <th>Status</th>
-                <th>Latency</th>
-                <th>Tokens</th>
-                <th>Cost</th>
+                <th>{t("Time")}</th>
+                <th>{t("Key")}</th>
+                <th>{t("Model")}</th>
+                <th>{t("Provider")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Latency")}</th>
+                <th>{t("Tokens")}</th>
+                <th>{t("Cost")}</th>
               </tr>
             </thead>
             <tbody>

@@ -1,4 +1,5 @@
 export type RateLimitWindow = "1h" | "5h" | "1d" | "7d" | "30d";
+export type TrafficBucketName = "hour" | "day" | "month";
 
 export type RateLimit = {
   window: RateLimitWindow;

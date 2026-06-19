@@ -4,11 +4,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { formatCurrency } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
 
 export function Pricing() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const prices = useQuery({ queryKey: ["prices"], queryFn: api.prices, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const create = useMutation({
@@ -49,13 +51,13 @@ export function Pricing() {
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
           </select>
-          <input name="public_model" placeholder="Public model" required />
-          <input name="input_cost" placeholder={`Input miss ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
-          <input name="input_cache_hit_cost" placeholder={`Cache hit ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
-          <input name="output_cost" placeholder={`Output ${CURRENCY} / 1M`} type="number" min="0" step="0.0001" />
+          <input name="public_model" placeholder={t("Public model")} required />
+          <input name="input_cost" placeholder={t("Input miss {currency} / 1M", { currency: CURRENCY })} type="number" min="0" step="0.0001" />
+          <input name="input_cache_hit_cost" placeholder={t("Cache hit {currency} / 1M", { currency: CURRENCY })} type="number" min="0" step="0.0001" />
+          <input name="output_cost" placeholder={t("Output {currency} / 1M", { currency: CURRENCY })} type="number" min="0" step="0.0001" />
           <button className="primary" type="submit">
             <Plus size={16} />
-            Save
+            {t("Save")}
           </button>
         </form>
       </section>
@@ -64,12 +66,12 @@ export function Pricing() {
           <table>
             <thead>
               <tr>
-                <th>Protocol</th>
-                <th>Model</th>
-                <th>Input miss / 1M</th>
-                <th>Cache hit / 1M</th>
-                <th>Output / 1M</th>
-                <th>Currency</th>
+                <th>{t("Protocol")}</th>
+                <th>{t("Model")}</th>
+                <th>{t("Input miss / 1M")}</th>
+                <th>{t("Cache hit / 1M")}</th>
+                <th>{t("Output / 1M")}</th>
+                <th>{t("Currency")}</th>
                 <th />
               </tr>
             </thead>
@@ -79,7 +81,7 @@ export function Pricing() {
                   <td>{price.protocol}</td>
                   <td>{price.public_model}</td>
                   <td>{formatCurrency(price.input_cost_micro_per_1m_tokens)}</td>
-                  <td>{price.input_cache_hit_cost_micro_per_1m_tokens === null ? "n/a" : formatCurrency(price.input_cache_hit_cost_micro_per_1m_tokens)}</td>
+                  <td>{price.input_cache_hit_cost_micro_per_1m_tokens === null ? t("n/a") : formatCurrency(price.input_cache_hit_cost_micro_per_1m_tokens)}</td>
                   <td>{formatCurrency(price.output_cost_micro_per_1m_tokens)}</td>
                   <td>{price.currency}</td>
                   <td>
@@ -89,6 +91,13 @@ export function Pricing() {
                   </td>
                 </tr>
               ))}
+              {!prices.data?.items?.length ? (
+                <tr>
+                  <td colSpan={7} className="muted-cell">
+                    {t("No prices configured.")}
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>

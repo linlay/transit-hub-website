@@ -10,11 +10,13 @@ import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
-import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency, quotaRatio } from "../lib/format";
+import { compactNumber, compactTokenCount, dateTime, integer, nullablePercent, formatCurrency, quotaRatio } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { RateLimitUsage } from "../lib/types";
 
 export function APIKeyDetail() {
+  const { t } = useI18n();
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -75,7 +77,7 @@ export function APIKeyDetail() {
     const form = new FormData(event.currentTarget);
     const allowedModels = form.getAll("allowed_models").map(String);
     if (allowedModels.length === 0) {
-      setModelError("Select at least one model.");
+      setModelError(t("Select at least one model."));
       return;
     }
     setModelError("");
@@ -102,28 +104,29 @@ export function APIKeyDetail() {
       </div>
 
       <div className="metrics-grid">
-        <MetricCard label="Requests" value={integer(summary?.requests ?? 0)} detail="Recorded calls" />
-        <MetricCard label="Tokens" value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail="Prompt + completion" />
-        <MetricCard label="Cache hit" value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{compactTokenCount(summary?.cache_total_tokens ?? 0)} cache tokens</span>} />
-        <MetricCard label="Cost" value={formatCurrency(summary?.cost_micro ?? 0)} detail="Estimated" />
-        <MetricCard label="Active devices" value={integer(usage.data?.active_devices ?? 0)} detail="Current window" />
+        <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
+        <MetricCard label={t("Tokens")} value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
+        <MetricCard label={t("Cache hit")} value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{t("{count} cache tokens", { count: compactTokenCount(summary?.cache_total_tokens ?? 0) })}</span>} />
+        <MetricCard label={t("Cost")} value={formatCurrency(summary?.cost_micro ?? 0)} detail={t("Estimated")} />
+        <MetricCard label={t("Active devices")} value={integer(usage.data?.active_devices ?? 0)} detail={t("Current window")} />
       </div>
 
       <RateLimitUsagePanel items={usage.data?.rate_limit_usage ?? []} />
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Traffic</h2>
+          <h2>{t("Traffic")}</h2>
           <div className="panel-actions">
             <select value={range} onChange={(event) => setRange(event.target.value)}>
-              <option value="7d">7 days</option>
-              <option value="14d">14 days</option>
-              <option value="30d">30 days</option>
-              <option value="all">All time</option>
+              <option value="7d">{t("7 days")}</option>
+              <option value="14d">{t("14 days")}</option>
+              <option value="30d">{t("30 days")}</option>
+              <option value="all">{t("All time")}</option>
             </select>
             <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
-              <option value="day">Daily</option>
-              <option value="hour">Hourly</option>
+              <option value="day">{t("Daily")}</option>
+              <option value="hour">{t("Hourly")}</option>
+              <option value="month">{t("Monthly")}</option>
             </select>
           </div>
         </div>
@@ -131,10 +134,10 @@ export function APIKeyDetail() {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={timeline.data?.items ?? []}>
               <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="requests" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="tokens" orientation="right" tickLine={false} axisLine={false} />
-              <Tooltip />
-              <Legend />
+              <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
+              <Tooltip formatter={(value: number, name: string) => [name === "total_tokens" ? compactTokenCount(value) : integer(value), name === "total_tokens" ? t("Tokens") : t("Requests")]} />
+              <Legend formatter={(value) => (value === "total_tokens" ? t("Tokens") : t("Requests"))} />
               <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
               <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
             </ComposedChart>
@@ -144,15 +147,15 @@ export function APIKeyDetail() {
           <table>
             <thead>
               <tr>
-                <th>Bucket</th>
-                <th>Requests</th>
-                <th>Input</th>
-                <th>Output</th>
-                <th>Total</th>
-                <th>Cache hit</th>
-                <th>Cache miss</th>
-                <th>Hit rate</th>
-                <th>Cost</th>
+                <th>{t("Bucket")}</th>
+                <th>{t("Requests")}</th>
+                <th>{t("Input")}</th>
+                <th>{t("Output")}</th>
+                <th>{t("Total")}</th>
+                <th>{t("Cache hit")}</th>
+                <th>{t("Cache miss")}</th>
+                <th>{t("Hit rate")}</th>
+                <th>{t("Cost")}</th>
               </tr>
             </thead>
             <tbody>
@@ -172,7 +175,7 @@ export function APIKeyDetail() {
               {!timeline.data?.items?.length ? (
                 <tr>
                   <td colSpan={9} className="muted-cell">
-                    No traffic in this range.
+                    {t("No traffic in this range.")}
                   </td>
                 </tr>
               ) : null}
@@ -183,19 +186,19 @@ export function APIKeyDetail() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Sessions</h2>
-          <span>Device IDs and sources</span>
+          <h2>{t("Sessions")}</h2>
+          <span>{t("Device IDs and sources")}</span>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Device</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Requests</th>
-                <th>Tokens</th>
-                <th>Last seen</th>
+                <th>{t("Device")}</th>
+                <th>{t("Source")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Requests")}</th>
+                <th>{t("Tokens")}</th>
+                <th>{t("Last seen")}</th>
               </tr>
             </thead>
             <tbody>
@@ -218,21 +221,21 @@ export function APIKeyDetail() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Logs</h2>
-          <span>Most recent requests</span>
+          <h2>{t("Logs")}</h2>
+          <span>{t("Most recent requests")}</span>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Model</th>
-                <th>Status</th>
-                <th>Device</th>
-                <th>Provider</th>
-                <th>Tokens</th>
-                <th>Cache</th>
-                <th>Cost</th>
+                <th>{t("Time")}</th>
+                <th>{t("Model")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Device")}</th>
+                <th>{t("Provider")}</th>
+                <th>{t("Tokens")}</th>
+                <th>{t("Cache")}</th>
+                <th>{t("Cost")}</th>
               </tr>
             </thead>
             <tbody>
@@ -241,8 +244,8 @@ export function APIKeyDetail() {
                   <td>{dateTime(log.created_at)}</td>
                   <td>{log.public_model}</td>
                   <td>{log.status_code}</td>
-                  <td>{log.device_id || "none"}</td>
-                  <td>{log.provider || "none"}</td>
+                  <td>{log.device_id || t("none")}</td>
+                  <td>{log.provider || t("none")}</td>
                   <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
                   <td>{nullablePercent(log.cache_hit_rate)}</td>
                   <td>{formatCurrency(log.cost_micro)}</td>
@@ -258,49 +261,49 @@ export function APIKeyDetail() {
           <div className="panel-heading">
             <div>
               <h2>{key.name}</h2>
-              <span className="eyebrow">Settings</span>
+              <span className="eyebrow">{t("Settings")}</span>
             </div>
             <div className="panel-actions">
-              <StatusPill active={key.status === "active"} label={key.status} />
+              <StatusPill active={key.status === "active"} label={key.status === "active" ? "Active" : "Disabled"} />
               {key.status === "active" ? (
-                <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm("Inactive this key?") && inactive.mutate()} type="button">
+                <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm(t("Inactive this key?")) && inactive.mutate()} type="button">
                   <Ban size={16} />
-                  Inactive
+                  {t("Inactive")}
                 </button>
               ) : null}
-              <button className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm("Delete this key?") && remove.mutate()} type="button">
+              <button className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm(t("Delete this key?")) && remove.mutate()} type="button">
                 <Trash2 size={16} />
-                Delete
+                {t("Delete")}
               </button>
-              {savedMessage ? <span className="saved-text">Saved</span> : null}
+              {savedMessage ? <span className="saved-text">{t("Saved")}</span> : null}
               <button className="primary" disabled={update.isPending} form="api-key-settings" type="submit">
                 <Save size={16} />
-                Save
+                {t("Save")}
               </button>
             </div>
           </div>
           <form id="api-key-settings" className="settings-form" onSubmit={submit}>
             <div className="settings-group">
-              <h3>Identity</h3>
+              <h3>{t("Identity")}</h3>
               <div className="settings-grid two">
                 <label>
-                  Name
+                  {t("Name")}
                   <input name="name" defaultValue={key.name} />
                 </label>
                 <label>
-                  Description
+                  {t("Description")}
                   <input name="description" defaultValue={key.description} />
                 </label>
               </div>
             </div>
             <div className="settings-group">
-              <h3>Limits</h3>
+              <h3>{t("Limits")}</h3>
               <div className="settings-grid three">
                 <label>
-                  Status
+                  {t("Status")}
                   <select name="status" defaultValue={key.status}>
-                    <option value="active">Active</option>
-                    <option value="disabled">Disabled</option>
+                    <option value="active">{t("Active")}</option>
+                    <option value="disabled">{t("Disabled")}</option>
                   </select>
                 </label>
                 <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
@@ -309,13 +312,13 @@ export function APIKeyDetail() {
               <RateLimitEditor key={`rate-limits-${key.id}-${JSON.stringify(key.rate_limits)}`} name="rate_limits" initialValue={key.rate_limits} />
               <label className="check-row">
                 <input name="forced_expired" defaultChecked={key.forced_expired} type="checkbox" />
-                Force expired
+                {t("Force expired")}
               </label>
             </div>
             <div className="settings-group">
-              <h3>Models</h3>
+              <h3>{t("Models")}</h3>
               <ModelWhitelistInput key={`models-${key.id}-${key.allowed_models.join(",")}`} models={providerModels} selected={key.allowed_models} />
-              {key.allowed_models.length === 0 ? <span className="muted-cell full-row">No models allowed</span> : null}
+              {key.allowed_models.length === 0 ? <span className="muted-cell full-row">{t("No models allowed")}</span> : null}
             </div>
             {modelError ? <span className="error-text">{modelError}</span> : null}
             {update.error ? <span className="error-text">{update.error.message}</span> : null}
@@ -339,28 +342,29 @@ function apiKeyTrafficQuery(id: string, bucket: string, range: string) {
 }
 
 function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
+  const { t } = useI18n();
   if (!items.length) return null;
 
   return (
     <section className="panel">
       <div className="panel-heading">
-        <h2>Rate limits</h2>
+        <h2>{t("Rate limits")}</h2>
       </div>
       <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Window</th>
-              <th>Requests</th>
-              <th>Tokens</th>
-              <th>Cost</th>
-              <th>Resets</th>
+              <th>{t("Window")}</th>
+              <th>{t("Requests")}</th>
+              <th>{t("Tokens")}</th>
+              <th>{t("Cost")}</th>
+              <th>{t("Resets")}</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.window}>
-                <td>{windowLabel(item.window)}</td>
+                <td>{t(windowLabel(item.window))}</td>
                 <td>
                   <LimitProgress value={quotaRatio(item.requests, item.request_quota)} label={`${integer(item.requests)} / ${quotaLabel(item.request_quota)}`} />
                 </td>

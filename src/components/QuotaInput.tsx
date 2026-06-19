@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { useI18n } from "../lib/i18n";
 
 type QuotaInputProps = {
   label: string;
@@ -7,6 +8,7 @@ type QuotaInputProps = {
 };
 
 export function QuotaInput({ label, name, initialValue = 0 }: QuotaInputProps) {
+  const { t } = useI18n();
   const inputId = useId();
   const checkId = useId();
   const [unlimited, setUnlimited] = useState(initialValue === 0);
@@ -14,14 +16,14 @@ export function QuotaInput({ label, name, initialValue = 0 }: QuotaInputProps) {
 
   return (
     <div className="quota-input">
-      <label htmlFor={inputId}>{label}</label>
+      <label htmlFor={inputId}>{t(label)}</label>
       <div>
         <input
           id={inputId}
           name={name}
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          placeholder={label}
+          placeholder={t(label)}
           type="number"
           min="1"
           required={!unlimited}
@@ -35,7 +37,7 @@ export function QuotaInput({ label, name, initialValue = 0 }: QuotaInputProps) {
             onChange={(event) => setUnlimited(event.target.checked)}
             type="checkbox"
           />
-          Unlimited
+          {t("Unlimited")}
         </label>
       </div>
     </div>
