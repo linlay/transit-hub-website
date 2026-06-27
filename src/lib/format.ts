@@ -28,6 +28,16 @@ export function formatCurrencyInteger(value: number) {
   return new Intl.NumberFormat(currencyLocale(), { style: "currency", currency: CURRENCY, maximumFractionDigits: 0 }).format((value || 0) / 1_000_000);
 }
 
+export function currencyIntegerValue(value: number) {
+  return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(
+    Math.round((value || 0) / 1_000_000),
+  );
+}
+
+export function percentValue(value: number) {
+  return String(Math.round((value || 0) * 100));
+}
+
 export function dateTime(value?: string) {
   if (!value) return currentLocale === "zh-CN" ? "从未" : "Never";
   return new Intl.DateTimeFormat(currentLocale, {
