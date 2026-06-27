@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { usePageActions } from "../components/Layout";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
@@ -42,6 +43,7 @@ export function JWTGrants() {
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
+  const isRefreshing = grants.isFetching || providers.isFetching;
   const createGrant = useMutation({
     mutationFn: api.createJWTGrant,
     onSuccess: (data) => {
@@ -157,16 +159,19 @@ export function JWTGrants() {
     setDeleting(grant);
   }
 
+  usePageActions(
+    <>
+      <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([grants.refetch(), providers.refetch()])} />
+      <button className="primary" onClick={openCreateDialog} type="button">
+        <Plus size={16} />
+        {t("Create grant")}
+      </button>
+    </>,
+    [isRefreshing, grants.refetch, providers.refetch, t],
+  );
+
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={grants.isFetching || providers.isFetching} onClick={() => Promise.all([grants.refetch(), providers.refetch()])} />
-        <button className="primary" onClick={openCreateDialog} type="button">
-          <Plus size={16} />
-          {t("Create grant")}
-        </button>
-      </div>
-
       <section className="panel">
         <div className="toolbar filters">
           <label className="search">

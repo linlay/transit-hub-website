@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
+import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
@@ -15,6 +16,7 @@ export function Providers() {
   const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const isRefreshing = providers.isFetching || usage.isFetching;
   const connectivity = useProviderConnectivityTest();
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
   const usageByAccount = useMemo(
@@ -71,12 +73,10 @@ export function Providers() {
     );
   }
 
+  usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([providers.refetch(), usage.refetch()])} />, [isRefreshing, providers.refetch, usage.refetch]);
+
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={providers.isFetching || usage.isFetching} onClick={() => Promise.all([providers.refetch(), usage.refetch()])} />
-      </div>
-
       <section className="panel">
         <div className="panel-heading">
           <h2>{t("Provider usage")}</h2>

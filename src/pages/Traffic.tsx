@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { compactNumber, compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
@@ -13,13 +14,12 @@ export function Traffic() {
   const [bucket, setBucket] = useState<TrafficBucketName>("day");
   const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const isRefreshing = traffic.isFetching || logs.isFetching;
+
+  usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([traffic.refetch(), logs.refetch()])} />, [isRefreshing, traffic.refetch, logs.refetch]);
 
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={traffic.isFetching || logs.isFetching} onClick={() => Promise.all([traffic.refetch(), logs.refetch()])} />
-      </div>
-
       <section className="panel">
         <div className="panel-heading">
           <h2>{t("Traffic")}</h2>

@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bot, Loader2, RotateCcw, Send, Square, User } from "lucide-react";
+import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { useI18n } from "../lib/i18n";
@@ -179,6 +180,17 @@ export function Playground() {
     abortRef.current?.abort();
   }
 
+  usePageActions(
+    <>
+      <RefreshButton isRefreshing={providers.isFetching} onClick={() => providers.refetch()} />
+      <button className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button">
+        <RotateCcw size={16} />
+        {t("Clear")}
+      </button>
+    </>,
+    [providers.isFetching, providers.refetch, isStreaming, messages.length, t],
+  );
+
   return (
     <section className="page">
       <section className="panel playground-panel">
@@ -186,13 +198,6 @@ export function Playground() {
           <div>
             <h2>{t("Target configuration")}</h2>
             <span>{targetSummary(meta, providerName, publicModel, inferredPoolName, accountName, done, t)}</span>
-          </div>
-          <div className="panel-actions">
-            <RefreshButton isRefreshing={providers.isFetching} onClick={() => providers.refetch()} />
-            <button className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button">
-              <RotateCcw size={16} />
-              {t("Clear")}
-            </button>
           </div>
         </div>
         {providers.isError ? <div className="error-text">{t("Provider loading failed.")}</div> : null}

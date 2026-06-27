@@ -1,6 +1,7 @@
 import { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
+import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
 import { formatCurrency } from "../lib/format";
@@ -13,6 +14,7 @@ export function Pricing() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const prices = useQuery({ queryKey: ["prices"], queryFn: api.prices, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  usePageActions(<RefreshButton isRefreshing={prices.isFetching} onClick={() => prices.refetch()} />, [prices.isFetching, prices.refetch]);
   const create = useMutation({
     mutationFn: api.createPrice,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prices"] }),
@@ -41,10 +43,6 @@ export function Pricing() {
 
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={prices.isFetching} onClick={() => prices.refetch()} />
-      </div>
-
       <section className="panel">
         <form className="inline-form" onSubmit={submit}>
           <select name="protocol" defaultValue="openai">

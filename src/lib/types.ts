@@ -30,6 +30,7 @@ export type APIKey = {
   key_prefix: string;
   source: "admin" | "jwt";
   issuer_jti?: string;
+  issuer_name?: string;
   status: "active" | "disabled";
   expires_at?: string;
   forced_expired: boolean;

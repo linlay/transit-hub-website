@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type DependencyList, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   Activity,
   BadgeDollarSign,
@@ -43,12 +43,24 @@ function currentPageLabel(pathname: string): string {
   return "";
 }
 
+const PageActionsContext = createContext<Dispatch<SetStateAction<ReactNode>> | null>(null);
+
+export function usePageActions(actions: ReactNode, dependencies: DependencyList) {
+  const setPageActions = useContext(PageActionsContext);
+
+  useEffect(() => {
+    if (!setPageActions) return;
+    setPageActions(actions);
+    return () => setPageActions(null);
+  }, [setPageActions, ...dependencies]);
+}
+
 export function Layout() {
-  const { locale, setLocale, t } = useI18n();
-  const { theme, setTheme } = useTheme();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const [pageActions, setPageActions] = useState<ReactNode>(null);
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
   const logout = useMutation({
     mutationFn: api.logout,
@@ -59,58 +71,45 @@ export function Layout() {
   });
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">
-            <RadioTower size={20} />
+    <PageActionsContext.Provider value={setPageActions}>
+      <div className="shell">
+        <aside className="sidebar">
+          <div className="brand">
+            <div className="brand-mark">
+              <RadioTower size={20} />
+            </div>
+            <div>
+              <strong>{t("Transit Hub")}</strong>
+              <span>{t("Admin Console")}</span>
+            </div>
           </div>
-          <div>
-            <strong>{t("Transit Hub")}</strong>
-            <span>{t("Admin Console")}</span>
+          <nav>
+            {nav.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.to === "/"}>
+                <item.icon size={18} />
+                <span>{t(item.label)}</span>
+              </NavLink>
+            ))}
+          </nav>
+          <div className="sidebar-footer">
+            <UserMenu username={me.data?.user.username ?? t("Admin")} onLogout={() => logout.mutate()} />
           </div>
-        </div>
-        <nav>
-          {nav.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.to === "/"}>
-              <item.icon size={18} />
-              <span>{t(item.label)}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="sidebar-footer">
-          <UserMenu username={me.data?.user.username ?? t("Admin")} onLogout={() => logout.mutate()} />
-        </div>
-      </aside>
-      <main className="main">
-        <header className="topbar">
-          <span className="topbar-page">{t(currentPageLabel(location.pathname))}</span>
-          <div className="topbar-controls">
-            <label className="topbar-select">
-              <Languages size={15} />
-              <select aria-label={t("Language")} value={locale} onChange={(event) => setLocale(event.target.value === "zh-CN" ? "zh-CN" : "en-US")}>
-                <option value="zh-CN">中文</option>
-                <option value="en-US">English</option>
-              </select>
-            </label>
-            <label className="topbar-select">
-              {themeIcon(theme)}
-              <select aria-label={t("Theme")} value={theme} onChange={(event) => setTheme(event.target.value as ThemePreference)}>
-                <option value="system">{t("System")}</option>
-                <option value="light">{t("Light")}</option>
-                <option value="dark">{t("Dark")}</option>
-              </select>
-            </label>
-          </div>
-        </header>
-        <Outlet />
-      </main>
-    </div>
+        </aside>
+        <main className="main">
+          <header className="topbar">
+            <span className="topbar-page">{t(currentPageLabel(location.pathname))}</span>
+            <div className="topbar-actions">{pageActions}</div>
+          </header>
+          <Outlet />
+        </main>
+      </div>
+    </PageActionsContext.Provider>
   );
 }
 
 function UserMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
-  const { t } = useI18n();
+  const { locale, setLocale, t } = useI18n();
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +135,27 @@ function UserMenu({ username, onLogout }: { username: string; onLogout: () => vo
       </button>
       {open ? (
         <div className="sidebar-user-dropdown">
+          <label className="sidebar-menu-select">
+            <span>
+              <Languages size={16} />
+              {t("Language")}
+            </span>
+            <select aria-label={t("Language")} value={locale} onChange={(event) => setLocale(event.target.value === "zh-CN" ? "zh-CN" : "en-US")}>
+              <option value="zh-CN">中文</option>
+              <option value="en-US">English</option>
+            </select>
+          </label>
+          <label className="sidebar-menu-select">
+            <span>
+              {themeIcon(theme)}
+              {t("Theme")}
+            </span>
+            <select aria-label={t("Theme")} value={theme} onChange={(event) => setTheme(event.target.value as ThemePreference)}>
+              <option value="system">{t("System")}</option>
+              <option value="light">{t("Light")}</option>
+              <option value="dark">{t("Dark")}</option>
+            </select>
+          </label>
           <button onClick={onLogout} type="button">
             <LogOut size={16} />
             {t("Logout")}

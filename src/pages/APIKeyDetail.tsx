@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Save, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
@@ -97,12 +98,19 @@ export function APIKeyDetail() {
     return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), logs.refetch()]);
   }
 
+  usePageActions(<RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} />, [
+    id,
+    isRefreshing,
+    detail.refetch,
+    providers.refetch,
+    usage.refetch,
+    timeline.refetch,
+    sessions.refetch,
+    logs.refetch,
+  ]);
+
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} />
-      </div>
-
       <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
         <MetricCard label={t("Tokens")} value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
-import { compactNumber, compactTokenCount, integer, percent, formatCurrency } from "../lib/format";
+import { compactNumber, compactTokenCount, integer, percent, formatCurrencyInteger } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
@@ -20,17 +21,19 @@ export function Dashboard() {
   });
   const data = overview.data;
   const trafficItems = traffic.data?.items ?? [];
+  const isRefreshing = overview.isFetching || traffic.isFetching;
+
+  usePageActions(
+    <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([overview.refetch(), traffic.refetch()])} />,
+    [isRefreshing, overview.refetch, traffic.refetch],
+  );
 
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={overview.isFetching || traffic.isFetching} onClick={() => Promise.all([overview.refetch(), traffic.refetch()])} />
-      </div>
-
       <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t("All time")} />
         <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
-        <MetricCard label={t("Cost")} value={formatCurrency(data?.total_cost_micro ?? 0)} detail={t("Estimated")} />
+        <MetricCard label={t("Cost")} value={formatCurrencyInteger(data?.total_cost_micro ?? 0)} detail={t("Estimated")} />
         <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
         <MetricCard
           label={t("Error rate")}

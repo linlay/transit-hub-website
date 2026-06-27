@@ -1,6 +1,7 @@
 import { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
+import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
@@ -12,6 +13,7 @@ export function Users() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: api.users, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  usePageActions(<RefreshButton isRefreshing={users.isFetching} onClick={() => users.refetch()} />, [users.isFetching, users.refetch]);
   const create = useMutation({
     mutationFn: api.createUser,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
@@ -34,10 +36,6 @@ export function Users() {
 
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={users.isFetching} onClick={() => users.refetch()} />
-      </div>
-
       <section className="panel">
         <form className="inline-form" onSubmit={submit}>
           <input name="username" placeholder={t("Username")} required />

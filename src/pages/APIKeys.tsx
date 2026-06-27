@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { usePageActions } from "../components/Layout";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
@@ -76,6 +77,7 @@ export function APIKeys() {
   }, [keys.data?.items, sortKey, sortDir]);
   const selectedCount = selectedIDs.size;
   const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selectedIDs.has(key.id));
+  const isRefreshing = keys.isFetching || providers.isFetching;
 
   function toggleSort(key: Exclude<SortKey, null>) {
     if (sortKey === key) {
@@ -174,16 +176,19 @@ export function APIKeys() {
     }
   }
 
+  usePageActions(
+    <>
+      <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
+      <button className="primary" onClick={openCreateDialog} type="button">
+        <Plus size={16} />
+        {t("Create key")}
+      </button>
+    </>,
+    [isRefreshing, keys.refetch, providers.refetch, t],
+  );
+
   return (
     <section className="page">
-      <div className="page-actions">
-        <RefreshButton isRefreshing={keys.isFetching || providers.isFetching} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
-        <button className="primary" onClick={openCreateDialog} type="button">
-          <Plus size={16} />
-          {t("Create key")}
-        </button>
-      </div>
-
       <section className="panel">
         <div className="toolbar filters">
           <label className="search">
@@ -200,7 +205,7 @@ export function APIKeys() {
             <option value="admin">{t("Admin")}</option>
             <option value="jwt">JWT</option>
           </select>
-          <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer JTI")} />
+          <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
           <button
             className="icon-text"
             onClick={() => {
@@ -230,7 +235,7 @@ export function APIKeys() {
           </div>
         ) : null}
         {batch.error ? <div className="error-text">{batch.error.message}</div> : null}
-        <div className="table-wrap">
+        <div className="table-wrap api-keys-table-wrap">
           <table>
             <thead>
               <tr>
@@ -242,7 +247,7 @@ export function APIKeys() {
                 <th>{t("Name")}</th>
                 <th>{t("Status")}</th>
                 <th>{t("Source")}</th>
-                <th>{t("Issuer JTI")}</th>
+                <th>{t("Issuer Name")}</th>
                 <th className="sortable">
                   <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
                     {t("Requests")}
@@ -284,8 +289,11 @@ export function APIKeys() {
                   <td>{key.source === "admin" ? t("Admin") : "JWT"}</td>
                   <td>
                     {key.issuer_jti ? (
-                      <Link className="table-link mono-link" to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>
-                        {key.issuer_jti}
+                      <Link className="table-link" to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>
+                        {key.issuer_name || key.issuer_jti}
+                        {key.issuer_name ? (
+                          <small className="mono">{key.issuer_jti}</small>
+                        ) : null}
                       </Link>
                     ) : (
                       <span className="muted-cell">-</span>
