@@ -174,7 +174,7 @@ a {
 .eyebrow,
 .panel-heading span,
 td small,
-.metric small {
+.metric-detail {
   color: var(--color-text-muted);
   font-size: 12px;
 }
@@ -453,7 +453,7 @@ td small,
   padding: 16px;
 }
 
-.metric span {
+.metric-label {
   display: block;
   color: var(--color-text-muted);
   font-size: 13px;
@@ -461,7 +461,7 @@ td small,
   letter-spacing: 0;
 }
 
-.metric strong {
+.metric-value {
   display: block;
   margin: 12px 0 8px;
   font-size: 26px;
@@ -470,7 +470,7 @@ td small,
   letter-spacing: 0;
 }
 
-.metric small {
+.metric-detail {
   display: block;
   color: var(--color-text-muted);
   font-size: 12px;

@@ -9,9 +9,9 @@ type Props = {
 export function MetricCard({ label, value, detail }: Props) {
   return (
     <section className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {detail ? <small>{detail}</small> : null}
+      <span className="metric-label">{label}</span>
+      <strong className="metric-value">{value}</strong>
+      {detail ? <small className="metric-detail">{detail}</small> : null}
     </section>
   );
 }
