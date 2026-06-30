@@ -79,7 +79,8 @@ export const api = {
     request<{ user: AdminUser }>("/admin/auth/login", { method: "POST", body: JSON.stringify(body) }),
   me: () => request<{ user: AdminUser }>("/admin/auth/me"),
   logout: () => request<{ status: string }>("/admin/auth/logout", { method: "POST" }),
-  overview: () => request<Overview>("/admin/overview"),
+  overview: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<Overview>("/admin/overview", { query }),
   apiKeys: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<APIKey>>("/admin/api-keys", { query }),
   apiKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`),

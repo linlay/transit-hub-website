@@ -10,13 +10,20 @@ import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
 
+type DashboardRange = "all" | "today" | "7d" | "30d";
+
 export function Dashboard() {
   const { t } = useI18n();
   const [bucket, setBucket] = useState<TrafficBucketName>("day");
-  const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const [range, setRange] = useState<DashboardRange>("all");
+  const overview = useQuery({
+    queryKey: ["overview", range],
+    queryFn: () => api.overview(dashboardRangeQuery(range)),
+    refetchInterval: PAGE_REFETCH_INTERVAL_MS,
+  });
   const traffic = useQuery({
-    queryKey: ["dashboard-traffic", bucket],
-    queryFn: () => api.traffic(dashboardTrafficQuery(bucket)),
+    queryKey: ["dashboard-traffic", bucket, range],
+    queryFn: () => api.traffic(dashboardTrafficQuery(bucket, range)),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const data = overview.data;
@@ -24,14 +31,22 @@ export function Dashboard() {
   const isRefreshing = overview.isFetching || traffic.isFetching;
 
   usePageActions(
-    <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([overview.refetch(), traffic.refetch()])} />,
-    [isRefreshing, overview.refetch, traffic.refetch],
+    <>
+      <select aria-label={t("Time range")} value={range} onChange={(event) => setRange(event.target.value as DashboardRange)}>
+        <option value="all">{t("All time")}</option>
+        <option value="today">{t("Today")}</option>
+        <option value="7d">{t("Last 7 days")}</option>
+        <option value="30d">{t("Last 30 days")}</option>
+      </select>
+      <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([overview.refetch(), traffic.refetch()])} />
+    </>,
+    [range, isRefreshing, overview.refetch, traffic.refetch, t],
   );
 
   return (
     <section className="page">
       <div className="metrics-grid">
-        <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t("All time")} />
+        <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
         <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
         <MetricCard label={t("Cost")} value={currencyIntegerValue(data?.total_cost_micro ?? 0)} detail={t("Estimated (CNY)")} />
         <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
@@ -116,15 +131,34 @@ export function Dashboard() {
   );
 }
 
-function dashboardTrafficQuery(bucket: TrafficBucketName) {
+function dashboardTrafficQuery(bucket: TrafficBucketName, range: DashboardRange) {
+  return { bucket, ...dashboardRangeQuery(range) };
+}
+
+function dashboardRangeQuery(range: DashboardRange) {
+  if (range === "all") return {};
+
   const now = new Date();
-  const from = new Date(now);
-  if (bucket === "hour") {
-    from.setHours(from.getHours() - 24);
-  } else if (bucket === "month") {
-    from.setMonth(from.getMonth() - 12);
+  let from: Date;
+  if (range === "today") {
+    from = new Date(now);
+    from.setHours(0, 0, 0, 0);
   } else {
-    from.setDate(from.getDate() - 14);
+    const days = range === "7d" ? 7 : 30;
+    from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
   }
-  return { bucket, from: from.toISOString(), to: now.toISOString() };
+  return { from: from.toISOString(), to: now.toISOString() };
+}
+
+function dashboardRangeLabel(range: DashboardRange) {
+  switch (range) {
+    case "today":
+      return "Today";
+    case "7d":
+      return "Last 7 days";
+    case "30d":
+      return "Last 30 days";
+    default:
+      return "All time";
+  }
 }
