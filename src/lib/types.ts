@@ -205,6 +205,7 @@ export type ProviderSnapshot = {
     models: Array<{
       public: string;
       upstream: string;
+      type?: "chat" | "embedding" | "image-generation";
       pool: string;
       override_pool?: string;
       override_valid?: boolean;
