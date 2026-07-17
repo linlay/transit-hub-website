@@ -243,6 +243,27 @@ export type ProviderConnectivityTestResult = {
   tested_at: string;
 };
 
+export type AdminModel = {
+  protocol: string;
+  type: string;
+  public_model: string;
+  upstream_model: string;
+  display_name: string;
+  owned_by: string;
+  created_at: string;
+  provider: string;
+  provider_base_url: string;
+  default_pool: string;
+  configured_pool: string;
+  override_pool?: string;
+  override_valid: boolean;
+  effective_pool: string;
+  endpoint_key?: string;
+  gateway_path?: string;
+  upstream_path?: string;
+  upstream_url?: string;
+};
+
 export type PlaygroundChatRole = "system" | "user" | "assistant";
 
 export type PlaygroundChatMessage = {

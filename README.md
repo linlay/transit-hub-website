@@ -2,6 +2,17 @@
 
 Transit Hub Website 是 Transit Hub 的 React + Vite 管理后台。生产环境中它是唯一对外暴露的入口，静态文件由 Nginx 托管，管理 API 请求会反向代理到运行时配置的后端 upstream。`TRANSIT_HUB_UPSTREAM` 必须在部署时显式配置。
 
+## 管理功能
+
+- Dashboard：请求、Token、成本、错误率和活跃设备概览。
+- Models：筛选运行态模型，查看公开模型到上游的映射、调用地址、curl 示例和脱敏 Provider YAML 模板。
+- API Keys / JWT Grants：管理客户端密钥、模型白名单、配额和签发授权。
+- Sessions / Traffic：查看客户端连接、用量与请求日志。
+- Pricing / Providers：维护模型价格，查看 Provider、Pool、账号和连通状态。
+- Playground / Users：调试模型路由和维护后台用户。
+
+`/models` 是只读模型目录，不会直接修改 Provider YAML。详情页中的接入地址根据运行时 `VITE_API_BASE_URL` 和当前访问域名生成，因此同时兼容根路径、子路径和独立 API 域名部署。
+
 ## 本地开发
 
 安装依赖：

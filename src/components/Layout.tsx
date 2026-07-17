@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import {
   Activity,
   BadgeDollarSign,
+  Boxes,
   Cable,
   ChevronDown,
   Gauge,
@@ -23,6 +24,7 @@ import { useTheme, type ThemePreference } from "../lib/theme";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Gauge },
+  { to: "/models", label: "Models", icon: Boxes },
   { to: "/api-keys", label: "API Keys", icon: KeyRound },
   { to: "/jwt-grants", label: "JWT Grants", icon: KeyRound },
   { to: "/sessions", label: "Sessions", icon: Cable },

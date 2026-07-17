@@ -1,4 +1,5 @@
 import type {
+  AdminModel,
   AdminUser,
   APIKeyBatchResult,
   APIKey,
@@ -117,6 +118,9 @@ export const api = {
   updatePrice: (id: string, body: Partial<ModelPrice>) =>
     request<ModelPrice>(`/admin/model-prices/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deletePrice: (id: string) => request<{ status: string }>(`/admin/model-prices/${id}`, { method: "DELETE" }),
+  models: () => request<ListResponse<AdminModel>>("/admin/models"),
+  model: (protocol: string, publicModel: string) =>
+    request<AdminModel>("/admin/models/detail", { query: { protocol, public_model: publicModel } }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
   testProviderConnectivity: (body: ProviderConnectivityTestRequest) =>
     request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: JSON.stringify(body) }),

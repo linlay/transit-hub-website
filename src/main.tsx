@@ -12,6 +12,8 @@ import { APIKeys } from "./pages/APIKeys";
 import { Dashboard } from "./pages/Dashboard";
 import { JWTGrants } from "./pages/JWTGrants";
 import { Login } from "./pages/Login";
+import { ModelDetail } from "./pages/ModelDetail";
+import { Models } from "./pages/Models";
 import { Pricing } from "./pages/Pricing";
 import { Playground } from "./pages/Playground";
 import { Providers } from "./pages/Providers";
@@ -47,6 +49,8 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route element={<RequireAuth />}>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/models" element={<Models />} />
+                <Route path="/models/:protocol/:modelId" element={<ModelDetail />} />
                 <Route path="/api-keys" element={<APIKeys />} />
                 <Route path="/api-keys/:id" element={<APIKeyDetail />} />
                 <Route path="/jwt-grants" element={<JWTGrants />} />

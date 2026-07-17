@@ -44,3 +44,8 @@ export const API_BASE_URL = normalizeApiBaseUrl(
   runtimeConfig.apiBaseUrl ?? import.meta.env.VITE_API_BASE_URL,
   APP_BASE_URL,
 );
+
+export function runtimeAPIBaseURL(): string {
+  const base = API_BASE_URL || "/";
+  return new URL(base.endsWith("/") ? base : `${base}/`, window.location.origin).toString().replace(/\/$/, "");
+}
