@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
-import { api } from "../lib/api";
+import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { api, isTelemetryError } from "../lib/api";
 import { compactNumber, compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
@@ -14,12 +15,16 @@ export function Traffic() {
   const [bucket, setBucket] = useState<TrafficBucketName>("day");
   const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const telemetryUnavailable = isTelemetryError(traffic.error) || isTelemetryError(logs.error);
   const isRefreshing = traffic.isFetching || logs.isFetching;
 
   usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([traffic.refetch(), logs.refetch()])} />, [isRefreshing, traffic.refetch, logs.refetch]);
 
   return (
     <section className="page">
+      {telemetryUnavailable ? <TelemetryUnavailable /> : null}
+      {!telemetryUnavailable ? (
+      <>
       <section className="panel">
         <div className="panel-heading">
           <h2>{t("Traffic")}</h2>
@@ -81,6 +86,8 @@ export function Traffic() {
           </table>
         </div>
       </section>
+      </>
+      ) : null}
     </section>
   );
 }

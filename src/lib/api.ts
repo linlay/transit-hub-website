@@ -27,6 +27,22 @@ type RequestOptions = RequestInit & {
   query?: Record<string, string | number | boolean | undefined>;
 };
 
+export class APIError extends Error {
+  readonly status: number;
+  readonly component?: string;
+
+  constructor(message: string, status: number, component?: string) {
+    super(message);
+    this.name = "APIError";
+    this.status = status;
+    this.component = component;
+  }
+}
+
+export function isTelemetryError(error: unknown) {
+  return error instanceof APIError && error.component === "telemetry";
+}
+
 function apiURL(path: string, query?: Record<string, string | number | boolean | undefined>) {
   const url = new URL(`${API_BASE}${path}`, window.location.origin);
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -48,8 +64,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     },
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error ?? `Request failed: ${response.status}`);
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; component?: string };
+    throw new APIError(payload.error ?? `Request failed: ${response.status}`, response.status, payload.component);
   }
   return response.json() as Promise<T>;
 }
@@ -66,8 +82,8 @@ async function requestStream(path: string, body: unknown, signal?: AbortSignal):
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error ?? `Request failed: ${response.status}`);
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; component?: string };
+    throw new APIError(payload.error ?? `Request failed: ${response.status}`, response.status, payload.component);
   }
   if (!response.body) {
     throw new Error("Streaming response is unavailable");
@@ -101,7 +117,15 @@ export const api = {
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteJWTGrant: (jti: string, query?: { delete_api_keys?: boolean }) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "DELETE", query }),
-  apiKeyUsage: (id: string) => request<{ key: APIKey; summary: TrafficBucket; recent_traffic: TrafficBucket[]; active_devices: number; rate_limit_usage: RateLimitUsage[] }>(`/admin/api-keys/${id}/usage`),
+  apiKeyUsage: (id: string) =>
+    request<{
+      key: APIKey;
+      summary: TrafficBucket;
+      recent_traffic: TrafficBucket[];
+      active_devices: number;
+      rate_limit_usage: RateLimitUsage[];
+      degraded_components?: string[];
+    }>(`/admin/api-keys/${id}/usage`),
   apiKeyLogs: (id: string, query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<RequestLog>>(`/admin/api-keys/${id}/logs`, { query }),
   apiKeySessions: (id: string, query?: Record<string, string | number | boolean | undefined>) =>

@@ -5,7 +5,8 @@ import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
-import { api } from "../lib/api";
+import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, integer, nullablePercent, formatCurrency } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
@@ -16,6 +17,7 @@ export function Providers() {
   const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const telemetryUnavailable = isTelemetryError(usage.error);
   const isRefreshing = providers.isFetching || usage.isFetching;
   const connectivity = useProviderConnectivityTest();
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
@@ -77,7 +79,8 @@ export function Providers() {
 
   return (
     <section className="page">
-      <section className="panel">
+      {telemetryUnavailable ? <TelemetryUnavailable /> : null}
+      {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <h2>{t("Provider usage")}</h2>
           <span>{t("All time")}</span>
@@ -152,7 +155,7 @@ export function Providers() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
       {(providers.data?.providers ?? []).map((provider) => (
         <section className="panel" key={provider.name}>
           <div className="panel-heading">
@@ -164,7 +167,7 @@ export function Providers() {
             </div>
             {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, t("Test provider"))}
           </div>
-          <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} />
+          {!telemetryUnavailable ? <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} /> : null}
           <div className="provider-grid">
             <div>
               <h3>{t("Models")}</h3>
@@ -224,8 +227,8 @@ export function Providers() {
                           <tr key={`${pool.name}:${account.name}`}>
                             <td>{pool.name}</td>
                             <td>{account.name}</td>
-                            <td>{integer(accountUsage.requests)}</td>
-                            <td>{compactTokenCount(accountUsage.total_tokens)}</td>
+                            <td>{telemetryUnavailable ? t("Unavailable") : integer(accountUsage.requests)}</td>
+                            <td>{telemetryUnavailable ? t("Unavailable") : compactTokenCount(accountUsage.total_tokens)}</td>
                             <td>{account.weight}</td>
                             <td>{String(account.circuit.state ?? "closed")}</td>
                             <td>

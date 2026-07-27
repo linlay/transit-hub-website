@@ -10,7 +10,8 @@ import { QuotaInput, quotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
-import { api } from "../lib/api";
+import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { api, isTelemetryError } from "../lib/api";
 import { compactNumber, compactTokenCount, dateTime, integer, nullablePercent, formatCurrency, quotaRatio } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
@@ -70,6 +71,11 @@ export function APIKeyDetail() {
 
   const key = detail.data;
   const summary = usage.data?.summary;
+  const telemetryUnavailable =
+    Boolean(usage.data?.degraded_components?.includes("telemetry")) ||
+    isTelemetryError(timeline.error) ||
+    isTelemetryError(sessions.error) ||
+    isTelemetryError(logs.error);
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
   const isRefreshing = detail.isFetching || providers.isFetching || usage.isFetching || timeline.isFetching || sessions.isFetching || logs.isFetching;
 
@@ -111,17 +117,18 @@ export function APIKeyDetail() {
 
   return (
     <section className="page">
-      <div className="metrics-grid">
+      {telemetryUnavailable ? <TelemetryUnavailable /> : null}
+      {!telemetryUnavailable ? <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
         <MetricCard label={t("Tokens")} value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
         <MetricCard label={t("Cache hit")} value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{t("{count} cache tokens", { count: compactTokenCount(summary?.cache_total_tokens ?? 0) })}</span>} />
         <MetricCard label={t("Cost")} value={formatCurrency(summary?.cost_micro ?? 0)} detail={t("Estimated")} />
         <MetricCard label={t("Active devices")} value={integer(usage.data?.active_devices ?? 0)} detail={t("Current window")} />
-      </div>
+      </div> : null}
 
       <RateLimitUsagePanel items={usage.data?.rate_limit_usage ?? []} />
 
-      <section className="panel">
+      {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <h2>{t("Traffic")}</h2>
           <div className="panel-actions">
@@ -190,9 +197,9 @@ export function APIKeyDetail() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="panel">
+      {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <h2>{t("Sessions")}</h2>
           <span>{t("Device IDs and sources")}</span>
@@ -225,9 +232,9 @@ export function APIKeyDetail() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="panel">
+      {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <h2>{t("Logs")}</h2>
           <span>{t("Most recent requests")}</span>
@@ -262,7 +269,7 @@ export function APIKeyDetail() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
 
       {key ? (
         <section className="panel">

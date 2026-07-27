@@ -4,7 +4,8 @@ import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, T
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
-import { api } from "../lib/api";
+import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { api, isTelemetryError } from "../lib/api";
 import { compactNumber, compactTokenCount, integer, percent, currencyIntegerValue, percentValue } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
@@ -28,6 +29,7 @@ export function Dashboard() {
   });
   const data = overview.data;
   const trafficItems = traffic.data?.items ?? [];
+  const telemetryUnavailable = Boolean(data?.degraded_components?.includes("telemetry")) || isTelemetryError(traffic.error);
   const isRefreshing = overview.isFetching || traffic.isFetching;
 
   usePageActions(
@@ -45,16 +47,21 @@ export function Dashboard() {
 
   return (
     <section className="page">
+      {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       <div className="metrics-grid">
-        <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
-        <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
-        <MetricCard label={t("Cost")} value={currencyIntegerValue(data?.total_cost_micro ?? 0)} detail={t("Estimated (CNY)")} />
-        <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
-        <MetricCard
-          label={t("Error rate (%)")}
-          value={percentValue(data?.total_requests ? (data.error_requests || 0) / data.total_requests : 0)}
-          detail={t("{count} failed", { count: integer(data?.error_requests ?? 0) })}
-        />
+        {!telemetryUnavailable ? (
+          <>
+            <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
+            <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
+            <MetricCard label={t("Cost")} value={currencyIntegerValue(data?.total_cost_micro ?? 0)} detail={t("Estimated (CNY)")} />
+            <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
+            <MetricCard
+              label={t("Error rate (%)")}
+              value={percentValue(data?.total_requests ? (data.error_requests || 0) / data.total_requests : 0)}
+              detail={t("{count} failed", { count: integer(data?.error_requests ?? 0) })}
+            />
+          </>
+        ) : null}
         <MetricCard
           label={t("API keys")}
           value={integer(data?.api_keys.active ?? 0)}
@@ -62,7 +69,7 @@ export function Dashboard() {
         />
       </div>
 
-      <section className="panel">
+      {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <div>
             <h2>{t("Recent traffic")}</h2>
@@ -90,7 +97,7 @@ export function Dashboard() {
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-      </section>
+      </section> : null}
 
       <section className="panel">
         <div className="panel-heading">

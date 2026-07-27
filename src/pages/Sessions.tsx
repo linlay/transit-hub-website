@@ -4,7 +4,8 @@ import { Search } from "lucide-react";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
-import { api } from "../lib/api";
+import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, dateTime, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
@@ -23,7 +24,8 @@ export function Sessions() {
 
   return (
     <section className="page">
-      <section className="panel">
+      {isTelemetryError(sessions.error) ? <TelemetryUnavailable /> : null}
+      {!isTelemetryError(sessions.error) ? <section className="panel">
         <div className="toolbar">
           <label className="search">
             <Search size={16} />
@@ -74,7 +76,7 @@ export function Sessions() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
     </section>
   );
 }

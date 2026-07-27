@@ -55,6 +55,8 @@ const zhCN: Record<string, string> = {
   "Request use": "请求使用率",
   "Token use": "Token 使用率",
   "No risky keys right now.": "当前没有高风险密钥。",
+  "Statistics service temporarily unavailable": "统计服务暂不可用",
+  "Sign-in, API keys, configuration, and request forwarding are still available.": "登录、API 密钥、配置和请求转发仍可正常使用。",
   Hourly: "每小时",
   Daily: "每天",
   Monthly: "每月",

@@ -115,6 +115,7 @@ export type Overview = {
     request_used_ratio: number;
     token_used_ratio: number;
   }>;
+  degraded_components?: string[];
 };
 
 export type RequestLog = {
