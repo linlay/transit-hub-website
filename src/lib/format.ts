@@ -13,7 +13,7 @@ export function compactNumber(value: number) {
 }
 
 export function compactTokenCount(value: number) {
-  return new Intl.NumberFormat(currentLocale, { notation: "compact", maximumFractionDigits: 1 }).format(value || 0);
+  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value || 0);
 }
 
 export function integer(value: number) {
