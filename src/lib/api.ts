@@ -11,6 +11,7 @@ import type {
   PlaygroundChatRequest,
   ProviderConnectivityTestRequest,
   ProviderConnectivityTestResult,
+  ProviderQuotaResponse,
   ProviderSnapshot,
   ProviderUsageResponse,
   ProviderUsage,
@@ -152,6 +153,7 @@ export const api = {
     requestStream("/admin/playground/chat", body, signal),
   providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ProviderUsageResponse>("/admin/providers/usage", { query }),
+  providerQuota: () => request<ProviderQuotaResponse>("/admin/providers/quota"),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),
   createUser: (body: { username: string; password: string; status?: string }) =>
     request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(body) }),

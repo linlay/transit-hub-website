@@ -646,6 +646,11 @@ td small {
   color: var(--color-text-soft);
 }
 
+.pill.danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
 .primary,
 .icon-text,
 .icon-button {
@@ -1293,6 +1298,28 @@ td small {
 
 .provider-metrics .metric {
   min-height: 96px;
+}
+
+.provider-quota {
+  margin-bottom: 18px;
+}
+
+.provider-quota-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.provider-quota-heading h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.provider-quota-heading span {
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .models-catalog-panel {

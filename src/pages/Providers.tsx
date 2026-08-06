@@ -7,24 +7,34 @@ import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { api, isTelemetryError } from "../lib/api";
-import { compactTokenCount, integer, nullablePercent, formatCurrency } from "../lib/format";
+import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
-import type { ProviderAccountUsage, ProviderUsage } from "../lib/types";
+import type { ProviderAccountUsage, ProviderQuotaAccount, ProviderQuotaWindow, ProviderUsage } from "../lib/types";
 
 export function Providers() {
   const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const quota = useQuery({ queryKey: ["provider-quota"], queryFn: api.providerQuota, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const telemetryUnavailable = isTelemetryError(usage.error);
-  const isRefreshing = providers.isFetching || usage.isFetching;
+  const isRefreshing = providers.isFetching || usage.isFetching || quota.isFetching;
   const connectivity = useProviderConnectivityTest();
   const usageByProvider = useMemo(() => new Map((usage.data?.items ?? []).map((item) => [item.provider, item])), [usage.data?.items]);
   const usageByAccount = useMemo(
     () => new Map((usage.data?.account_items ?? []).map((item) => [`${item.provider}:${item.pool}:${item.account}`, item])),
     [usage.data?.account_items],
   );
+  const quotaByProvider = useMemo(() => {
+    const items = new Map<string, ProviderQuotaAccount[]>();
+    for (const account of quota.data?.items ?? []) {
+      const providerItems = items.get(account.provider) ?? [];
+      providerItems.push(account);
+      items.set(account.provider, providerItems);
+    }
+    return items;
+  }, [quota.data?.items]);
 
   type SortKey = "total_tokens" | "cache_hit_tokens" | "cache_miss_tokens" | null;
   type SortDir = "asc" | "desc";
@@ -75,7 +85,7 @@ export function Providers() {
     );
   }
 
-  usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([providers.refetch(), usage.refetch()])} />, [isRefreshing, providers.refetch, usage.refetch]);
+  usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([providers.refetch(), usage.refetch(), quota.refetch()])} />, [isRefreshing, providers.refetch, usage.refetch, quota.refetch]);
 
   return (
     <section className="page">
@@ -168,6 +178,7 @@ export function Providers() {
             {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, t("Test provider"))}
           </div>
           {!telemetryUnavailable ? <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} /> : null}
+          {(quotaByProvider.get(provider.name)?.length ?? 0) > 0 ? <ProviderQuotaTable items={quotaByProvider.get(provider.name) ?? []} /> : null}
           <div className="provider-grid">
             <div>
               <h3>{t("Models")}</h3>
@@ -256,6 +267,91 @@ export function Providers() {
       <ConnectivityResultToast result={connectivity.toast?.result} label={connectivity.toast?.label} onClose={connectivity.dismissToast} />
     </section>
   );
+}
+
+function ProviderQuotaTable({ items }: { items: ProviderQuotaAccount[] }) {
+  const { t } = useI18n();
+
+  return (
+    <div className="provider-quota">
+      <div className="provider-quota-heading">
+        <h3>{t("Upstream quota")}</h3>
+        <span>{t("Cached provider data")}</span>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{t("Pool")}</th>
+              <th>{t("Account")}</th>
+              <th>{t("Quota")}</th>
+              <th>{t("Status")}</th>
+              <th>{t("Current window")}</th>
+              <th>{t("Current reset")}</th>
+              <th>{t("Weekly window")}</th>
+              <th>{t("Weekly reset")}</th>
+              <th>{t("Weekly boost")}</th>
+              <th>{t("Updated")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.flatMap((item) => {
+              const quotas = item.quotas.length ? item.quotas : [undefined];
+              return quotas.map((quotaItem, index) => (
+                <tr key={`${item.pool}:${item.account}:${quotaItem?.model_name ?? "empty"}:${index}`}>
+                  <td>{index === 0 ? item.pool : ""}</td>
+                  <td>
+                    {index === 0 ? item.account : ""}
+                    {index === 0 && item.last_error ? <small title={item.last_error}>{item.last_error}</small> : null}
+                  </td>
+                  <td>{quotaItem?.model_name ?? t("Awaiting quota data")}</td>
+                  <td>{index === 0 ? <QuotaState state={item.state} /> : null}</td>
+                  <td>{quotaItem ? <QuotaWindowValue window={quotaItem.current} /> : "—"}</td>
+                  <td>{quotaItem ? optionalDateTime(quotaItem.current.reset_at) : "—"}</td>
+                  <td>{quotaItem ? <QuotaWindowValue window={quotaItem.weekly} /> : "—"}</td>
+                  <td>{quotaItem ? optionalDateTime(quotaItem.weekly.reset_at) : "—"}</td>
+                  <td>{quotaItem?.weekly_boost_multiplier === undefined ? "—" : `${Number(quotaItem.weekly_boost_multiplier.toFixed(2))}×`}</td>
+                  <td>
+                    {index === 0 ? dateTime(item.last_success_at) : ""}
+                    {index === 0 && item.state === "error" && item.last_success_at ? <small>{t("Stale data")}</small> : null}
+                  </td>
+                </tr>
+              ));
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function QuotaState({ state }: { state: ProviderQuotaAccount["state"] }) {
+  const { t } = useI18n();
+  const className = state === "ok" ? "good" : state === "error" ? "danger" : "muted";
+  const label = state === "ok" ? "Available" : state === "error" ? "Query failed" : "Pending";
+  return <span className={`pill ${className}`}>{t(label)}</span>;
+}
+
+function QuotaWindowValue({ window }: { window: ProviderQuotaWindow }) {
+  const { t } = useI18n();
+  const primary = window.status === "unlimited"
+    ? t("Unlimited")
+    : window.remaining_percent === undefined
+      ? t("n/a")
+      : `${Math.round(window.remaining_percent * 10) / 10}%`;
+  const hasTotal = window.total_count !== undefined && window.total_count > 0;
+
+  return (
+    <span>
+      {primary}
+      {hasTotal ? <small>{integer(window.used_count ?? 0)} / {integer(window.total_count ?? 0)} {t("used")}</small> : null}
+      {window.status === "exhausted" ? <small>{t("Exhausted")}</small> : null}
+    </span>
+  );
+}
+
+function optionalDateTime(value?: string) {
+  return value ? dateTime(value) : "—";
 }
 
 function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
