@@ -78,7 +78,7 @@ export type AdminUser = {
 export type TrafficBucket = {
   bucket: string;
   requests: number;
-  unique_devices?: number;
+  unique_api_keys?: number;
   request_tokens: number;
   response_tokens: number;
   total_tokens: number;
