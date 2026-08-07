@@ -1322,6 +1322,106 @@ td small {
   font-size: 12px;
 }
 
+.provider-quota-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.provider-quota-account {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-subtle);
+  padding: 14px;
+}
+
+.provider-quota-account-heading,
+.provider-quota-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.provider-quota-account-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.provider-quota-account-heading strong {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-quota-account-heading span,
+.provider-quota-meta,
+.provider-quota-empty {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.provider-quota-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.provider-quota-stale {
+  color: var(--color-danger);
+  font-weight: 650;
+}
+
+.provider-quota-error {
+  overflow: hidden;
+  margin-top: 10px;
+  border-radius: 6px;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  padding: 8px 10px;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-quota-entries {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.provider-quota-entry {
+  border-top: 1px solid var(--color-border-soft);
+  padding-top: 12px;
+}
+
+.provider-quota-entry h4 {
+  margin: 0 0 7px;
+  font-size: 13px;
+}
+
+.provider-quota-lines {
+  display: grid;
+  gap: 4px;
+}
+
+.provider-quota-lines p {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.provider-quota-empty {
+  margin-top: 12px;
+  border-top: 1px solid var(--color-border-soft);
+  padding-top: 12px;
+}
+
 .models-catalog-panel {
   min-width: 0;
 }
@@ -1606,6 +1706,7 @@ td small {
   .rate-limit-header,
   .rate-limit-row,
   .provider-metrics,
+  .provider-quota-grid,
   .provider-grid,
   .connectivity-target {
     grid-template-columns: 1fr;

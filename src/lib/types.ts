@@ -197,22 +197,9 @@ export type ProviderAccountUsage = {
   error_requests: number;
 };
 
-export type ProviderQuotaWindow = {
-  start_at?: string;
-  reset_at?: string;
-  remaining_seconds?: number;
-  total_count?: number;
-  used_count?: number;
-  remaining_percent?: number;
-  status: "normal" | "exhausted" | "unlimited" | "unknown";
-  raw_status?: string | number | boolean | null;
-};
-
-export type ProviderQuota = {
-  model_name: string;
-  current: ProviderQuotaWindow;
-  weekly: ProviderQuotaWindow;
-  weekly_boost_multiplier?: number;
+export type ProviderQuotaEntry = {
+  title: string;
+  lines: string[];
 };
 
 export type ProviderQuotaAccount = {
@@ -224,7 +211,7 @@ export type ProviderQuotaAccount = {
   last_attempt_at?: string;
   last_success_at?: string;
   last_error?: string;
-  quotas: ProviderQuota[];
+  entries: ProviderQuotaEntry[];
 };
 
 export type ProviderSnapshot = {
