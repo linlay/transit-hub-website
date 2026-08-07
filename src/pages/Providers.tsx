@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Loader2 } from "lucide-react";
 import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
+import { ModalDialog } from "../components/ModalDialog";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { api, isTelemetryError } from "../lib/api";
@@ -271,6 +272,8 @@ export function Providers() {
 
 function ProviderQuotaSummary({ items }: { items: ProviderQuotaAccount[] }) {
   const { t } = useI18n();
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const selected = items.find((item) => `${item.pool}:${item.account}` === selectedKey) ?? null;
 
   return (
     <div className="provider-quota">
@@ -278,40 +281,79 @@ function ProviderQuotaSummary({ items }: { items: ProviderQuotaAccount[] }) {
         <h3>{t("Upstream quota")}</h3>
         <span>{t("Cached provider data")}</span>
       </div>
-      <div className="provider-quota-grid">
+      <div className="provider-quota-list">
         {items.map((item) => {
           const updatedAt = item.last_success_at ?? item.last_attempt_at;
           const entries = item.entries ?? [];
+          const summaryEntry = entries[0];
+          const summary = summaryEntry?.lines[0];
           return (
-            <article className="provider-quota-account" key={`${item.pool}:${item.account}`}>
+            <button
+              aria-label={t("View quota details for {account}", { account: item.account })}
+              className="provider-quota-account"
+              key={`${item.pool}:${item.account}`}
+              onClick={() => setSelectedKey(`${item.pool}:${item.account}`)}
+              title={t("View quota details")}
+              type="button"
+            >
               <div className="provider-quota-account-heading">
-                <div>
+                <div className="provider-quota-account-identity">
                   <strong>{item.account}</strong>
                   <span>{item.pool}</span>
                 </div>
-                <QuotaState state={item.state} />
+                <div className="provider-quota-account-action">
+                  <QuotaState state={item.state} />
+                  <ChevronRight aria-hidden="true" size={16} />
+                </div>
+              </div>
+              <div className="provider-quota-summary">
+                {summary ? <><strong>{summaryEntry.title}</strong><span>{summary}</span></> : <span>{item.last_error || t("Awaiting quota data")}</span>}
               </div>
               <div className="provider-quota-meta">
                 <span>{t(item.last_success_at ? "Updated" : "Last attempt")}: {updatedAt ? dateTime(updatedAt) : "—"}</span>
                 {item.state === "error" && item.last_success_at ? <span className="provider-quota-stale">{t("Stale data")}</span> : null}
               </div>
-              {item.last_error ? <div className="provider-quota-error" title={item.last_error}>{item.last_error}</div> : null}
-              {entries.length ? (
-                <div className="provider-quota-entries">
-                  {entries.map((entry, index) => (
-                    <section className="provider-quota-entry" key={`${entry.title}:${index}`}>
-                      <h4>{entry.title}</h4>
-                      <div className="provider-quota-lines">
-                        {entry.lines.map((line, lineIndex) => <p key={`${line}:${lineIndex}`}>{line}</p>)}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              ) : <div className="provider-quota-empty">{t("Awaiting quota data")}</div>}
-            </article>
+            </button>
           );
         })}
       </div>
+      {selected ? (
+        <ModalDialog title={`${selected.account} · ${t("Upstream quota")}`} onClose={() => setSelectedKey(null)}>
+          <ProviderQuotaDetails item={selected} />
+        </ModalDialog>
+      ) : null}
+    </div>
+  );
+}
+
+function ProviderQuotaDetails({ item }: { item: ProviderQuotaAccount }) {
+  const { t } = useI18n();
+  const updatedAt = item.last_success_at ?? item.last_attempt_at;
+  const entries = item.entries ?? [];
+
+  return (
+    <div className="provider-quota-dialog">
+      <div className="provider-quota-dialog-heading">
+        <div>
+          <strong>{item.pool}</strong>
+          <span>{t(item.last_success_at ? "Updated" : "Last attempt")}: {updatedAt ? dateTime(updatedAt) : "—"}</span>
+        </div>
+        <QuotaState state={item.state} />
+      </div>
+      {item.state === "error" && item.last_success_at ? <div className="provider-quota-stale">{t("Stale data")}</div> : null}
+      {item.last_error ? <div className="provider-quota-error">{item.last_error}</div> : null}
+      {entries.length ? (
+        <div className="provider-quota-entries">
+          {entries.map((entry, index) => (
+            <section className="provider-quota-entry" key={`${entry.title}:${index}`}>
+              <h4>{entry.title}</h4>
+              <div className="provider-quota-lines">
+                {entry.lines.map((line, lineIndex) => <p key={`${line}:${lineIndex}`}>{line}</p>)}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : <div className="provider-quota-empty">{t("Awaiting quota data")}</div>}
     </div>
   );
 }

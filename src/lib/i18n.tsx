@@ -293,6 +293,8 @@ const zhCN: Record<string, string> = {
   "Query failed": "查询失败",
   Pending: "等待查询",
   "Stale data": "旧数据",
+  "View quota details": "查看额度详情",
+  "View quota details for {account}": "查看 {account} 的额度详情",
   Exhausted: "已耗尽",
   used: "已用",
   "Usage by provider": "按供应商统计用量",
