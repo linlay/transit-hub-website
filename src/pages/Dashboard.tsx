@@ -90,8 +90,8 @@ export function Dashboard() {
       {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>{t("API Keys & PV")}</h2>
-            <span>{t("Unique API keys and request PV by {bucket}", { bucket: t(bucket) })}</span>
+            <h2>{t("API Key activity")}</h2>
+            <span>{t("Unique API keys and average requests per key by {bucket}", { bucket: t(bucket) })}</span>
           </div>
         </div>
         <UsageChart items={trafficItems} />

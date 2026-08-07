@@ -20,6 +20,10 @@ export function integer(value: number) {
   return new Intl.NumberFormat(currentLocale).format(value || 0);
 }
 
+export function decimal(value: number) {
+  return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 1 }).format(value || 0);
+}
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat(currencyLocale(), { style: "currency", currency: CURRENCY, maximumFractionDigits: 4 }).format((value || 0) / 1_000_000);
 }
