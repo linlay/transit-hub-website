@@ -88,6 +88,13 @@ export type TrafficBucket = {
   cost_micro: number;
   error_requests: number;
   average_latency_ms: number;
+  models?: TrafficModelUsage[];
+};
+
+export type TrafficModelUsage = {
+  model: string;
+  requests: number;
+  total_tokens: number;
 };
 
 export type Overview = {

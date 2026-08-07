@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { TrafficChart } from "../components/TrafficChart";
 import { api, isTelemetryError } from "../lib/api";
-import { compactNumber, compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
+import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
@@ -27,7 +27,10 @@ export function Traffic() {
       <>
       <section className="panel">
         <div className="panel-heading">
-          <h2>{t("Traffic")}</h2>
+          <div>
+            <h2>{t("Traffic")}</h2>
+            <span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span>
+          </div>
           <div className="panel-actions">
             <select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
               <option value="day">{t("Daily")}</option>
@@ -36,19 +39,7 @@ export function Traffic() {
             </select>
           </div>
         </div>
-        <div className="chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={traffic.data?.items ?? []}>
-              <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(value: number, name: string) => [name === "total_tokens" ? compactTokenCount(value) : integer(value), name === "total_tokens" ? t("Tokens") : t("Requests")]} />
-              <Legend formatter={(value) => (value === "total_tokens" ? t("Tokens") : t("Requests"))} />
-              <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
-              <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        <TrafficChart items={traffic.data?.items ?? []} />
       </section>
       <section className="panel">
         <div className="panel-heading">

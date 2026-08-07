@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { TrafficChart } from "../components/TrafficChart";
 import { api, isTelemetryError } from "../lib/api";
 import { compactNumber, compactTokenCount, integer, percent, currencyIntegerValue, percentValue } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -73,7 +73,7 @@ export function Dashboard() {
         <div className="panel-heading">
           <div>
             <h2>{t("Recent traffic")}</h2>
-            <span>{t("Requests and tokens by {bucket}", { bucket: t(bucket) })}</span>
+            <span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span>
           </div>
           <div className="panel-actions">
             <select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
@@ -83,20 +83,7 @@ export function Dashboard() {
             </select>
           </div>
         </div>
-        <div className="chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={trafficItems}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(value: number, name: string) => [name === "total_tokens" ? compactTokenCount(value) : integer(value), name === "total_tokens" ? t("Tokens") : t("Requests")]} />
-              <Legend formatter={(value) => (value === "total_tokens" ? t("Tokens") : t("Requests"))} />
-              <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
-              <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        <TrafficChart items={trafficItems} />
       </section> : null}
 
       <section className="panel">
