@@ -5,6 +5,7 @@ import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
+import { UsageChart } from "../components/UsageChart";
 import { api, isTelemetryError } from "../lib/api";
 import { compactNumber, compactTokenCount, integer, percent, currencyIntegerValue, percentValue } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -84,6 +85,16 @@ export function Dashboard() {
           </div>
         </div>
         <TrafficChart items={trafficItems} />
+      </section> : null}
+
+      {!telemetryUnavailable ? <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <h2>{t("Devices & PV")}</h2>
+            <span>{t("Unique devices and request PV by {bucket}", { bucket: t(bucket) })}</span>
+          </div>
+        </div>
+        <UsageChart items={trafficItems} />
       </section> : null}
 
       <section className="panel">

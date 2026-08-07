@@ -487,6 +487,11 @@ td small,
   color: var(--color-text-muted) !important;
 }
 
+.chart .recharts-legend-wrapper,
+.chart .recharts-default-tooltip {
+  font-size: 13px !important;
+}
+
 .chart .recharts-cartesian-grid line {
   stroke: var(--color-border-soft);
 }

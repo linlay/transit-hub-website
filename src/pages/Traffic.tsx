@@ -4,6 +4,7 @@ import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
+import { UsageChart } from "../components/UsageChart";
 import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -40,6 +41,15 @@ export function Traffic() {
           </div>
         </div>
         <TrafficChart items={traffic.data?.items ?? []} />
+      </section>
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <h2>{t("Devices & PV")}</h2>
+            <span>{t("Unique devices and request PV by {bucket}", { bucket: t(bucket) })}</span>
+          </div>
+        </div>
+        <UsageChart items={traffic.data?.items ?? []} />
       </section>
       <section className="panel">
         <div className="panel-heading">
