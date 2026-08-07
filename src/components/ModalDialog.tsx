@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { X } from "lucide-react";
 import { useI18n } from "../lib/i18n";
 
@@ -10,6 +10,18 @@ type ModalDialogProps = {
 
 export function ModalDialog({ title, children, onClose }: ModalDialogProps) {
   const { t } = useI18n();
+
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    }
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
 
   return (
     <div className="dialog-backdrop">

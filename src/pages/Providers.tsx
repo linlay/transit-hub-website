@@ -296,22 +296,18 @@ function ProviderQuotaSummary({ items }: { items: ProviderQuotaAccount[] }) {
               title={t("View quota details")}
               type="button"
             >
-              <div className="provider-quota-account-heading">
-                <div className="provider-quota-account-identity">
-                  <strong>{item.account}</strong>
-                  <span>{item.pool}</span>
-                </div>
-                <div className="provider-quota-account-action">
-                  <QuotaState state={item.state} />
-                  <ChevronRight aria-hidden="true" size={16} />
-                </div>
+              <div className="provider-quota-account-identity">
+                <strong>{item.account}</strong>
+                <span>{item.pool}</span>
               </div>
               <div className="provider-quota-summary">
                 {summary ? <><strong>{summaryEntry.title}</strong><span>{summary}</span></> : <span>{item.last_error || t("Awaiting quota data")}</span>}
               </div>
-              <div className="provider-quota-meta">
-                <span>{t(item.last_success_at ? "Updated" : "Last attempt")}: {updatedAt ? dateTime(updatedAt) : "—"}</span>
+              <div className="provider-quota-account-action">
+                <QuotaState state={item.state} />
                 {item.state === "error" && item.last_success_at ? <span className="provider-quota-stale">{t("Stale data")}</span> : null}
+                <span className="provider-quota-updated">{t(item.last_success_at ? "Updated" : "Last attempt")}: {updatedAt ? dateTime(updatedAt) : "—"}</span>
+                <ChevronRight aria-hidden="true" size={16} />
               </div>
             </button>
           );
