@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
+import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue } from "../components/QuotaInput";
@@ -27,6 +28,7 @@ export function APIKeys() {
   const [source, setSource] = useState(params.get("source") ?? "all");
   const [issuerJTI, setIssuerJTI] = useState(params.get("issuer_jti") ?? "");
   const [createOpen, setCreateOpen] = useState(false);
+  const [copySource, setCopySource] = useState<APIKey | null>(null);
   const [createdKey, setCreatedKey] = useState("");
   const [createModelError, setCreateModelError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
@@ -98,7 +100,8 @@ export function APIKeys() {
     return sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
   }
 
-  function openCreateDialog() {
+  function openCreateDialog(source: APIKey | null = null) {
+    setCopySource(source);
     create.reset();
     setCreatedKey("");
     setCreateModelError("");
@@ -113,6 +116,7 @@ export function APIKeys() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (create.isPending || createdKey) return;
     const form = new FormData(event.currentTarget);
     const allowedModels = form.getAll("allowed_models").map(String);
     if (allowedModels.length === 0) {
@@ -179,7 +183,7 @@ export function APIKeys() {
   usePageActions(
     <>
       <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
-      <button className="primary" onClick={openCreateDialog} type="button">
+      <button className="primary" onClick={() => openCreateDialog()} type="button">
         <Plus size={16} />
         {t("Create key")}
       </button>
@@ -235,117 +239,49 @@ export function APIKeys() {
           </div>
         ) : null}
         {batch.error ? <div className="error-text">{batch.error.message}</div> : null}
-        <div className="table-wrap api-keys-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                {selecting ? (
-                  <th className="select-cell">
-                    <input checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />
-                  </th>
-                ) : null}
-                <th>{t("Name")}</th>
-                <th>{t("Status")}</th>
-                <th>{t("Source")}</th>
-                <th>{t("Issuer Name")}</th>
-                <th className="sortable">
-                  <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
-                    {t("Requests")}
-                    {sortIcon("used_requests")}
-                  </button>
-                </th>
-                <th className="sortable">
-                  <button className="sort-header" type="button" onClick={() => toggleSort("used_tokens")}>
-                    {t("Tokens")}
-                    {sortIcon("used_tokens")}
-                  </button>
-                </th>
-                <th className="sortable">
-                  <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
-                    {t("Last used")}
-                    {sortIcon("last_used_at")}
-                  </button>
-                </th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {visibleKeys.map((key) => (
-                <tr key={key.id}>
-                  {selecting ? (
-                    <td className="select-cell">
-                      <input checked={selectedIDs.has(key.id)} onChange={() => toggleSelection(key.id)} type="checkbox" />
-                    </td>
-                  ) : null}
-                  <td>
-                    <Link className="table-link" to={`/api-keys/${key.id}`}>
-                      {key.name}
-                    </Link>
-                    <small>{key.key_prefix}</small>
-                  </td>
-                  <td>
-                    <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
-                  </td>
-                  <td>{key.source === "admin" ? t("Admin") : "JWT"}</td>
-                  <td>
-                    {key.issuer_jti ? (
-                      <Link className="table-link" to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>
-                        {key.issuer_name || key.issuer_jti}
-                        {key.issuer_name ? (
-                          <small className="mono">{key.issuer_jti}</small>
-                        ) : null}
-                      </Link>
-                    ) : (
-                      <span className="muted-cell">-</span>
-                    )}
-                  </td>
-                  <td>
-                    <Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} />
-                  </td>
-                  <td>
-                    <Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${compactTokenCount(key.used_tokens)} / ${key.token_quota ? compactTokenCount(key.token_quota) : "∞"}`} title={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} />
-                  </td>
-                  <td>{dateTime(key.last_used_at)}</td>
-                  <td>
-                    <div className="table-actions">
-                      {key.status === "active" ? (
-                        <button className="icon-button" onClick={() => inactiveKey(key.id, key.name)} title={t("Inactive")} type="button">
-                          <Ban size={16} />
-                        </button>
-                      ) : null}
-                      <button
-                        className="icon-button danger"
-                        onClick={() => window.confirm(t("Delete {name}?", { name: key.name })) && remove.mutate(key.id)}
-                        title={t("Delete")}
-                        type="button"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {!keys.data?.items?.length ? (
-                <tr>
-                  <td colSpan={selecting ? 9 : 8} className="muted-cell">
-                    {t("No API keys found.")}
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+        <div className="credential-sort">
+          {selecting ? <label className="mini-check"><input checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />{t("Select all")}</label> : null}
+          {(["used_requests", "used_tokens", "last_used_at"] as const).map((field) => (
+            <button className="sort-header" key={field} type="button" onClick={() => toggleSort(field)} aria-label={`${t(field === "used_requests" ? "Requests" : field === "used_tokens" ? "Tokens" : "Last used")} · ${sortKey === field ? t(sortDir === "asc" ? "Ascending" : "Descending") : t("Unsorted")}`}>
+              {t(field === "used_requests" ? "Requests" : field === "used_tokens" ? "Tokens" : "Last used")}{sortIcon(field)}
+            </button>
+          ))}
+        </div>
+        <div className="credential-list">
+          {visibleKeys.map((key) => (
+            <article className="credential-item" key={key.id}>
+              <div className="credential-heading">
+                {selecting ? <input aria-label={t("Select {name}", { name: key.name })} checked={selectedIDs.has(key.id)} onChange={() => toggleSelection(key.id)} type="checkbox" /> : null}
+                <div className="credential-identity"><Link className="table-link" to={`/api-keys/${key.id}`}>{key.name}</Link><span className="mono muted-cell">{key.key_prefix}</span></div>
+                <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
+                <div className="table-actions">
+                  <button className="icon-text" onClick={() => openCreateDialog(key)} type="button"><Copy size={16} />{t("Duplicate")}</button>
+                  {key.status === "active" ? <button className="icon-button" onClick={() => inactiveKey(key.id, key.name)} aria-label={t("Inactive")} title={t("Inactive")} type="button"><Ban size={16} /></button> : null}
+                  <button className="icon-button danger" onClick={() => window.confirm(t("Delete {name}?", { name: key.name })) && remove.mutate(key.id)} aria-label={t("Delete")} title={t("Delete")} type="button"><Trash2 size={16} /></button>
+                </div>
+              </div>
+              <div className="credential-meta">
+                <span><span className="muted-cell">{t("Source")}</span> {key.source === "admin" ? t("Admin") : "JWT"}{key.issuer_jti ? <> · <Link className="table-link" title={key.issuer_jti} to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>{key.issuer_name || key.issuer_jti}</Link></> : null}</span>
+                <div><span className="muted-cell">{t("Requests")}</span><Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} /></div>
+                <div><span className="muted-cell">{t("Tokens")}</span><Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${compactTokenCount(key.used_tokens)} / ${key.token_quota ? compactTokenCount(key.token_quota) : "∞"}`} title={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} /></div>
+                <span><span className="muted-cell">{t("Last used")}</span> {dateTime(key.last_used_at)}</span>
+              </div>
+              <CredentialModels models={key.allowed_models} />
+            </article>
+          ))}
+          {!keys.data?.items?.length ? <p className="muted-cell">{t("No API keys found.")}</p> : null}
         </div>
       </section>
 
       {createOpen ? (
         <ModalDialog title="Create API Key" onClose={() => setCreateOpen(false)}>
           <form className="dialog-form" onSubmit={submit}>
-            <input name="name" placeholder={t("Name")} required />
-            <input name="description" placeholder={t("Description")} />
-            <QuotaInput label="Request quota" name="request_quota" />
-            <QuotaInput label="Token quota" name="token_quota" />
-            <RateLimitEditor name="rate_limits" />
-            <ModelWhitelistInput models={providerModels} />
+            <input name="name" aria-label={t("Name")} placeholder={t("Name")} defaultValue={copySource ? t("{name} (copy)", { name: copySource.name }) : ""} required />
+            <input name="description" aria-label={t("Description")} placeholder={t("Description")} defaultValue={copySource?.description ?? ""} />
+            <QuotaInput label="Request quota" name="request_quota" initialValue={copySource?.request_quota ?? 0} />
+            <QuotaInput label="Token quota" name="token_quota" initialValue={copySource?.token_quota ?? 0} />
+            <RateLimitEditor name="rate_limits" initialValue={copySource?.rate_limits} />
+            <ModelWhitelistInput models={Array.from(new Set([...providerModels, ...(copySource?.allowed_models ?? [])]))} selected={copySource?.allowed_models} />
             {createdKey ? (
               <div className="secret-box">
                 <code>{createdKey}</code>
@@ -361,7 +297,7 @@ export function APIKeys() {
               <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">
                 {t("Close")}
               </button>
-              <button className="primary" disabled={create.isPending} type="submit">
+              <button className="primary" disabled={create.isPending || Boolean(createdKey)} type="submit">
                 <Plus size={16} />
                 {t("Create")}
               </button>

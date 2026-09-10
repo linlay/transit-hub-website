@@ -14,6 +14,14 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  Duplicate: "复制新增",
+  "{name} (copy)": "{name}（副本）",
+  "Show all ({count})": "展开全部（{count}）",
+  "Show less": "收起",
+  "Select {name}": "选择 {name}",
+  Ascending: "升序",
+  Descending: "降序",
+  Unsorted: "未排序",
   "Transit Hub": "Transit Hub",
   "Admin Console": "管理控制台",
   Dashboard: "仪表盘",
