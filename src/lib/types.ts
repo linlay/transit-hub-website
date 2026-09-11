@@ -28,7 +28,8 @@ export type APIKey = {
   name: string;
   description: string;
   key_prefix: string;
-  source: "admin" | "jwt";
+  source: "admin" | "jwt" | "access_token";
+  device_binding?: { issuer: string; subject: string; device_id: string };
   issuer_jti?: string;
   issuer_name?: string;
   status: "active" | "disabled";

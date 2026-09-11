@@ -210,6 +210,7 @@ export function APIKeys() {
             <option value="all">{t("All sources")}</option>
             <option value="admin">{t("Admin")}</option>
             <option value="jwt">JWT</option>
+            <option value="access_token">{t("User-device binding")}</option>
           </select>
           <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
           <button
@@ -293,7 +294,7 @@ export function APIKeys() {
                     <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
                   </td>
                   <td>
-                    <span>{key.source === "admin" ? t("Admin") : "JWT"}</span>
+                    <span>{key.source === "admin" ? t("Admin") : key.source === "access_token" ? t("User-device binding") : "JWT"}</span>
                     {key.issuer_jti ? (
                       <small><Link className="cell-ellipsis" title={key.issuer_jti} to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>{key.issuer_name || key.issuer_jti}</Link></small>
                     ) : <small className="muted-cell">—</small>}

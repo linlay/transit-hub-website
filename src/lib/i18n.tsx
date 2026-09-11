@@ -107,6 +107,7 @@ const zhCN: Record<string, string> = {
   "All sources": "全部来源",
   Admin: "管理员",
   JWT: "JWT",
+  "User-device binding": "用户设备绑定",
   "Issuer JTI": "签发名称",
   "Issuer Name": "签发名称",
   "Create key": "创建密钥",
