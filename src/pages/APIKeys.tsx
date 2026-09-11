@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
+import { CredentialTime } from "../components/CredentialTime";
+import { RowActions } from "../components/RowActions";
 import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
@@ -12,7 +14,7 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
-import { compactTokenCount, dateTime, integer, quotaRatio } from "../lib/format";
+import { compactTokenCount, integer, quotaRatio } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { APIKey } from "../lib/types";
@@ -193,7 +195,7 @@ export function APIKeys() {
 
   return (
     <section className="page">
-      <section className="panel">
+      <section className="panel credential-panel">
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
@@ -239,37 +241,89 @@ export function APIKeys() {
           </div>
         ) : null}
         {batch.error ? <div className="error-text">{batch.error.message}</div> : null}
-        <div className="credential-sort">
-          {selecting ? <label className="mini-check"><input checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />{t("Select all")}</label> : null}
-          {(["used_requests", "used_tokens", "last_used_at"] as const).map((field) => (
-            <button className="sort-header" key={field} type="button" onClick={() => toggleSort(field)} aria-label={`${t(field === "used_requests" ? "Requests" : field === "used_tokens" ? "Tokens" : "Last used")} · ${sortKey === field ? t(sortDir === "asc" ? "Ascending" : "Descending") : t("Unsorted")}`}>
-              {t(field === "used_requests" ? "Requests" : field === "used_tokens" ? "Tokens" : "Last used")}{sortIcon(field)}
-            </button>
-          ))}
-        </div>
-        <div className="credential-list">
-          {visibleKeys.map((key) => (
-            <article className="credential-item" key={key.id}>
-              <div className="credential-heading">
-                {selecting ? <input aria-label={t("Select {name}", { name: key.name })} checked={selectedIDs.has(key.id)} onChange={() => toggleSelection(key.id)} type="checkbox" /> : null}
-                <div className="credential-identity"><Link className="table-link" to={`/api-keys/${key.id}`}>{key.name}</Link><span className="mono muted-cell">{key.key_prefix}</span></div>
-                <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
-                <div className="table-actions">
-                  <button className="icon-text" onClick={() => openCreateDialog(key)} type="button"><Copy size={16} />{t("Duplicate")}</button>
-                  {key.status === "active" ? <button className="icon-button" onClick={() => inactiveKey(key.id, key.name)} aria-label={t("Inactive")} title={t("Inactive")} type="button"><Ban size={16} /></button> : null}
-                  <button className="icon-button danger" onClick={() => window.confirm(t("Delete {name}?", { name: key.name })) && remove.mutate(key.id)} aria-label={t("Delete")} title={t("Delete")} type="button"><Trash2 size={16} /></button>
-                </div>
-              </div>
-              <div className="credential-meta">
-                <span><span className="muted-cell">{t("Source")}</span> {key.source === "admin" ? t("Admin") : "JWT"}{key.issuer_jti ? <> · <Link className="table-link" title={key.issuer_jti} to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>{key.issuer_name || key.issuer_jti}</Link></> : null}</span>
-                <div><span className="muted-cell">{t("Requests")}</span><Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} /></div>
-                <div><span className="muted-cell">{t("Tokens")}</span><Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${compactTokenCount(key.used_tokens)} / ${key.token_quota ? compactTokenCount(key.token_quota) : "∞"}`} title={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} /></div>
-                <span><span className="muted-cell">{t("Last used")}</span> {dateTime(key.last_used_at)}</span>
-              </div>
-              <CredentialModels models={key.allowed_models} />
-            </article>
-          ))}
-          {!keys.data?.items?.length ? <p className="muted-cell">{t("No API keys found.")}</p> : null}
+        <div className="table-wrap credential-table-wrap">
+          <table className="credential-table key-table">
+            <thead>
+              <tr>
+                {selecting ? (
+                  <th className="select-cell">
+                    <input aria-label={t("Select all")} checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />
+                  </th>
+                ) : null}
+                <th className="credential-name-col">{t("Name")}</th>
+                <th className="credential-status-col">{t("Status")}</th>
+                <th className="credential-source-col">{t("Source")} / {t("Issuer Name")}</th>
+                <th>{t("Models")}</th>
+                <th className="sortable credential-usage-col" aria-sort={sortKey === "used_requests" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+                  <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
+                    {t("Requests")}
+                    {sortIcon("used_requests")}
+                  </button>
+                </th>
+                <th className="sortable credential-usage-col" aria-sort={sortKey === "used_tokens" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+                  <button className="sort-header" type="button" onClick={() => toggleSort("used_tokens")}>
+                    {t("Tokens")}
+                    {sortIcon("used_tokens")}
+                  </button>
+                </th>
+                <th className="sortable credential-date-col" aria-sort={sortKey === "last_used_at" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+                  <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
+                    {t("Last used")}
+                    {sortIcon("last_used_at")}
+                  </button>
+                </th>
+                <th className="row-actions-cell" aria-label={t("Actions")} />
+              </tr>
+            </thead>
+            <tbody>
+              {visibleKeys.map((key) => (
+                <tr key={key.id}>
+                  {selecting ? (
+                    <td className="select-cell">
+                      <input aria-label={t("Select {name}", { name: key.name })} checked={selectedIDs.has(key.id)} onChange={() => toggleSelection(key.id)} type="checkbox" />
+                    </td>
+                  ) : null}
+                  <td>
+                    <Link className="table-link cell-ellipsis" title={key.name} to={`/api-keys/${key.id}`}>
+                      {key.name}
+                    </Link>
+                    <small>{key.key_prefix}</small>
+                  </td>
+                  <td>
+                    <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
+                  </td>
+                  <td>
+                    <span>{key.source === "admin" ? t("Admin") : "JWT"}</span>
+                    {key.issuer_jti ? (
+                      <small><Link className="cell-ellipsis" title={key.issuer_jti} to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>{key.issuer_name || key.issuer_jti}</Link></small>
+                    ) : <small className="muted-cell">—</small>}
+                  </td>
+                  <td><CredentialModels models={key.allowed_models} /></td>
+                  <td>
+                    <Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} />
+                  </td>
+                  <td>
+                    <Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${compactTokenCount(key.used_tokens)} / ${key.token_quota ? compactTokenCount(key.token_quota) : "∞"}`} title={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} />
+                  </td>
+                  <td><CredentialTime value={key.last_used_at} /></td>
+                  <td className="row-actions-cell">
+                    <RowActions label={t("Actions for {name}", { name: key.name })} items={[
+                      { label: t("Duplicate"), icon: <Copy size={15} />, onSelect: () => openCreateDialog(key) },
+                      ...(key.status === "active" ? [{ label: t("Inactive"), icon: <Ban size={15} />, onSelect: () => inactiveKey(key.id, key.name) }] : []),
+                      { label: t("Delete"), icon: <Trash2 size={15} />, danger: true, onSelect: () => { if (window.confirm(t("Delete {name}?", { name: key.name }))) remove.mutate(key.id); } },
+                    ]} />
+                  </td>
+                </tr>
+              ))}
+              {!keys.data?.items?.length ? (
+                <tr>
+                  <td colSpan={selecting ? 9 : 8} className="muted-cell">
+                    {t("No API keys found.")}
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
 

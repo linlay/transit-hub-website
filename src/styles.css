@@ -1932,54 +1932,43 @@ td small {
   }
 }
 
-.credential-item {
-  padding: 18px 10px;
-  border-top: 1px solid var(--color-border-soft);
-  display: grid;
-  gap: 12px;
-  font-size: 14px;
-}
+/* Keep credential rows compact; long values stay inside their own columns. */
+.credential-table { table-layout: fixed; min-width: 680px; }
+.credential-table th, .credential-table td { padding: 14px 10px; vertical-align: middle; }
+.credential-table td { height: 72px; }
+.credential-table td small { color: var(--color-text-muted); font-size: 12px; line-height: 18px; }
+.credential-table tbody tr:hover { background: var(--color-surface-subtle); }
+.credential-table .credential-name-col { width: 19%; }
+.credential-table .credential-status-col { width: 76px; }
+.credential-table .credential-issued-col { width: 8%; }
+.credential-table .credential-limits-col { width: 17%; }
+.credential-table .credential-date-col { width: 10%; }
+.credential-table .credential-source-col { width: 14%; }
+.credential-table .credential-usage-col { width: 13%; }
+.credential-table .row-actions-cell { width: 36px; padding-left: 4px; padding-right: 4px; text-align: center; }
+.credential-table .select-cell { width: 36px; }
+.cell-ellipsis { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-model-link { display: block; margin-top: 3px; padding: 0; border: 0; background: transparent; color: var(--color-primary-strong); font-size: 12px; line-height: 18px; cursor: pointer; }
+.cell-model-link:hover { text-decoration: underline; }
+.credential-model-list { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; }
+.credential-model-list li { padding: 10px 0; border-bottom: 1px solid var(--color-border-soft); overflow-wrap: anywhere; font-size: 14px; }
+.row-actions-trigger { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--color-text-muted); cursor: pointer; }
+.row-actions-trigger:hover, .row-actions-trigger[aria-expanded="true"] { background: var(--color-control-soft); color: var(--color-text); }
+.row-actions-menu { position: fixed; z-index: 30; width: 172px; padding: 5px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface-raised); box-shadow: var(--shadow-menu); }
+.row-actions-menu button { display: flex; align-items: center; gap: 9px; width: 100%; height: 36px; padding: 0 9px; border: 0; border-radius: 4px; background: transparent; color: var(--color-text); font-size: 13px; text-align: left; cursor: pointer; }
+.row-actions-menu button:hover, .row-actions-menu button:focus-visible { background: var(--color-control-soft); }
+.row-actions-menu button.danger { color: var(--color-danger); border-top: 1px solid var(--color-border-soft); border-radius: 0 0 4px 4px; }
 
-.credential-heading, .credential-meta, .credential-models, .credential-sort {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 24px;
-  min-width: 0;
-}
+.credential-panel { min-width: 0; }
+.credential-table .progress-cell { min-width: 0; }
+.credential-table .progress-cell small { overflow: hidden; text-overflow: ellipsis; }
 
-.credential-identity {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 12px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.credential-identity > strong, .credential-identity > a { font-size: 15px; }
-.credential-identity > .mono { font-size: 12px; }
-.credential-heading .table-actions { margin-left: auto; }
-.credential-meta { color: var(--color-text-soft); font-size: 13px; }
-.credential-meta > * { min-width: 0; overflow-wrap: anywhere; }
-.credential-meta > div { display: flex; align-items: center; gap: 8px; }
-.credential-meta .progress-cell { min-width: 120px; }
-.credential-meta .muted-cell { margin-right: 6px; }
-.credential-models { gap: 6px; font-size: 12px; }
-.credential-models > .muted-cell { margin-right: 6px; }
-.credential-model {
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-soft);
-  border-radius: 5px;
-  padding: 3px 7px;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-.credential-sort { padding: 0 10px 14px; font-size: 12px; }
-@media (max-width: 640px) {
-  .credential-heading { gap: 10px; }
-  .credential-identity { flex: 1 1 100%; }
-  .credential-meta { gap: 10px 16px; }
-  .credential-meta > * { flex: 1 1 100%; }
-  .credential-heading .table-actions { flex-wrap: wrap; }
+.credential-panel { container-type: inline-size; }
+.credential-table td > small { overflow: hidden; text-overflow: ellipsis; }
+.credential-table th { white-space: normal; }
+@container (max-width: 1100px) {
+  .credential-table th, .credential-table td { padding-left: 7px; padding-right: 7px; }
+  .credential-table td { font-size: 13px; }
+  .credential-table .row-actions-cell { padding-left: 4px; padding-right: 4px; }
+  .credential-table .credential-status-col { width: 68px; }
 }

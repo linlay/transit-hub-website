@@ -14,6 +14,8 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Actions for {name}": "{name}的操作",
+  "View {count} models": "查看 {count} 个模型",
   Duplicate: "复制新增",
   "{name} (copy)": "{name}（副本）",
   "Show all ({count})": "展开全部（{count}）",

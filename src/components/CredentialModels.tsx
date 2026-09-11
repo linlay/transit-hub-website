@@ -1,16 +1,21 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "../lib/i18n";
+import { ModalDialog } from "./ModalDialog";
 
 export function CredentialModels({ models }: { models: string[] }) {
   const { t } = useI18n();
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? models : models.slice(0, 4);
+  const [viewing, setViewing] = useState(false);
+  if (!models.length) return <span className="muted-cell">{t("No models allowed")}</span>;
   return (
-    <div className="credential-models">
-      <span className="muted-cell">{t("Models")}</span>
-      {visible.map((model) => <span className="credential-model" key={model}>{model}</span>)}
-      {!models.length ? <span className="muted-cell">{t("No models allowed")}</span> : null}
-      {models.length > 4 ? <button className="model-picker-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? t("Show less") : t("Show all ({count})", { count: models.length })}</button> : null}
+    <div className="credential-model-cell">
+      <span className="cell-ellipsis" title={models.join(", ")}>{models.join(", ")}</span>
+      <button className="cell-model-link" type="button" onClick={() => setViewing(true)}>{t("View {count} models", { count: models.length })}</button>
+      {viewing ? createPortal(
+        <ModalDialog title="Allowed models" onClose={() => setViewing(false)}>
+          <ul className="credential-model-list">{models.map((model) => <li key={model}>{model}</li>)}</ul>
+        </ModalDialog>, document.body,
+      ) : null}
     </div>
   );
 }

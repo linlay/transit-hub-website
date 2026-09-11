@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
+import { CredentialTime } from "../components/CredentialTime";
+import { RowActions } from "../components/RowActions";
 import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
@@ -13,7 +15,7 @@ import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import type { JWTGrant } from "../lib/types";
-import { compactTokenCount, dateTime, integer } from "../lib/format";
+import { compactTokenCount, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
@@ -176,7 +178,7 @@ export function JWTGrants() {
 
   return (
     <section className="page">
-      <section className="panel">
+      <section className="panel credential-panel">
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
@@ -188,29 +190,61 @@ export function JWTGrants() {
             <option value="disabled">{t("Disabled")}</option>
           </select>
         </div>
-        <div className="credential-list">
-          {(grants.data?.items ?? []).map((grant) => (
-            <article className="credential-item" key={grant.jti}>
-              <div className="credential-heading">
-                <div className="credential-identity"><strong>{grant.name}</strong><span className="mono muted-cell">{grant.jti}</span></div>
-                <StatusPill active={grant.status === "active"} label={grant.status === "active" ? "Active" : "Disabled"} />
-                <div className="table-actions">
-                  <button className="icon-text" onClick={() => openCreateDialog(grant)} type="button"><Copy size={16} />{t("Duplicate")}</button>
-                  <button className="icon-button" onClick={() => openViewDialog(grant)} aria-label={t("View JWT")} title={t("View JWT")} type="button"><Eye size={16} /></button>
-                  <button className="icon-button" onClick={() => openEditDialog(grant)} aria-label={t("Edit")} title={t("Edit")} type="button"><Edit size={16} /></button>
-                  <button className="icon-button danger" onClick={() => deleteGrant(grant)} aria-label={t("Delete")} title={t("Delete")} type="button"><Trash2 size={16} /></button>
-                </div>
-              </div>
-              <div className="credential-meta">
-                <span><span className="muted-cell">{t("Issued")}</span> {integer(grant.issued_count)} / {grant.issue_unlimited ? "∞" : integer(grant.issue_quota)}</span>
-                <span><span className="muted-cell">{t("Default limits")}</span> {t("{count} requests", { count: grant.request_quota || "∞" })} · {t("{count} tokens", { count: grant.token_quota ? compactTokenCount(grant.token_quota) : "∞" })} · {grant.rate_limits.length ? t("{count} windows", { count: grant.rate_limits.length }) : t("No windows")}</span>
-                <span><span className="muted-cell">{t("Expires")}</span> {dateTime(grant.expires_at)}</span>
-                <span><span className="muted-cell">{t("Last issued")}</span> {dateTime(grant.last_issued_at)}</span>
-              </div>
-              <CredentialModels models={grant.allowed_models} />
-            </article>
-          ))}
-          {!grants.data?.items?.length ? <p className="muted-cell">{t("No JWT grants found.")}</p> : null}
+        <div className="table-wrap credential-table-wrap">
+          <table className="credential-table grant-table">
+            <thead>
+              <tr>
+                <th className="credential-name-col">{t("Name")}</th>
+                <th className="credential-status-col">{t("Status")}</th>
+                <th className="credential-issued-col">{t("Issued")}</th>
+                <th className="credential-limits-col">{t("Default limits")}</th>
+                <th>{t("Models")}</th>
+                <th className="credential-date-col">{t("Expires")}</th>
+                <th className="credential-date-col">{t("Last issued")}</th>
+                <th className="row-actions-cell" aria-label={t("Actions")} />
+              </tr>
+            </thead>
+            <tbody>
+              {(grants.data?.items ?? []).map((grant) => (
+                <tr key={grant.jti}>
+                  <td>
+                    <strong className="cell-ellipsis" title={grant.name}>{grant.name}</strong>
+                    <small className="mono cell-ellipsis" title={grant.jti}>{grant.jti}</small>
+                  </td>
+                  <td>
+                    <StatusPill active={grant.status === "active"} label={grant.status === "active" ? "Active" : "Disabled"} />
+                  </td>
+                  <td>
+                    {integer(grant.issued_count)} / {grant.issue_unlimited ? "∞" : integer(grant.issue_quota)}
+                  </td>
+                  <td>
+                    <span>{t("{count} requests", { count: grant.request_quota ? integer(grant.request_quota) : "∞" })}</span>
+                    <small title={grant.token_quota ? integer(grant.token_quota) : "∞"}>
+                      {t("{count} tokens", { count: grant.token_quota ? compactTokenCount(grant.token_quota) : "∞" })} · {grant.rate_limits.length ? t("{count} windows", { count: grant.rate_limits.length }) : t("No windows")}
+                    </small>
+                  </td>
+                  <td><CredentialModels models={grant.allowed_models} /></td>
+                  <td><CredentialTime value={grant.expires_at} /></td>
+                  <td><CredentialTime value={grant.last_issued_at} /></td>
+                  <td className="row-actions-cell">
+                    <RowActions label={t("Actions for {name}", { name: grant.name })} items={[
+                      { label: t("View JWT"), icon: <Eye size={15} />, onSelect: () => openViewDialog(grant) },
+                      { label: t("Duplicate"), icon: <Copy size={15} />, onSelect: () => openCreateDialog(grant) },
+                      { label: t("Edit"), icon: <Edit size={15} />, onSelect: () => openEditDialog(grant) },
+                      { label: t("Delete"), icon: <Trash2 size={15} />, danger: true, onSelect: () => deleteGrant(grant) },
+                    ]} />
+                  </td>
+                </tr>
+              ))}
+              {!grants.data?.items?.length ? (
+                <tr>
+                  <td colSpan={8} className="muted-cell">
+                    {t("No JWT grants found.")}
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
 
