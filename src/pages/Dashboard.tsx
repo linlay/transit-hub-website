@@ -7,7 +7,7 @@ import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
 import { UsageChart } from "../components/UsageChart";
 import { api, isTelemetryError } from "../lib/api";
-import { compactNumber, compactTokenCount, integer, percent, formatCredits, percentValue } from "../lib/format";
+import { compactNumber, compactTokenCount, integer, percent, MICRO_PER_CREDIT, percentValue } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
@@ -54,7 +54,7 @@ export function Dashboard() {
           <>
             <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
             <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
-            <MetricCard label={t("Cost")} value={formatCredits(data?.total_cost_micro ?? 0)} detail={t("Recorded consumption")} />
+            <MetricCard label={t("Cost")} value={integer(Math.round((data?.total_cost_micro ?? 0) / MICRO_PER_CREDIT))} detail={t("Recorded consumption")} />
             <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
             <MetricCard
               label={t("Error rate (%)")}
@@ -90,11 +90,11 @@ export function Dashboard() {
       {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>{t("API Key activity")}</h2>
-            <span>{t("Unique API keys and average requests per key by {bucket}", { bucket: t(bucket) })}</span>
+            <h2>{t("Activity and spend")}</h2>
+            <span>{t("Active API keys and total Credits by {bucket}", { bucket: t(bucket) })}</span>
           </div>
         </div>
-        <UsageChart items={trafficItems} />
+        <UsageChart items={trafficItems} metric="credits" />
       </section> : null}
 
       <section className="panel">

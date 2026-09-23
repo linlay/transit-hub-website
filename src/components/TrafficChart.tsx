@@ -37,10 +37,10 @@ export function TrafficChart({ items }: TrafficChartProps) {
           <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
           <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
           <Tooltip
-            formatter={(value: number, name: string, item) => [
-              item.dataKey === "total_tokens" ? compactTokenCount(value) : integer(value),
-              name,
-            ]}
+            content={({ active, label }) => (
+              <TrafficTooltip active={active} item={items.find((item) => item.bucket === String(label))} />
+            )}
+            wrapperStyle={{ pointerEvents: "auto", zIndex: 10 }}
           />
           <Legend />
           {modelSeries.map((series) => (
@@ -64,6 +64,47 @@ export function TrafficChart({ items }: TrafficChartProps) {
           />
         </ComposedChart>
       </ResponsiveContainer>
+    </div>
+  );
+}
+
+function TrafficTooltip({ active, item }: { active?: boolean; item?: TrafficBucket }) {
+  const { t } = useI18n();
+  if (!active || !item) return null;
+
+  const models = [...(item.models ?? [])].sort((a, b) => b.requests - a.requests || a.model.localeCompare(b.model));
+
+  return (
+    <div className="traffic-tooltip">
+      <strong>{item.bucket}</strong>
+      <div className="traffic-tooltip-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>{t("Model")}</th>
+              <th>{t("Requests")}</th>
+              <th>{t("Tokens")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {models.map((model) => (
+              <tr key={model.model}>
+                <td>{model.model || t("Unknown model")}</td>
+                <td>{integer(model.requests)}</td>
+                <td>{integer(model.total_tokens)}</td>
+              </tr>
+            ))}
+            {!models.length ? <tr><td colSpan={3}>{t("Model breakdown unavailable")}</td></tr> : null}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>{t("Total")}</th>
+              <td>{integer(item.requests)}</td>
+              <td>{integer(item.total_tokens)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import vm from "node:vm";
+import ts from "typescript";
+
+const source = fs.readFileSync(new URL("../src/lib/trafficFilters.ts", import.meta.url), "utf8");
+const { outputText } = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS } });
+const context = { exports: {} };
+vm.runInNewContext(outputText, context);
+const { trafficTimeRange, trafficSelections } = context.exports;
+const now = Date.parse("2026-09-23T02:00:00Z");
+const plain = (value) => JSON.parse(JSON.stringify(value));
+assert.deepEqual(plain(trafficTimeRange("today", "", "", 480, now)), { from: "2026-09-22T16:00:00.000Z", to: "2026-09-23T02:00:00.000Z" });
+assert.deepEqual(plain(trafficTimeRange("yesterday", "", "", 480, now)), { from: "2026-09-21T16:00:00.000Z", to: "2026-09-22T16:00:00.000Z" });
+assert.equal(trafficTimeRange("7d", "", "", 480, now).from, "2026-09-16T16:00:00.000Z");
+assert.equal(trafficTimeRange("today", "", "", 0, now).from, "2026-09-23T00:00:00.000Z");
+assert.deepEqual(plain(trafficTimeRange("custom", "2026-09-01", "2026-09-01", 480, now)), { from: "2026-08-31T16:00:00.000Z", to: "2026-09-01T16:00:00.000Z" });
+assert.equal(trafficTimeRange("custom", "2026-02-30", "2026-03-01", 480, now), null);
+assert.equal(trafficTimeRange("custom", "2026-09-02", "2026-09-01", 480, now), null);
+assert.equal(trafficTimeRange("custom", "", "", 480, now), null);
+assert.deepEqual(plain(trafficSelections('["key-a","key-a",12,"model,comma",""]')), ["key-a", "model,comma", ""]);
+assert.deepEqual(plain(trafficSelections("broken")), []);
+assert.deepEqual(plain(trafficSelections("{}")), []);
+console.log("Traffic date boundaries, time zones and URL selections passed.");

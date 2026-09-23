@@ -185,3 +185,9 @@ podman compose ps
 额度和消费统一显示 Credits（1 元 = 100 Credits），价格页面按人民币配置并显示 Credits 等值。Key/JWT 创建与编辑支持总 Credits 额度及“不限”，窗口额度同样使用 Credits。Key 详情的生命周期累计消费独立于可清理的日志报表，允许显示负余额。价格支持文本缓存读写、图片尺寸/质量规则和显式免费。
 
 API 字段继续使用整数微元，不提交浮点 Credits。前后端需配套发布；Desktop 的后续接入契约位于 server 的 `docs/credits-api.md`。
+
+### Traffic 分析页
+
+`/traffic` 支持时间范围、API Key/模型搜索多选、Provider、请求结果和统计时区筛选，条件保存在 URL。六类图表展示调用趋势、活跃度和花费、模型/Key 排行、词元与缓存、请求质量；点击排行可继续筛选，匹配日志在独立弹框内分页。
+
+此页面依赖配套后端的 `/admin/traffic/analytics` 和增强的 `/admin/logs`，上线时先更新后端。统计基于保留日志，默认最近 7 天、UTC+8，Credits 汇总显示整数。日期边界和 URL 筛选测试：`node scripts/traffic-filters.test.mjs`。

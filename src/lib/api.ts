@@ -19,6 +19,7 @@ import type {
   RateLimitUsage,
   RequestLog,
   TrafficBucket,
+  TrafficAnalytics,
 } from "./types";
 import { API_BASE_URL } from "./env";
 
@@ -131,6 +132,8 @@ export const api = {
     request<ListResponse<RequestLog>>(`/admin/api-keys/${id}/logs`, { query }),
   apiKeySessions: (id: string, query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<APISession>>(`/admin/api-keys/${id}/sessions`, { query }),
+  trafficAnalytics: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<TrafficAnalytics>("/admin/traffic/analytics", { query }),
   traffic: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<TrafficBucket>>("/admin/traffic", { query }),
   logs: (query?: Record<string, string | number | boolean | undefined>) =>

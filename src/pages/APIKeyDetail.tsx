@@ -1,9 +1,8 @@
-import { formatCredits, MICRO_PER_CREDIT } from "../lib/format";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { creditAmount, MICRO_PER_CREDIT } from "../lib/format";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Save, Trash2 } from "lucide-react";
+import { Ban, FileText, Save, Trash2, X } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
@@ -12,8 +11,9 @@ import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { TrafficChart } from "../components/TrafficChart";
 import { api, isTelemetryError } from "../lib/api";
-import { compactNumber, compactTokenCount, dateTime, integer, nullablePercent, quotaRatio } from "../lib/format";
+import { compactTokenCount, dateTime, integer, nullablePercent, quotaRatio } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { RateLimitUsage } from "../lib/types";
@@ -24,6 +24,7 @@ export function APIKeyDetail() {
   const navigate = useNavigate();
   const { hash } = useLocation();
   const queryClient = useQueryClient();
+  const [logsOpen, setLogsOpen] = useState(false);
   const [bucket, setBucket] = useState("day");
   const [range, setRange] = useState("14d");
   const [modelError, setModelError] = useState("");
@@ -46,7 +47,7 @@ export function APIKeyDetail() {
   const logs = useQuery({
     queryKey: ["api-key-logs", id],
     queryFn: () => api.apiKeyLogs(id, { limit: 50 }),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && logsOpen,
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const update = useMutation({
@@ -83,8 +84,7 @@ export function APIKeyDetail() {
   const telemetryUnavailable =
     Boolean(usage.data?.degraded_components?.includes("telemetry")) ||
     isTelemetryError(timeline.error) ||
-    isTelemetryError(sessions.error) ||
-    isTelemetryError(logs.error);
+    isTelemetryError(sessions.error);
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
   const isRefreshing = detail.isFetching || providers.isFetching || usage.isFetching || timeline.isFetching || sessions.isFetching || logs.isFetching;
 
@@ -111,12 +111,13 @@ export function APIKeyDetail() {
   }
 
   function refreshDetail() {
-    return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), logs.refetch()]);
+    return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), ...(logsOpen ? [logs.refetch()] : [])]);
   }
 
   usePageActions(<RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} />, [
     id,
     isRefreshing,
+    logsOpen,
     detail.refetch,
     providers.refetch,
     usage.refetch,
@@ -129,9 +130,9 @@ export function APIKeyDetail() {
     <section className="page">
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       <div className="credits-summary-grid">
-        <MetricCard label={t("Total Credits")} value={key?.cost_quota_micro ? formatCredits(key.cost_quota_micro) : "∞"} detail={t("Lifetime")} />
-        <MetricCard label={t("Credits used")} value={formatCredits(key?.used_cost_micro ?? 0)} detail={t("Since Credits enabled")} />
-        <MetricCard label={t("Credits remaining")} value={key?.cost_quota_micro ? formatCredits(key.cost_quota_micro - (key.used_cost_micro ?? 0)) : "∞"} detail={t("Negative balance means overage")} />
+        <MetricCard label={t("Total Credits")} value={key?.cost_quota_micro ? creditAmount(key.cost_quota_micro) : "∞"} detail={t("Lifetime")} />
+        <MetricCard label={t("Credits used")} value={creditAmount(key?.used_cost_micro ?? 0)} detail={t("Since Credits enabled")} />
+        <MetricCard label={t("Credits remaining")} value={key?.cost_quota_micro ? creditAmount(key.cost_quota_micro - (key.used_cost_micro ?? 0)) : "∞"} detail={t("Negative balance means overage")} />
       </div>
       {!telemetryUnavailable ? <div className="usage-summary-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
@@ -144,7 +145,10 @@ export function APIKeyDetail() {
 
       {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
-          <h2>{t("Traffic")}</h2>
+          <div>
+            <h2>{t("Traffic")}</h2>
+            <span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span>
+          </div>
           <div className="panel-actions">
             <select value={range} onChange={(event) => setRange(event.target.value)}>
               <option value="7d">{t("7 days")}</option>
@@ -159,19 +163,7 @@ export function APIKeyDetail() {
             </select>
           </div>
         </div>
-        <div className="chart compact">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={timeline.data?.items ?? []}>
-              <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="requests" tickFormatter={compactNumber} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(value: number, name: string) => [name === "total_tokens" ? compactTokenCount(value) : integer(value), name === "total_tokens" ? t("Tokens") : t("Requests")]} />
-              <Legend formatter={(value) => (value === "total_tokens" ? t("Tokens") : t("Requests"))} />
-              <Bar yAxisId="requests" dataKey="requests" fill="#0a84ff" radius={[6, 6, 0, 0]} />
-              <Line yAxisId="tokens" type="monotone" dataKey="total_tokens" stroke="#12b76a" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        <TrafficChart items={timeline.data?.items ?? []} />
         <div className="table-wrap">
           <table>
             <thead>
@@ -198,7 +190,7 @@ export function APIKeyDetail() {
                   <td title={integer(item.cache_hit_tokens)}>{compactTokenCount(item.cache_hit_tokens)}</td>
                   <td title={integer(item.cache_miss_tokens)}>{compactTokenCount(item.cache_miss_tokens)}</td>
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
-                  <td>{formatCredits(item.cost_micro)}</td>
+                  <td>{creditAmount(item.cost_micro)}</td>
                 </tr>
               ))}
               {!timeline.data?.items?.length ? (
@@ -248,42 +240,49 @@ export function APIKeyDetail() {
         </div>
       </section> : null}
 
-      {!telemetryUnavailable ? <section className="panel">
-        <div className="panel-heading">
-          <h2>{t("Logs")}</h2>
-          <span>{t("Most recent requests")}</span>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{t("Time")}</th>
-                <th>{t("Model")}</th>
-                <th>{t("Status")}</th>
-                <th>{t("Device")}</th>
-                <th>{t("Provider")}</th>
-                <th>{t("Tokens")}</th>
-                <th>{t("Cache")}</th>
-                <th>{t("Cost")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(logs.data?.items ?? []).map((log) => (
-                <tr key={log.id}>
-                  <td>{dateTime(log.created_at)}</td>
-                  <td>{log.public_model}</td>
-                  <td>{log.status_code}</td>
-                  <td>{log.device_id || t("none")}</td>
-                  <td>{log.provider || t("none")}</td>
-                  <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
-                  <td>{nullablePercent(log.cache_hit_rate)}</td>
-                  <td title={JSON.stringify(log.price_snapshot ?? {})}>{formatCredits(log.cost_micro)}<small>{log.billing_status ?? "legacy"}</small></td>
+      {logsOpen ? (
+        <APIKeyLogsDialog onClose={() => setLogsOpen(false)}>
+          <div className="panel-actions">
+            <span>{t("Most recent requests")}</span>
+            <RefreshButton isRefreshing={logs.isFetching} onClick={() => logs.refetch()} />
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t("Time")}</th>
+                  <th>{t("Model")}</th>
+                  <th>{t("Status")}</th>
+                  <th>{t("Device")}</th>
+                  <th>{t("Provider")}</th>
+                  <th>{t("Tokens")}</th>
+                  <th>{t("Cache")}</th>
+                  <th>{t("Cost")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section> : null}
+              </thead>
+              <tbody>
+                {logs.isPending || logs.error || !logs.data?.items?.length ? (
+                  <tr><td colSpan={8} className={logs.error ? "error-text" : "muted-cell"}>
+                    {logs.isPending ? t("Loading logs...") : logs.error ? t("Unable to load logs") : t("No requests yet.")}
+                  </td></tr>
+                ) : null}
+                {(logs.data?.items ?? []).map((log) => (
+                  <tr key={log.id}>
+                    <td>{dateTime(log.created_at)}</td>
+                    <td>{log.public_model}</td>
+                    <td>{log.status_code}</td>
+                    <td>{log.device_id || t("none")}</td>
+                    <td>{log.provider || t("none")}</td>
+                    <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
+                    <td>{nullablePercent(log.cache_hit_rate)}</td>
+                    <td title={JSON.stringify(log.price_snapshot ?? {})}>{creditAmount(log.cost_micro)}<small>{log.billing_status ?? "legacy"}</small></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </APIKeyLogsDialog>
+      ) : null}
 
       {key ? (
         <section className="panel">
@@ -293,6 +292,10 @@ export function APIKeyDetail() {
               <span className="eyebrow">{t("Settings")}</span>
             </div>
             <div className="panel-actions">
+              <button className="icon-text" onClick={() => setLogsOpen(true)} type="button">
+                <FileText size={16} />
+                {t("View logs")}
+              </button>
               <StatusPill active={key.status === "active"} label={key.status === "active" ? "Active" : "Disabled"} />
               {key.status === "active" ? (
                 <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm(t("Inactive this key?")) && inactive.mutate()} type="button">
@@ -396,7 +399,7 @@ function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
               <tr key={item.window}>
                 <td>{t(windowLabel(item.window))}</td>
                 <td>
-                  <span>{item.cost_quota_micro ? formatCredits(item.cost_remaining_micro) : "∞"} {t("remaining")}</span><LimitProgress value={quotaRatio(item.cost_micro, item.cost_quota_micro)} label={`${formatCredits(item.cost_micro)} / ${item.cost_quota_micro ? formatCredits(item.cost_quota_micro) : "∞"}`} />
+                  <span>{item.cost_quota_micro ? creditAmount(item.cost_remaining_micro) : "∞"} {t("remaining")}</span><LimitProgress value={quotaRatio(item.cost_micro, item.cost_quota_micro)} label={`${creditAmount(item.cost_micro)} / ${item.cost_quota_micro ? creditAmount(item.cost_quota_micro) : "∞"}`} />
                 </td>
                 <td>
                   <LimitProgress value={quotaRatio(item.requests, item.request_quota)} label={`${integer(item.requests)} / ${quotaLabel(item.request_quota)}`} />
@@ -448,4 +451,32 @@ function windowLabel(window: string) {
     default:
       return window;
   }
+}
+
+function APIKeyLogsDialog({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+  const { t } = useI18n();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog?.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  return (
+    <dialog ref={dialogRef} className="api-key-logs-dialog" aria-labelledby="api-key-logs-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
+      <div className="dialog-header">
+        <h2 id="api-key-logs-title">{t("Logs")}</h2>
+        <button autoFocus aria-label={t("Close dialog")} className="icon-button" onClick={onClose} type="button">
+          <X size={16} />
+        </button>
+      </div>
+      {children}
+    </dialog>
+  );
 }

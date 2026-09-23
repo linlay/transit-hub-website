@@ -363,3 +363,20 @@ export type APIKeyBatchResult = {
   matched: number;
   updated: number;
 };
+
+export type TrafficRanking = {
+  id: string;
+  name: string;
+  requests: number;
+  total_tokens: number;
+  cost_micro: number;
+};
+
+export type TrafficOption = { id: string; name: string };
+export type TrafficAnalytics = {
+  items: TrafficBucket[];
+  summary: TrafficBucket;
+  models: TrafficRanking[];
+  keys: TrafficRanking[];
+  options: { keys: TrafficOption[]; models: TrafficOption[]; providers: TrafficOption[] };
+};

@@ -1,94 +1,106 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
+import { MetricCard } from "../components/MetricCard";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
 import { UsageChart } from "../components/UsageChart";
+import { TrafficMetricsChart, TrafficRankingChart } from "../components/TrafficAnalyticsCharts";
+import { TrafficFilterSelect } from "../components/TrafficFilterSelect";
+import { TrafficLogsDialog } from "../components/TrafficLogsDialog";
 import { api, isTelemetryError } from "../lib/api";
-import { compactTokenCount, dateTime, integer, formatCredits } from "../lib/format";
+import { integer, MICRO_PER_CREDIT } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
-import type { TrafficBucketName } from "../lib/types";
+import type { TrafficAnalytics } from "../lib/types";
+import { trafficSelections, trafficTimeRange } from "../lib/trafficFilters";
 
 export function Traffic() {
-  const { t } = useI18n();
-  const [bucket, setBucket] = useState<TrafficBucketName>("day");
-  const traffic = useQuery({ queryKey: ["traffic", bucket], queryFn: () => api.traffic({ bucket }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
-  const logs = useQuery({ queryKey: ["logs"], queryFn: () => api.logs({ limit: 100 }), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
-  const telemetryUnavailable = isTelemetryError(traffic.error) || isTelemetryError(logs.error);
-  const isRefreshing = traffic.isFetching || logs.isFetching;
+  const { t, locale } = useI18n();
+  const [params, setParams] = useSearchParams();
+  const [now, setNow] = useState(Date.now);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const range = ["today", "yesterday", "7d", "30d", "custom"].includes(params.get("range") ?? "") ? params.get("range")! : "7d";
+  const bucket = ["hour", "day", "month"].includes(params.get("bucket") ?? "") ? params.get("bucket")! : "day";
+  const offset = params.get("timezone") === "UTC" ? 0 : 480;
+  const timezone = offset === 0 ? "UTC" : "Asia/Shanghai";
+  const keys = trafficSelections(params.get("keys"));
+  const models = trafficSelections(params.get("models"));
+  const provider = params.get("provider") ?? "";
+  const status = ["success", "failed"].includes(params.get("status") ?? "") ? params.get("status")! : "";
+  const from = params.get("from") ?? "";
+  const to = params.get("to") ?? "";
+  const dates = trafficTimeRange(range, from, to, offset, now);
+  const query = { ...dates, bucket, timezone_offset: offset, exclusive_end: true, api_key_ids: JSON.stringify(keys), models: JSON.stringify(models), provider, status };
+  const analytics = useQuery({ queryKey: ["traffic-analytics", query], queryFn: () => api.trafficAnalytics(query), enabled: Boolean(dates), refetchInterval: range === "today" || range === "7d" || range === "30d" ? false : PAGE_REFETCH_INTERVAL_MS });
+  const data = analytics.data;
+  const [cachedOptions, setCachedOptions] = useState<TrafficAnalytics["options"]>({ keys: [], models: [], providers: [] });
+  useEffect(() => { if (data) setCachedOptions(data.options); }, [data]);
+  const options = data?.options ?? cachedOptions;
+  useEffect(() => {
+    if (!["today", "7d", "30d"].includes(range) || logsOpen) return;
+    const timer = window.setInterval(() => setNow(Date.now()), PAGE_REFETCH_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [range, logsOpen]);
+  const summary = data?.summary;
+  const items = data?.items ?? [];
 
-  usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([traffic.refetch(), logs.refetch()])} />, [isRefreshing, traffic.refetch, logs.refetch]);
+  function change(values: Record<string, string | undefined>) {
+    const next = new URLSearchParams(params);
+    for (const [key, value] of Object.entries(values)) {
+      if (value === undefined || value === "" || value === "[]") next.delete(key); else next.set(key, value);
+    }
+    setParams(next);
+    setNow(Date.now());
+  }
+  function select(field: "keys" | "models", values: string[]) { change({ [field]: JSON.stringify(values) }); }
+  function refresh() {
+    if (range === "today" || range === "7d" || range === "30d") setNow(Date.now());
+    else return analytics.refetch();
+  }
+  usePageActions(<RefreshButton disabled={!dates} isRefreshing={analytics.isFetching} onClick={refresh} />, [dates?.from, dates?.to, analytics.isFetching, range, analytics.refetch]);
 
-  return (
-    <section className="page">
-      {telemetryUnavailable ? <TelemetryUnavailable /> : null}
-      {!telemetryUnavailable ? (
-      <>
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>{t("Traffic")}</h2>
-            <span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span>
-          </div>
-          <div className="panel-actions">
-            <select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
-              <option value="day">{t("Daily")}</option>
-              <option value="hour">{t("Hourly")}</option>
-              <option value="month">{t("Monthly")}</option>
-            </select>
-          </div>
-        </div>
-        <TrafficChart items={traffic.data?.items ?? []} />
-      </section>
-      <section className="panel">
-        <div className="panel-heading">
-          <div>
-            <h2>{t("API Key activity")}</h2>
-            <span>{t("Unique API keys and average requests per key by {bucket}", { bucket: t(bucket) })}</span>
-          </div>
-        </div>
-        <UsageChart items={traffic.data?.items ?? []} />
-      </section>
-      <section className="panel">
-        <div className="panel-heading">
-          <h2>{t("Request logs")}</h2>
-          <span>{t("Latest gateway activity")}</span>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{t("Time")}</th>
-                <th>{t("Key")}</th>
-                <th>{t("Model")}</th>
-                <th>{t("Provider")}</th>
-                <th>{t("Status")}</th>
-                <th>{t("Latency")}</th>
-                <th>{t("Tokens")}</th>
-                <th>{t("Cost")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(logs.data?.items ?? []).map((log) => (
-                <tr key={log.id}>
-                  <td>{dateTime(log.created_at)}</td>
-                  <td>{log.api_key_name}</td>
-                  <td>{log.public_model}</td>
-                  <td>{log.provider}</td>
-                  <td>{log.status_code}</td>
-                  <td>{integer(log.latency_ms)} ms</td>
-                  <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
-                  <td title={JSON.stringify(log.price_snapshot ?? {})}>{formatCredits(log.cost_micro)}<small>{log.billing_status ?? "legacy"}</small></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      </>
-      ) : null}
+  return <section className="page traffic-page">
+    <section className="panel traffic-filters">
+      <div className="panel-heading"><div><h2>{t("Traffic analysis")}</h2><span>{t("All charts follow the filters below")}</span></div><button type="button" className="icon-text" onClick={() => { setParams({}); setNow(Date.now()); }}>{t("Reset")}</button></div>
+      <div className="traffic-filter-grid">
+        <label>{t("Time range")}<select value={range} onChange={(e) => change({ range: e.target.value })}>
+          <option value="today">{t("Today")}</option><option value="yesterday">{t("Yesterday")}</option><option value="7d">{t("Last 7 days")}</option><option value="30d">{t("Last 30 days")}</option><option value="custom">{t("Custom dates")}</option>
+        </select></label>
+        <div><span className="traffic-filter-label">{t("API keys")}</span><TrafficFilterSelect label="API keys" options={options.keys} values={keys} onChange={(values) => select("keys", values)} /></div>
+        <div><span className="traffic-filter-label">{t("Models")}</span><TrafficFilterSelect label="Models" options={options.models} values={models} onChange={(values) => select("models", values)} /></div>
+        <label>{t("Granularity")}<select value={bucket} onChange={(e) => change({ bucket: e.target.value })}><option value="hour">{t("Hourly")}</option><option value="day">{t("Daily")}</option><option value="month">{t("Monthly")}</option></select></label>
+        <label>{t("Time zone")}<select value={timezone} onChange={(e) => change({ timezone: e.target.value })}><option value="Asia/Shanghai">UTC+8 · {t("Beijing time")}</option><option value="UTC">UTC</option></select></label>
+      </div>
+      {range === "custom" ? <div className="traffic-custom-dates"><label>{t("Start date")}<input type="date" value={from} onChange={(e) => change({ from: e.target.value })} /></label><label>{t("End date (inclusive)")}<input type="date" value={to} min={from} onChange={(e) => change({ to: e.target.value })} /></label></div> : null}
+      <details className="traffic-advanced" open={provider || status ? true : undefined}>
+        <summary>{t("Advanced filters")}</summary>
+        <div className="traffic-custom-dates"><label>{t("Provider")}<select value={provider} onChange={(e) => change({ provider: e.target.value })}><option value="">{t("All")}</option>{options.providers.filter((item) => item.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}{provider && !options.providers.some((item) => item.id === provider) ? <option value={provider}>{provider}</option> : null}</select></label><label>{t("Request result")}<select value={status} onChange={(e) => change({ status: e.target.value })}><option value="">{t("All")}</option><option value="success">{t("Successful")}</option><option value="failed">{t("Failed")}</option></select></label></div>
+      </details>
+      {keys.length || models.length ? <div className="traffic-selected">{keys.map((id) => <button className="icon-text" type="button" key={`key-${id}`} onClick={() => select("keys", keys.filter((value) => value !== id))}>{t("Key")}: {options.keys.find((option) => option.id === id)?.name || id || t("Unknown")} ×</button>)}{models.map((id) => <button className="icon-text" type="button" key={`model-${id}`} onClick={() => select("models", models.filter((value) => value !== id))}>{t("Model")}: {id || t("Unknown")} ×</button>)}</div> : null}
+      <p className="traffic-note">{t("Based on retained request logs; bucketed by completion time.")}</p>
     </section>
-  );
+    {!dates ? <div className="form-error" role="alert">{t("Choose a valid start and end date")}</div> : analytics.isPending ? <section className="panel" role="status">{t("Loading analytics...")}</section> : analytics.error ? isTelemetryError(analytics.error) ? <TelemetryUnavailable /> : <div className="form-error" role="alert">{t("Unable to load analytics")}</div> : <>
+      <div className="metrics-grid">
+        <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} />
+        <MetricCard label={t("Tokens")} value={integer(summary?.total_tokens ?? 0)} />
+        <MetricCard label={t("Spend (Credits)")} value={integer(Math.round((summary?.cost_micro ?? 0) / MICRO_PER_CREDIT))} />
+        <MetricCard label={t("Active API keys")} value={integer(summary?.unique_api_keys ?? 0)} detail={t("Distinct across selected range")} />
+        <MetricCard label={t("Failure rate")} value={new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(summary?.requests ? summary.error_requests / summary.requests : 0)} />
+        <MetricCard label={t("Average latency (ms)")} value={integer(Math.round(summary?.average_latency_ms ?? 0))} />
+      </div>
+      <div className="traffic-results-toolbar"><span>{t("Filtered results")} · {timezone}</span><button className="icon-text" type="button" onClick={() => setLogsOpen(true)}>{t("View matching requests")}</button></div>
+      {!items.length ? <section className="panel">{t("No requests match these filters")}</section> : <div className="traffic-charts-grid">
+        <section className="panel"><div className="panel-heading"><div><h2>{t("Call trend")}</h2><span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span></div></div><TrafficChart items={items} /></section>
+        <section className="panel"><div className="panel-heading"><h2>{t("Activity and spend")}</h2></div><UsageChart items={items} metric="credits" /></section>
+        <TrafficRankingChart title="Model ranking" rows={data?.models ?? []} onSelect={(id) => select("models", [id])} />
+        {keys.length !== 1 ? <TrafficRankingChart title="API Key ranking" rows={data?.keys ?? []} onSelect={(id) => select("keys", [id])} /> : null}
+        <TrafficMetricsChart items={items} kind="tokens" />
+        <TrafficMetricsChart items={items} kind="quality" />
+      </div>}
+    </>}
+    {logsOpen && dates ? <TrafficLogsDialog key={JSON.stringify(query)} query={query} timezone={timezone} onClose={() => setLogsOpen(false)} /> : null}
+  </section>;
 }

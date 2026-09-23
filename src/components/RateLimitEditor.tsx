@@ -50,9 +50,9 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
               <input checked={checked} name={`${name}_${window.value}_enabled`} onChange={(event) => toggle(window.value, event.target.checked)} type="checkbox" />
               {t(window.label)}
             </label>
-            <input defaultValue={currencyValue(limit?.cost_quota_micro)} disabled={!checked} min="0" name={`${name}_${window.value}_cost_quota`} placeholder="∞" step="1" type="number" />
-            <input defaultValue={positiveValue(limit?.request_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_request_quota`} placeholder="∞" type="number" />
-            <input defaultValue={positiveValue(limit?.token_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_token_quota`} placeholder="∞" type="number" />
+            <input defaultValue={currencyValue(limit?.cost_quota_micro)} disabled={!checked} min="0" name={`${name}_${window.value}_cost_quota`} aria-label={`${t(window.label)} · ${t("Credits")}`} placeholder="∞" step="1" type="number" />
+            <input defaultValue={positiveValue(limit?.request_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_request_quota`} aria-label={`${t(window.label)} · ${t("Requests")}`} placeholder="∞" type="number" />
+            <input defaultValue={positiveValue(limit?.token_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_token_quota`} aria-label={`${t(window.label)} · ${t("Tokens")}`} placeholder="∞" type="number" />
           </div>
         );
       })}

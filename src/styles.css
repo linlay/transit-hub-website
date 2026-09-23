@@ -743,7 +743,7 @@ td small {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.settings-form label,
+.settings-form label:not(.mini-check):not(.model-option),
 .login-panel label,
 .quota-input > label {
   display: grid;
@@ -839,18 +839,21 @@ td small {
 
 .quota-input input[type="number"] {
   width: 100%;
+  min-width: 0;
 }
 
 .rate-limit-editor {
   display: grid;
   gap: 8px;
   min-width: 0;
+  overflow-x: auto;
 }
 
 .rate-limit-header,
 .rate-limit-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) repeat(3, minmax(96px, 1fr));
+  grid-template-columns: minmax(110px, 1fr) repeat(3, minmax(96px, 1fr));
+  min-width: 440px;
   gap: 8px;
   align-items: center;
 }
@@ -863,6 +866,7 @@ td small {
 }
 
 .rate-limit-row input[type="number"] {
+  min-width: 0;
   width: 100%;
 }
 
@@ -878,8 +882,11 @@ td small {
 }
 
 .mini-check input {
+  padding: 0;
   width: 16px;
   height: 16px;
+  margin: 0;
+  flex: 0 0 16px;
 }
 
 .table-edit {
@@ -1783,8 +1790,6 @@ td small {
   .settings-grid.two,
   .settings-grid.three,
   .settings-grid.four,
-  .rate-limit-header,
-  .rate-limit-row,
   .provider-metrics,
   .provider-grid,
   .connectivity-target {
@@ -2021,3 +2026,118 @@ td small {
 .key-usage-detail { cursor: help; text-decoration: underline dotted var(--color-border-control); text-underline-offset: 3px; }
 .key-usage-detail:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 #api-key-settings { scroll-margin-top: 64px; }
+
+/* Keep request history outside the settings page's layout. */
+.api-key-logs-dialog {
+  width: min(1120px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-dialog);
+  overflow: hidden;
+}
+
+.api-key-logs-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.api-key-logs-dialog::backdrop {
+  background: var(--overlay-dialog);
+}
+
+.api-key-logs-dialog .dialog-header {
+  flex-shrink: 0;
+}
+
+.api-key-logs-dialog .table-wrap {
+  min-height: 0;
+  overflow: auto;
+}
+
+.api-key-logs-dialog td {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.traffic-tooltip {
+  max-width: min(560px, calc(100vw - 40px));
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-panel);
+}
+
+.traffic-tooltip-scroll {
+  max-height: 320px;
+  overflow: auto;
+  margin-top: 8px;
+}
+
+.traffic-tooltip th,
+.traffic-tooltip td {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.traffic-tooltip th:first-child,
+.traffic-tooltip td:first-child {
+  min-width: 100px;
+  max-width: 260px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.traffic-tooltip th:not(:first-child),
+.traffic-tooltip td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.traffic-tooltip tfoot {
+  font-weight: 700;
+}
+
+.traffic-filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(2, minmax(120px, .7fr)); gap: 12px; }
+.traffic-filter-grid > label, .traffic-custom-dates label { display: grid; gap: 6px; font-size: 13px; color: var(--color-text-strong-muted); }
+.traffic-filter-grid select { width: 100%; min-width: 0; }
+.traffic-filter-label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--color-text-strong-muted); }
+.traffic-filter-select { position: relative; }
+.traffic-filter-select > summary { cursor: pointer; min-height: 38px; border: 1px solid var(--color-border-control); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+.traffic-filter-popover { position: absolute; top: calc(100% + 6px); left: 0; z-index: 15; width: min(360px, calc(100vw - 64px)); display: grid; gap: 8px; padding: 12px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: var(--shadow-panel); }
+.traffic-filter-popover > input { width: 100%; min-width: 0; }
+.traffic-filter-options { max-height: 250px; overflow-y: auto; }
+.traffic-filter-options .mini-check { display: flex; white-space: normal; padding: 6px 0; align-items: flex-start; }
+.traffic-filter-options input { margin-top: 2px; }
+.traffic-filter-options span { min-width: 0; overflow-wrap: anywhere; }
+.traffic-filter-options small { display: block; color: var(--color-text-muted); font-size: 11px; }
+.traffic-custom-dates { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.traffic-advanced { margin-top: 14px; }
+.traffic-advanced > summary { cursor: pointer; font-size: 13px; }
+.traffic-selected { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.traffic-selected button { max-width: 100%; overflow-wrap: anywhere; }
+.traffic-note { margin: 12px 0 0; color: var(--color-text-muted); font-size: 12px; }
+.traffic-results-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.traffic-charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.traffic-charts-grid > .panel { min-width: 0; }
+.traffic-ranking { height: 320px; overflow-y: auto; }
+.traffic-ranking-row { display: grid; grid-template-columns: minmax(90px, 1.2fr) minmax(40px, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 12px 4px; text-align: left; border-bottom: 1px solid var(--color-border-soft); background: transparent; color: var(--color-text); }
+.traffic-ranking-row:hover { background: var(--color-control-soft); }
+.traffic-ranking-row:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.traffic-ranking-name { overflow-wrap: anywhere; font-size: 13px; }
+.traffic-ranking-row strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+.traffic-ranking-bar { height: 12px; border-radius: 4px; background: var(--color-control-soft); overflow: hidden; }
+.traffic-ranking-bar > span { display: block; height: 100%; background: #0a84ff; }
+@media (max-width: 1200px) { .traffic-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .traffic-charts-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .traffic-filter-grid { grid-template-columns: minmax(0, 1fr); } .traffic-custom-dates > label { width: 100%; } .traffic-filter-popover { width: 100%; } }
+
+.traffic-page .metrics-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.traffic-page .metric-value { overflow-wrap: anywhere; }
