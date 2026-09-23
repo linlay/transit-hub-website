@@ -8,7 +8,7 @@ import { ModalDialog } from "../components/ModalDialog";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { api, isTelemetryError } from "../lib/api";
-import { compactTokenCount, dateTime, integer, nullablePercent, formatCurrency } from "../lib/format";
+import { compactTokenCount, dateTime, integer, nullablePercent, formatCredits } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
@@ -153,7 +153,7 @@ export function Providers() {
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
                   <td>{integer(item.error_requests)}</td>
                   <td>{integer(item.average_latency_ms)} ms</td>
-                  <td>{formatCurrency(item.cost_micro)}</td>
+                  <td>{formatCredits(item.cost_micro)}</td>
                 </tr>
               ))}
               {!usage.data?.items?.length ? (
@@ -369,7 +369,7 @@ function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
       <MetricCard label={t("Requests")} value={integer(usage.requests)} detail={t("{count} failed", { count: integer(usage.error_requests) })} />
       <MetricCard label={t("Tokens")} value={compactTokenCount(usage.total_tokens)} detail={t("{count} input", { count: compactTokenCount(usage.request_tokens) })} />
       <MetricCard label={t("Cache hit")} value={nullablePercent(usage.cache_hit_rate)} detail={t("{count} cache tokens", { count: compactTokenCount(usage.cache_total_tokens) })} />
-      <MetricCard label={t("Cost")} value={formatCurrency(usage.cost_micro)} detail={t("{count} ms avg", { count: integer(usage.average_latency_ms) })} />
+      <MetricCard label={t("Cost")} value={formatCredits(usage.cost_micro)} detail={t("{count} ms avg", { count: integer(usage.average_latency_ms) })} />
     </div>
   );
 }

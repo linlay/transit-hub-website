@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import vm from "node:vm";
+import ts from "typescript";
+
+const source = fs.readFileSync(new URL("../src/lib/format.ts", import.meta.url), "utf8");
+const { outputText } = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS } });
+const context = { exports: {}, Intl, BigInt, Number, String };
+vm.runInNewContext(outputText, context);
+const { decimalToMicro, formatCredits } = context.exports;
+assert.equal(decimalToMicro("0.000001"), 1);
+assert.equal(decimalToMicro("0.0023"), 2300);
+assert.equal(decimalToMicro("10000", 10000), 100000000);
+assert.equal(decimalToMicro("0.0001", 10000), 1);
+assert.equal(decimalToMicro("9007199254.740991"), Number.MAX_SAFE_INTEGER);
+assert.throws(() => decimalToMicro("9007199254.740992"));
+assert.throws(() => decimalToMicro("-1"));
+assert.throws(() => decimalToMicro("0.0000001"));
+assert.equal(formatCredits(2300), "0.23 Credits");
+assert.equal(formatCredits(-2300), "-0.23 Credits");
+console.log("Credits precision and negative-balance formatting passed.");

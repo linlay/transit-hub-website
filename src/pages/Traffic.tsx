@@ -6,7 +6,7 @@ import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
 import { UsageChart } from "../components/UsageChart";
 import { api, isTelemetryError } from "../lib/api";
-import { compactTokenCount, dateTime, integer, formatCurrency } from "../lib/format";
+import { compactTokenCount, dateTime, integer, formatCredits } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
@@ -80,7 +80,7 @@ export function Traffic() {
                   <td>{log.status_code}</td>
                   <td>{integer(log.latency_ms)} ms</td>
                   <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
-                  <td>{formatCurrency(log.cost_micro)}</td>
+                  <td title={JSON.stringify(log.price_snapshot ?? {})}>{formatCredits(log.cost_micro)}<small>{log.billing_status ?? "legacy"}</small></td>
                 </tr>
               ))}
             </tbody>

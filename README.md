@@ -179,3 +179,9 @@ podman compose ps
 - 宿主机 80 端口冲突：修改 website `compose.yml` 的 `ports` 映射，或交给外部反代接入。
 - Cookie 无法保持登录：检查访问域名、HTTPS、`COOKIE_SECURE` 和后端 CORS 配置是否匹配。
 # tunnel-hub-website
+
+## Credits 管理
+
+额度和消费统一显示 Credits（1 元 = 100 Credits），价格页面按人民币配置并显示 Credits 等值。Key/JWT 创建与编辑支持总 Credits 额度及“不限”，窗口额度同样使用 Credits。Key 详情的生命周期累计消费独立于可清理的日志报表，允许显示负余额。价格支持文本缓存读写、图片尺寸/质量规则和显式免费。
+
+API 字段继续使用整数微元，不提交浮点 Credits。前后端需配套发布；Desktop 的后续接入契约位于 server 的 `docs/credits-api.md`。

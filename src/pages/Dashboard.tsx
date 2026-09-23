@@ -7,7 +7,7 @@ import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
 import { UsageChart } from "../components/UsageChart";
 import { api, isTelemetryError } from "../lib/api";
-import { compactNumber, compactTokenCount, integer, percent, currencyIntegerValue, percentValue } from "../lib/format";
+import { compactNumber, compactTokenCount, integer, percent, formatCredits, percentValue } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
@@ -54,7 +54,7 @@ export function Dashboard() {
           <>
             <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
             <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
-            <MetricCard label={t("Cost")} value={currencyIntegerValue(data?.total_cost_micro ?? 0)} detail={t("Estimated (CNY)")} />
+            <MetricCard label={t("Cost")} value={formatCredits(data?.total_cost_micro ?? 0)} detail={t("Recorded consumption")} />
             <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
             <MetricCard
               label={t("Error rate (%)")}
@@ -100,7 +100,7 @@ export function Dashboard() {
       <section className="panel">
         <div className="panel-heading">
           <h2>{t("Quota watch")}</h2>
-          <span>{t("Keys above 80% of request or token quota")}</span>
+          <span>{t("Keys above 80% of request, token or Credits quota")}</span>
         </div>
         <div className="table-wrap">
           <table>
@@ -108,6 +108,7 @@ export function Dashboard() {
               <tr>
                 <th>{t("Name")}</th>
                 <th>{t("Prefix")}</th>
+                <th>{t("Credits")}</th>
                 <th>{t("Request use")}</th>
                 <th>{t("Token use")}</th>
               </tr>
@@ -117,13 +118,14 @@ export function Dashboard() {
                 <tr key={key.id}>
                   <td>{key.name}</td>
                   <td>{key.key_prefix}</td>
+                  <td>{percent(key.cost_used_ratio ?? 0)}</td>
                   <td>{percent(key.request_used_ratio)}</td>
                   <td>{percent(key.token_used_ratio)}</td>
                 </tr>
               ))}
               {!data?.risk_keys?.length ? (
                 <tr>
-                  <td colSpan={4} className="muted-cell">
+                  <td colSpan={5} className="muted-cell">
                     {t("No risky keys right now.")}
                   </td>
                 </tr>

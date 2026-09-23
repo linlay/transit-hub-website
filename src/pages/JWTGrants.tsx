@@ -1,3 +1,4 @@
+import { formatCredits, MICRO_PER_CREDIT } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
@@ -132,6 +133,7 @@ export function JWTGrants() {
       issue_quota: quotaValue(form, "issue_quota"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      cost_quota_micro: quotaValue(form,"credits_quota") * MICRO_PER_CREDIT,
       rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
     });
@@ -154,6 +156,7 @@ export function JWTGrants() {
         issue_quota: quotaValue(form, "issue_quota"),
         request_quota: quotaValue(form, "request_quota"),
         token_quota: quotaValue(form, "token_quota"),
+      cost_quota_micro: quotaValue(form,"credits_quota") * MICRO_PER_CREDIT,
         rate_limits: rateLimitValue(form, "rate_limits"),
         allowed_models: allowedModels,
       },
@@ -218,9 +221,9 @@ export function JWTGrants() {
                     {integer(grant.issued_count)} / {grant.issue_unlimited ? "∞" : integer(grant.issue_quota)}
                   </td>
                   <td>
-                    <span>{t("{count} requests", { count: grant.request_quota ? integer(grant.request_quota) : "∞" })}</span>
+                    <span>{grant.cost_quota_micro ? formatCredits(grant.cost_quota_micro) : `∞ ${t("Credits")}`}</span>
                     <small title={grant.token_quota ? integer(grant.token_quota) : "∞"}>
-                      {t("{count} tokens", { count: grant.token_quota ? compactTokenCount(grant.token_quota) : "∞" })} · {grant.rate_limits.length ? t("{count} windows", { count: grant.rate_limits.length }) : t("No windows")}
+                      {t("{count} requests", { count: grant.request_quota ? integer(grant.request_quota) : "∞" })} · {t("{count} tokens", { count: grant.token_quota ? compactTokenCount(grant.token_quota) : "∞" })} · {grant.rate_limits.length ? t("{count} windows", { count: grant.rate_limits.length }) : t("No windows")}
                     </small>
                   </td>
                   <td><CredentialModels models={grant.allowed_models} /></td>
@@ -254,6 +257,7 @@ export function JWTGrants() {
             <input name="name" aria-label={t("Name")} placeholder={t("Name")} defaultValue={copySource ? t("{name} (copy)", { name: copySource.name }) : ""} required />
             <input name="description" aria-label={t("Description")} placeholder={t("Description")} defaultValue={copySource?.description ?? ""} />
             <QuotaInput label="Issue quota" name="issue_quota" initialValue={copySource?.issue_quota ?? 0} />
+            <QuotaInput label="Total Credits" name="credits_quota" initialValue={(copySource?.cost_quota_micro ?? 0) / MICRO_PER_CREDIT} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={copySource?.request_quota ?? 500} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={copySource?.token_quota ?? 2000000} />
             <RateLimitEditor name="rate_limits" initialValue={copySource?.rate_limits} />
@@ -290,6 +294,7 @@ export function JWTGrants() {
               <option value="disabled">{t("Disabled")}</option>
             </select>
             <QuotaInput label="Issue quota" name="issue_quota" initialValue={editing.issue_quota} />
+            <QuotaInput label="Total Credits" name="credits_quota" initialValue={(editing.cost_quota_micro ?? 0) / MICRO_PER_CREDIT} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={editing.request_quota} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={editing.token_quota} />
             <RateLimitEditor key={`rate-limits-${editing.jti}-${JSON.stringify(editing.rate_limits)}`} name="rate_limits" initialValue={editing.rate_limits} />

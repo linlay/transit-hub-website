@@ -1,3 +1,4 @@
+import { formatCredits, MICRO_PER_CREDIT } from "../lib/format";
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
@@ -131,6 +132,7 @@ export function APIKeys() {
       description: String(form.get("description") ?? ""),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      cost_quota_micro: quotaValue(form,"credits_quota") * MICRO_PER_CREDIT,
       rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
     });
@@ -255,6 +257,7 @@ export function APIKeys() {
                 <th className="credential-status-col">{t("Status")}</th>
                 <th className="credential-source-col">{t("Source")} / {t("Issuer Name")}</th>
                 <th>{t("Models")}</th>
+                <th className="credential-usage-col">{t("Credits")}</th>
                 <th className="sortable credential-usage-col" aria-sort={sortKey === "used_requests" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
                     {t("Requests")}
@@ -300,6 +303,8 @@ export function APIKeys() {
                     ) : <small className="muted-cell">—</small>}
                   </td>
                   <td><CredentialModels models={key.allowed_models} /></td>
+                  <td><Progress value={quotaRatio(key.used_cost_micro ?? 0,key.cost_quota_micro ?? 0)} label={`${formatCredits(key.used_cost_micro ?? 0)} / ${key.cost_quota_micro ? formatCredits(key.cost_quota_micro) : "∞"}`} />
+                  </td>
                   <td>
                     <Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} />
                   </td>
@@ -318,7 +323,7 @@ export function APIKeys() {
               ))}
               {!keys.data?.items?.length ? (
                 <tr>
-                  <td colSpan={selecting ? 9 : 8} className="muted-cell">
+                  <td colSpan={selecting ? 10 : 9} className="muted-cell">
                     {t("No API keys found.")}
                   </td>
                 </tr>
@@ -333,6 +338,7 @@ export function APIKeys() {
           <form className="dialog-form" onSubmit={submit}>
             <input name="name" aria-label={t("Name")} placeholder={t("Name")} defaultValue={copySource ? t("{name} (copy)", { name: copySource.name }) : ""} required />
             <input name="description" aria-label={t("Description")} placeholder={t("Description")} defaultValue={copySource?.description ?? ""} />
+            <QuotaInput label="Total Credits" name="credits_quota" initialValue={(copySource?.cost_quota_micro ?? 0) / MICRO_PER_CREDIT} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={copySource?.request_quota ?? 0} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={copySource?.token_quota ?? 0} />
             <RateLimitEditor name="rate_limits" initialValue={copySource?.rate_limits} />

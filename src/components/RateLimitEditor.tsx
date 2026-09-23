@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CURRENCY } from "../lib/format";
+import { decimalToMicro } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import type { RateLimit, RateLimitWindow } from "../lib/types";
 
@@ -37,9 +37,9 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
     <div className="rate-limit-editor">
       <div className="rate-limit-header">
         <span>{t("Window")}</span>
+        <span>{t("Credits")}</span>
         <span>{t("Requests")}</span>
         <span>{t("Tokens")}</span>
-        <span>{CURRENCY}</span>
       </div>
       {WINDOWS.map((window) => {
         const limit = initialByWindow.get(window.value);
@@ -50,9 +50,9 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
               <input checked={checked} name={`${name}_${window.value}_enabled`} onChange={(event) => toggle(window.value, event.target.checked)} type="checkbox" />
               {t(window.label)}
             </label>
+            <input defaultValue={currencyValue(limit?.cost_quota_micro)} disabled={!checked} min="0" name={`${name}_${window.value}_cost_quota`} placeholder="∞" step="1" type="number" />
             <input defaultValue={positiveValue(limit?.request_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_request_quota`} placeholder="∞" type="number" />
             <input defaultValue={positiveValue(limit?.token_quota)} disabled={!checked} min="0" name={`${name}_${window.value}_token_quota`} placeholder="∞" type="number" />
-            <input defaultValue={currencyValue(limit?.cost_quota_micro)} disabled={!checked} min="0" name={`${name}_${window.value}_cost_quota`} placeholder="∞" step="0.0001" type="number" />
           </div>
         );
       })}
@@ -69,7 +69,7 @@ export function rateLimitValue(form: FormData, name: string): RateLimit[] {
       window: window.value,
       request_quota: numberValue(form.get(`${name}_${window.value}_request_quota`)),
       token_quota: numberValue(form.get(`${name}_${window.value}_token_quota`)),
-      cost_quota_micro: Math.round(currencyNumberValue(form.get(`${name}_${window.value}_cost_quota`)) * 1_000_000),
+      cost_quota_micro: decimalToMicro(form.get(`${name}_${window.value}_cost_quota`), 10_000),
     };
     if (!limit.request_quota && !limit.token_quota && !limit.cost_quota_micro) {
       return [];
@@ -84,13 +84,9 @@ function positiveValue(value?: number) {
 
 function currencyValue(value?: number) {
   if (!value || value <= 0) return "";
-  return String(value / 1_000_000);
+  return String(value / 10_000);
 }
 
 function numberValue(value: FormDataEntryValue | null) {
   return Math.max(0, Math.floor(Number(value || 0)));
-}
-
-function currencyNumberValue(value: FormDataEntryValue | null) {
-  return Math.max(0, Number(value || 0));
 }

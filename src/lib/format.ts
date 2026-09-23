@@ -1,4 +1,4 @@
-export const CURRENCY = import.meta.env.VITE_CURRENCY ?? "CNY";
+export const CURRENCY = "CNY";
 
 export type FormatLocale = "zh-CN" | "en-US";
 
@@ -74,4 +74,20 @@ function currencyLocale() {
 function initialFormatLocale(): FormatLocale {
   if (typeof navigator === "undefined") return "en-US";
   return navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+}
+
+export const MICRO_PER_CREDIT = 10_000;
+export function formatCredits(value: number) {
+ return `${new Intl.NumberFormat(currentLocale, {maximumFractionDigits:4}).format((value || 0) / MICRO_PER_CREDIT)} ${currentLocale === "zh-CN" ? "点数" : "Credits"}`;
+}
+// Parse decimal form inputs without binary floating point monetary arithmetic.
+export function decimalToMicro(value: FormDataEntryValue | string | null, scale = 1_000_000) {
+ const text = String(value ?? "").trim() || "0";
+ if (!/^\d+(\.\d+)?$/.test(text)) throw new Error("Invalid amount");
+ const [whole, fraction = ""] = text.split(".");
+ const digits = String(scale).length - 1;
+ if (fraction.length > digits) throw new Error("Amount has too many decimal places");
+ const result = BigInt(whole) * BigInt(scale) + BigInt(fraction.padEnd(digits,"0") || "0");
+ if (result > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("Amount is too large");
+ return Number(result);
 }

@@ -1,3 +1,4 @@
+import { formatCredits, MICRO_PER_CREDIT } from "../lib/format";
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Save, Trash2 } from "lucide-react";
@@ -12,7 +13,7 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { api, isTelemetryError } from "../lib/api";
-import { compactNumber, compactTokenCount, dateTime, integer, nullablePercent, formatCurrency, quotaRatio } from "../lib/format";
+import { compactNumber, compactTokenCount, dateTime, integer, nullablePercent, quotaRatio } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { RateLimitUsage } from "../lib/types";
@@ -94,6 +95,7 @@ export function APIKeyDetail() {
       status: String(form.get("status") ?? "active"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
+      cost_quota_micro: quotaValue(form,"credits_quota") * MICRO_PER_CREDIT,
       rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
       forced_expired: form.get("forced_expired") === "on",
@@ -118,11 +120,15 @@ export function APIKeyDetail() {
   return (
     <section className="page">
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
-      {!telemetryUnavailable ? <div className="metrics-grid">
+      <div className="credits-summary-grid">
+        <MetricCard label={t("Total Credits")} value={key?.cost_quota_micro ? formatCredits(key.cost_quota_micro) : "∞"} detail={t("Lifetime")} />
+        <MetricCard label={t("Credits used")} value={formatCredits(key?.used_cost_micro ?? 0)} detail={t("Since Credits enabled")} />
+        <MetricCard label={t("Credits remaining")} value={key?.cost_quota_micro ? formatCredits(key.cost_quota_micro - (key.used_cost_micro ?? 0)) : "∞"} detail={t("Negative balance means overage")} />
+      </div>
+      {!telemetryUnavailable ? <div className="usage-summary-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
         <MetricCard label={t("Tokens")} value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
         <MetricCard label={t("Cache hit")} value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{t("{count} cache tokens", { count: compactTokenCount(summary?.cache_total_tokens ?? 0) })}</span>} />
-        <MetricCard label={t("Cost")} value={formatCurrency(summary?.cost_micro ?? 0)} detail={t("Estimated")} />
         <MetricCard label={t("Active devices")} value={integer(usage.data?.active_devices ?? 0)} detail={t("Current window")} />
       </div> : null}
 
@@ -184,7 +190,7 @@ export function APIKeyDetail() {
                   <td title={integer(item.cache_hit_tokens)}>{compactTokenCount(item.cache_hit_tokens)}</td>
                   <td title={integer(item.cache_miss_tokens)}>{compactTokenCount(item.cache_miss_tokens)}</td>
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
-                  <td>{formatCurrency(item.cost_micro)}</td>
+                  <td>{formatCredits(item.cost_micro)}</td>
                 </tr>
               ))}
               {!timeline.data?.items?.length ? (
@@ -263,7 +269,7 @@ export function APIKeyDetail() {
                   <td>{log.provider || t("none")}</td>
                   <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
                   <td>{nullablePercent(log.cache_hit_rate)}</td>
-                  <td>{formatCurrency(log.cost_micro)}</td>
+                  <td title={JSON.stringify(log.price_snapshot ?? {})}>{formatCredits(log.cost_micro)}<small>{log.billing_status ?? "legacy"}</small></td>
                 </tr>
               ))}
             </tbody>
@@ -321,6 +327,7 @@ export function APIKeyDetail() {
                     <option value="disabled">{t("Disabled")}</option>
                   </select>
                 </label>
+                <QuotaInput key={`credits-${key.id}-${key.cost_quota_micro}`} label="Total Credits" name="credits_quota" initialValue={(key.cost_quota_micro ?? 0) / MICRO_PER_CREDIT} />
                 <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
                 <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
               </div>
@@ -370,9 +377,9 @@ function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
           <thead>
             <tr>
               <th>{t("Window")}</th>
+              <th>{t("Credits")}</th>
               <th>{t("Requests")}</th>
               <th>{t("Tokens")}</th>
-              <th>{t("Cost")}</th>
               <th>{t("Resets")}</th>
             </tr>
           </thead>
@@ -380,6 +387,9 @@ function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
             {items.map((item) => (
               <tr key={item.window}>
                 <td>{t(windowLabel(item.window))}</td>
+                <td>
+                  <span>{item.cost_quota_micro ? formatCredits(item.cost_remaining_micro) : "∞"} {t("remaining")}</span><LimitProgress value={quotaRatio(item.cost_micro, item.cost_quota_micro)} label={`${formatCredits(item.cost_micro)} / ${item.cost_quota_micro ? formatCredits(item.cost_quota_micro) : "∞"}`} />
+                </td>
                 <td>
                   <LimitProgress value={quotaRatio(item.requests, item.request_quota)} label={`${integer(item.requests)} / ${quotaLabel(item.request_quota)}`} />
                 </td>
@@ -389,9 +399,6 @@ function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
                     label={`${compactTokenCount(item.tokens)} / ${item.token_quota ? compactTokenCount(item.token_quota) : "∞"}`}
                     title={`${integer(item.tokens)} / ${item.token_quota ? integer(item.token_quota) : "∞"}`}
                   />
-                </td>
-                <td>
-                  <LimitProgress value={quotaRatio(item.cost_micro, item.cost_quota_micro)} label={`${formatCurrency(item.cost_micro)} / ${item.cost_quota_micro ? formatCurrency(item.cost_quota_micro) : "∞"}`} />
                 </td>
                 <td>{dateTime(item.resets_at)}</td>
               </tr>

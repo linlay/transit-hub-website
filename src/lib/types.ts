@@ -24,6 +24,10 @@ export type RateLimitUsage = {
 };
 
 export type APIKey = {
+  used_cost_micro: number;
+  cost_remaining_micro?: number;
+  cost_unlimited?: boolean;
+  cost_quota_micro: number;
   id: string;
   name: string;
   description: string;
@@ -48,6 +52,7 @@ export type APIKey = {
 };
 
 export type JWTGrant = {
+  cost_quota_micro: number;
   jti: string;
   name: string;
   description: string;
@@ -123,11 +128,18 @@ export type Overview = {
     token_remaining: number;
     request_used_ratio: number;
     token_used_ratio: number;
+ cost_used_ratio?: number;
+ cost_remaining_micro?: number;
   }>;
   degraded_components?: string[];
 };
 
 export type RequestLog = {
+ billing_status?: string;
+ price_snapshot?: ModelPrice | null;
+ started_at?: string;
+ cache_write_tokens?: number;
+ image_count?: number;
   id: number;
   api_key_id: string;
   api_key_name: string;
@@ -168,7 +180,15 @@ export type APISession = {
   token_count: number;
 };
 
+export type PriceBilling = {
+ mode: "tokens" | "image" | "free";
+ cache_write_cost_micro_per_1m_tokens?: number | null;
+ image_prices?: Array<{size: string; quality: string; cost_micro: number}>;
+ default_max_output_tokens?: number;
+ max_output_tokens?: number;
+};
 export type ModelPrice = {
+ billing?: PriceBilling;
   id: string;
   protocol: string;
   public_model: string;
