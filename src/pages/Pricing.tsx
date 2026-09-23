@@ -30,6 +30,7 @@ export function Pricing() {
   try {
    const optionalAmount=(name:string)=>String(form.get(name)??"").trim() ? decimalToMicro(form.get(name)) : null;
    const billing:PriceBilling={mode};
+   if (mode === "tokens" && editing?.billing?.token_tiers) billing.token_tiers = editing.billing.token_tiers;
    if(mode==="tokens") {
     billing.cache_write_cost_micro_per_1m_tokens=optionalAmount("cache_write");
    }
@@ -79,6 +80,7 @@ export function Pricing() {
     <td>{price.billing?.mode==="image" ? price.billing.image_prices?.map((r,i)=><div key={i}>{r.size||"*"} / {r.quality||"*"}: {formatCurrency(r.cost_micro)} · {formatCredits(r.cost_micro)}</div>) : price.billing?.mode==="free" ? formatCredits(0) : <>
      <div>{t("Input / output per 1M")}: {formatCurrency(price.input_cost_micro_per_1m_tokens)} / {formatCurrency(price.output_cost_micro_per_1m_tokens)}</div>
      <small>{formatCredits(price.input_cost_micro_per_1m_tokens)} / {formatCredits(price.output_cost_micro_per_1m_tokens)}</small>
+     {price.billing?.token_tiers?.map(tier => <div key={tier.above_input_tokens}>输入 &gt; {tier.above_input_tokens.toLocaleString()} tokens：{formatCurrency(tier.input_cost_micro_per_1m_tokens)} / {formatCurrency(tier.output_cost_micro_per_1m_tokens)}（输入 / 输出，每百万 tokens）</div>)}
      <div>{t("Cache hit / write per 1M")}: {formatCurrency(price.input_cache_hit_cost_micro_per_1m_tokens??price.input_cost_micro_per_1m_tokens)} / {formatCurrency(price.billing?.cache_write_cost_micro_per_1m_tokens??price.input_cost_micro_per_1m_tokens)}</div>
     </>}</td>
     <td><button className="icon-button" aria-label={t("Edit")} onClick={()=>select(price)}><Pencil size={16}/></button><button className="icon-button danger" aria-label={t("Delete")} onClick={()=>remove.mutate(price.id)}><Trash2 size={16}/></button></td>
