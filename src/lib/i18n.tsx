@@ -14,7 +14,9 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Used": "已用",
   "Cumulative": "累计",
+  "Hover for usage and limit": "悬浮查看精确用量和上限",
   "Period": "周期",
   "Spent": "花费",
   "Limit": "限额",

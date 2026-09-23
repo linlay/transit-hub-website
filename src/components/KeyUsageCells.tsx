@@ -47,17 +47,15 @@ export function KeyUsageCells({ apiKey: key, now }: { apiKey: APIKey; now: numbe
   function usageValue(row: UsageRow, used: number | undefined, limit: number, format: (value: number) => string) {
     const state = quotaLabel(used, limit);
     const full = `${label(row)}: ${used === undefined ? t("Usage unavailable") : integer(used)} / ${limit ? integer(limit) : t("Unlimited")}${state ? ` · ${state}` : ""}`;
-    return <span className={tone(used, limit)} title={full} aria-label={full}>
-      {used === undefined ? "—" : format(used)} <span className="key-quota-denominator">/ {limit ? format(limit) : "∞"}</span>
-      {state ? <span className="key-quota-flag">{state}</span> : null}
+    return <span className={`key-usage-detail ${tone(used, limit)}`} tabIndex={0} title={full} aria-label={full}>
+      {used === undefined ? "—" : format(used)}
     </span>;
   }
   return <>
-    <td>{stack((row) => <span className="muted-cell" title={label(row)}>{row.window === "total" ? t("Cumulative") : row.window}</span>)}</td>
+    <td>{stack((row) => <span className="muted-cell" title={label(row)}>{row.window === "total" ? t("Total") : row.window}</span>)}</td>
     <td>{stack((row) => <span className={tone(row.cost_micro, row.cost_quota_micro)} title={`${label(row)}: ${row.cost_micro === undefined ? t("Usage unavailable") : creditAmount(row.cost_micro) + " Credits"}`}>{row.cost_micro === undefined ? "—" : creditAmount(row.cost_micro)}</span>)}</td>
-    <td>{stack((row) => <span className={tone(row.cost_micro, row.cost_quota_micro)} title={`${label(row)}: ${row.cost_quota_micro ? creditAmount(row.cost_quota_micro) + " Credits" : t("Unlimited")}`}>
-      {row.cost_quota_micro ? creditAmount(row.cost_quota_micro) : <span className="muted-cell">{t("Unlimited")}</span>}
-      <span className="key-quota-flag">{quotaLabel(row.cost_micro, row.cost_quota_micro) ? ` ${quotaLabel(row.cost_micro, row.cost_quota_micro)}` : ""}</span>
+    <td>{stack((row) => <span className={tone(row.cost_micro, row.cost_quota_micro)} title={`${label(row)}: ${row.cost_quota_micro ? creditAmount(row.cost_quota_micro) + " Credits" : t("Unlimited")} · ${quotaLabel(row.cost_micro, row.cost_quota_micro)}`}>
+      {row.cost_quota_micro ? creditAmount(row.cost_quota_micro) : <span className="muted-cell" aria-label={t("Unlimited")}>∞</span>}
     </span>)}</td>
     <td>{stack((row) => usageValue(row, row.requests, row.request_quota, compactTokenCount))}</td>
     <td>{stack((row) => usageValue(row, row.tokens, row.token_quota, compactTokenCount))}</td>

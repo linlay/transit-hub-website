@@ -1,8 +1,8 @@
 import { MICRO_PER_CREDIT } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
 import { CredentialTime } from "../components/CredentialTime";
 import { RowActions } from "../components/RowActions";
@@ -23,6 +23,7 @@ import type { APIKey } from "../lib/types";
 export function APIKeys() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 15_000);
@@ -271,16 +272,16 @@ export function APIKeys() {
                     {t("Requests")}
                     {sortIcon("used_requests")}
                   </button>
-                  <span className="key-column-hint">{t("Used / limit")}</span>
+                  <span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>
                 </th>
                 <th className="sortable credential-usage-col" aria-sort={sortKey === "used_tokens" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_tokens")}>
                     {t("Tokens")}
                     {sortIcon("used_tokens")}
                   </button>
-                  <span className="key-column-hint">{t("Used / limit")}</span>
+                  <span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>
                 </th>
-                <th className="key-reset-col">{t("Resets in")}</th>
+                <th className="key-reset-col">{t("Reset")}</th>
                 <th className="sortable credential-date-col" aria-sort={sortKey === "last_used_at" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
                     {t("Last used")}
@@ -319,6 +320,7 @@ export function APIKeys() {
                   <td><CredentialTime value={key.last_used_at} /></td>
                   <td className="row-actions-cell">
                     <RowActions label={t("Actions for {name}", { name: key.name })} items={[
+                      { label: t("Edit"), icon: <Pencil size={15} />, onSelect: () => navigate(`/api-keys/${key.id}#api-key-settings`) },
                       { label: t("Duplicate"), icon: <Copy size={15} />, onSelect: () => openCreateDialog(key) },
                       ...(key.status === "active" ? [{ label: t("Inactive"), icon: <Ban size={15} />, onSelect: () => inactiveKey(key.id, key.name) }] : []),
                       { label: t("Delete"), icon: <Trash2 size={15} />, danger: true, onSelect: () => { if (window.confirm(t("Delete {name}?", { name: key.name }))) remove.mutate(key.id); } },

@@ -1990,17 +1990,17 @@ td small {
 
 /* Shared period lines keep all key usage dimensions aligned and compact. */
 .api-keys-page { max-width: none; }
-.credential-table.key-table { min-width: 1580px; }
-.key-table .key-models-col { width: 122px; }
-.key-table .credential-name-col { width: 160px; }
-.key-table .credential-status-col { width: 100px; }
-.key-table .credential-source-col { width: 124px; }
-.key-table .key-period-col { width: 94px; }
-.key-table .key-spend-col { width: 110px; }
-.key-table .key-limit-col { width: 146px; }
-.key-table .credential-usage-col { width: 190px; }
-.key-table .key-reset-col { width: 112px; }
-.key-table .credential-date-col { width: 104px; }
+.credential-table.key-table { min-width: 1000px; }
+.key-table .key-models-col { width: 88px; }
+.key-table .credential-name-col { width: 124px; }
+.key-table .credential-status-col { width: 74px; }
+.key-table .credential-source-col { width: 100px; }
+.key-table .key-period-col { width: 50px; }
+.key-table .key-spend-col { width: 80px; }
+.key-table .key-limit-col { width: 62px; }
+.key-table .credential-usage-col { width: 72px; }
+.key-table .key-reset-col { width: 72px; }
+.key-table .credential-date-col { width: 86px; }
 .key-table .key-column-hint { display: block; font-size: 11px; font-weight: 400; color: var(--color-text-muted); margin-top: 3px; text-transform: none; }
 .key-usage-stack { display: grid; grid-auto-rows: 28px; font-variant-numeric: tabular-nums; font-size: 13px; }
 .key-usage-line { display: flex; align-items: center; white-space: nowrap; }
@@ -2014,3 +2014,10 @@ td small {
 .key-window-limited { display: block; margin-top: 5px; color: var(--color-danger); font-size: 11px; white-space: nowrap; }
 
 .key-usage-line > span { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+.credential-table.key-table th, .credential-table.key-table td { padding-left: 6px; padding-right: 6px; }
+.key-table .sort-header { gap: 3px; font-size: 12px; }
+.key-table .key-window-limited { white-space: normal; }
+.key-usage-detail { cursor: help; text-decoration: underline dotted var(--color-border-control); text-underline-offset: 3px; }
+.key-usage-detail:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+#api-key-settings { scroll-margin-top: 64px; }

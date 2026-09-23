@@ -1,8 +1,8 @@
 import { formatCredits, MICRO_PER_CREDIT } from "../lib/format";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Save, Trash2 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Bar, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
@@ -22,6 +22,7 @@ export function APIKeyDetail() {
   const { t } = useI18n();
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const queryClient = useQueryClient();
   const [bucket, setBucket] = useState("day");
   const [range, setRange] = useState("14d");
@@ -71,6 +72,13 @@ export function APIKeyDetail() {
   });
 
   const key = detail.data;
+  useEffect(() => {
+    if (key?.id && hash === "#api-key-settings") {
+      const form = document.getElementById("api-key-settings");
+      form?.scrollIntoView({ block: "start" });
+      form?.querySelector<HTMLInputElement>('input[name="name"]')?.focus({ preventScroll: true });
+    }
+  }, [key?.id, hash]);
   const summary = usage.data?.summary;
   const telemetryUnavailable =
     Boolean(usage.data?.degraded_components?.includes("telemetry")) ||
