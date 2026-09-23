@@ -1,5 +1,5 @@
-import { formatCredits, MICRO_PER_CREDIT } from "../lib/format";
-import { FormEvent, useMemo, useState } from "react";
+import { MICRO_PER_CREDIT } from "../lib/format";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -15,7 +15,7 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
-import { compactTokenCount, integer, quotaRatio } from "../lib/format";
+import { KeyUsageCells, keyHasWindowLimit } from "../components/KeyUsageCells";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { APIKey } from "../lib/types";
@@ -23,6 +23,11 @@ import type { APIKey } from "../lib/types";
 export function APIKeys() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [params] = useSearchParams();
   type SortKey = "used_requests" | "used_tokens" | "last_used_at" | null;
   type SortDir = "asc" | "desc";
@@ -196,7 +201,7 @@ export function APIKeys() {
   );
 
   return (
-    <section className="page">
+    <section className="page api-keys-page">
       <section className="panel credential-panel">
         <div className="toolbar filters">
           <label className="search">
@@ -243,6 +248,7 @@ export function APIKeys() {
             </button>
           </div>
         ) : null}
+        {keys.error ? <div className="error-text" role="alert">{keys.error.message}</div> : null}
         {batch.error ? <div className="error-text">{batch.error.message}</div> : null}
         <div className="table-wrap credential-table-wrap">
           <table className="credential-table key-table">
@@ -256,20 +262,25 @@ export function APIKeys() {
                 <th className="credential-name-col">{t("Name")}</th>
                 <th className="credential-status-col">{t("Status")}</th>
                 <th className="credential-source-col">{t("Source")} / {t("Issuer Name")}</th>
-                <th>{t("Models")}</th>
-                <th className="credential-usage-col">{t("Credits")}</th>
+                <th className="key-models-col">{t("Models")}</th>
+                <th className="key-period-col">{t("Period")}</th>
+                <th className="key-spend-col">{t("Spent")}<span className="key-column-hint">Credits</span></th>
+                <th className="key-limit-col">{t("Limit")}<span className="key-column-hint">Credits</span></th>
                 <th className="sortable credential-usage-col" aria-sort={sortKey === "used_requests" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-                  <button className="sort-header" type="button" onClick={() => toggleSort("used_requests")}>
+                  <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_requests")}>
                     {t("Requests")}
                     {sortIcon("used_requests")}
                   </button>
+                  <span className="key-column-hint">{t("Used / limit")}</span>
                 </th>
                 <th className="sortable credential-usage-col" aria-sort={sortKey === "used_tokens" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-                  <button className="sort-header" type="button" onClick={() => toggleSort("used_tokens")}>
+                  <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_tokens")}>
                     {t("Tokens")}
                     {sortIcon("used_tokens")}
                   </button>
+                  <span className="key-column-hint">{t("Used / limit")}</span>
                 </th>
+                <th className="key-reset-col">{t("Resets in")}</th>
                 <th className="sortable credential-date-col" aria-sort={sortKey === "last_used_at" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
                     {t("Last used")}
@@ -295,6 +306,7 @@ export function APIKeys() {
                   </td>
                   <td>
                     <StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" ? "Active" : "Disabled"} />
+                    {key.status === "active" && !key.forced_expired && keyHasWindowLimit(key, now) ? <span className="key-window-limited">{t("Window limited")}</span> : null}
                   </td>
                   <td>
                     <span>{key.source === "admin" ? t("Admin") : key.source === "access_token" ? t("User-device binding") : "JWT"}</span>
@@ -303,14 +315,7 @@ export function APIKeys() {
                     ) : <small className="muted-cell">—</small>}
                   </td>
                   <td><CredentialModels models={key.allowed_models} /></td>
-                  <td><Progress value={quotaRatio(key.used_cost_micro ?? 0,key.cost_quota_micro ?? 0)} label={`${formatCredits(key.used_cost_micro ?? 0)} / ${key.cost_quota_micro ? formatCredits(key.cost_quota_micro) : "∞"}`} />
-                  </td>
-                  <td>
-                    <Progress value={quotaRatio(key.used_requests, key.request_quota)} label={`${integer(key.used_requests)} / ${key.request_quota || "∞"}`} />
-                  </td>
-                  <td>
-                    <Progress value={quotaRatio(key.used_tokens, key.token_quota)} label={`${compactTokenCount(key.used_tokens)} / ${key.token_quota ? compactTokenCount(key.token_quota) : "∞"}`} title={`${integer(key.used_tokens)} / ${key.token_quota ? integer(key.token_quota) : "∞"}`} />
-                  </td>
+                  <KeyUsageCells apiKey={key} now={now} />
                   <td><CredentialTime value={key.last_used_at} /></td>
                   <td className="row-actions-cell">
                     <RowActions label={t("Actions for {name}", { name: key.name })} items={[
@@ -321,10 +326,10 @@ export function APIKeys() {
                   </td>
                 </tr>
               ))}
-              {!keys.data?.items?.length ? (
+              {!visibleKeys.length ? (
                 <tr>
-                  <td colSpan={selecting ? 10 : 9} className="muted-cell">
-                    {t("No API keys found.")}
+                  <td colSpan={selecting ? 13 : 12} className="muted-cell">
+                    {keys.isLoading ? t("Loading...") : keys.isError ? t("Unable to load keys") : t("No API keys found.")}
                   </td>
                 </tr>
               ) : null}
@@ -389,15 +394,4 @@ function compareOptionalTime(a?: string, b?: string) {
   if (!a) return 1;
   if (!b) return -1;
   return new Date(a).getTime() - new Date(b).getTime();
-}
-
-function Progress({ value, label, title: cellTitle }: { value: number; label: string; title?: string }) {
-  return (
-    <div className="progress-cell">
-      <div className="progress">
-        <span style={{ width: `${Math.round(value * 100)}%` }} />
-      </div>
-      <small title={cellTitle}>{label}</small>
-    </div>
-  );
 }

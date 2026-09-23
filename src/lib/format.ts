@@ -77,6 +77,9 @@ function initialFormatLocale(): FormatLocale {
 }
 
 export const MICRO_PER_CREDIT = 10_000;
+export function creditAmount(value: number) {
+  return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 4 }).format(value / MICRO_PER_CREDIT);
+}
 export function formatCredits(value: number) {
  return `${new Intl.NumberFormat(currentLocale, {maximumFractionDigits:4}).format((value || 0) / MICRO_PER_CREDIT)} ${currentLocale === "zh-CN" ? "点数" : "Credits"}`;
 }

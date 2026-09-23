@@ -14,6 +14,19 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Cumulative": "累计",
+  "Period": "周期",
+  "Spent": "花费",
+  "Limit": "限额",
+  "Used / limit": "已用 / 上限",
+  "Resets in": "距重置",
+  "Window limited": "周期限流",
+  "Sort by cumulative usage": "按累计用量排序",
+  "Usage unavailable": "用量暂不可用",
+  "Awaiting window refresh": "窗口已结束，等待刷新用量",
+  "Refreshing...": "刷新中…",
+  "Unable to load keys": "无法加载密钥",
+
  "Keys above 80% of request, token or Credits quota": "点数、请求或词元额度已使用超过 80% 的密钥",
  "Total Credits": "总点数额度（Credits）",
  "Credits used": "已消费点数",

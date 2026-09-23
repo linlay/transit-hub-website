@@ -43,6 +43,8 @@ export type APIKey = {
   token_quota: number;
   allowed_models: string[];
   rate_limits: RateLimit[];
+  rate_limit_usage?: RateLimitUsage[];
+  rate_limit_usage_unavailable?: boolean;
   used_requests: number;
   used_tokens: number;
   last_used_at?: string;
