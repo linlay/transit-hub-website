@@ -10,6 +10,7 @@ export type RateLimit = {
 
 export type RateLimitUsage = {
   window: RateLimitWindow;
+  state?: "idle" | "active" | "expired";
   starts_at: string;
   resets_at: string;
   requests: number;

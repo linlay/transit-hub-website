@@ -5,7 +5,7 @@ import type { APIKey, RateLimit, RateLimitUsage, RateLimitWindow } from "../lib/
 
 const windows: RateLimitWindow[] = ["1h", "5h", "1d", "7d", "30d"];
 const windowNames = { "1h": "1 hour", "5h": "5 hours", "1d": "1 day", "7d": "7 days", "30d": "30 days" };
-type UsageRow = Omit<RateLimit, "window"> & { window: RateLimitWindow | "total"; requests?: number; tokens?: number; cost_micro?: number; resets_at?: string; stale?: boolean };
+type UsageRow = Omit<RateLimit, "window"> & { window: RateLimitWindow | "total"; requests?: number; tokens?: number; cost_micro?: number; resets_at?: string; stale?: boolean; state?: string; starts_at?: string };
 
 function currentUsage(key: APIKey, window: string, now: number): RateLimitUsage | undefined {
   if (key.rate_limit_usage_unavailable) return undefined;
@@ -34,8 +34,10 @@ export function KeyUsageCells({ apiKey: key, now }: { apiKey: APIKey; now: numbe
     ...[...(key.rate_limits ?? [])].sort((a, b) => windows.indexOf(a.window) - windows.indexOf(b.window)).map((limit) => {
       const usage = currentUsage(key, limit.window, now);
       const previous = key.rate_limit_usage?.find((item) => item.window === limit.window);
-      return { ...limit, requests: usage?.requests, tokens: usage?.tokens, cost_micro: usage?.cost_micro,
-        resets_at: usage?.resets_at, stale: Boolean(previous && Date.parse(previous.resets_at) <= now) };
+      const waiting = !key.rate_limit_usage_unavailable && previous && (previous.state === "idle" || previous.state === "expired" || ((limit.window === "5h" || limit.window === "7d") && Date.parse(previous.resets_at) <= now));
+      return { ...limit, requests: waiting ? 0 : usage?.requests, tokens: waiting ? 0 : usage?.tokens, cost_micro: waiting ? 0 : usage?.cost_micro,
+        resets_at: usage?.resets_at, starts_at: usage?.starts_at, state: waiting ? (previous.state === "idle" ? "idle" : "expired") : undefined,
+        stale: Boolean(previous && Date.parse(previous.resets_at) <= now) };
     }),
   ];
   const label = (row: UsageRow) => row.window === "total" ? t("Cumulative") : t(windowNames[row.window]);
@@ -59,8 +61,9 @@ export function KeyUsageCells({ apiKey: key, now }: { apiKey: APIKey; now: numbe
     </span>)}</td>
     <td>{stack((row) => usageValue(row, row.requests, row.request_quota, compactTokenCount))}</td>
     <td>{stack((row) => usageValue(row, row.tokens, row.token_quota, compactTokenCount))}</td>
-    <td>{stack((row) => row.window === "total" ? <span className="muted-cell">—</span> : row.resets_at
-      ? <span className="muted-cell" title={dateTime(row.resets_at)}>{resetCountdown(row.resets_at, now)}</span>
+    <td>{stack((row) => row.window === "total" ? <span className="muted-cell">—</span> : row.state
+      ? <span className="muted-cell" title={t(row.state === "idle" ? "Starts on first use" : "Starts on next use")}>{t("Awaiting use")}</span> : row.resets_at
+      ? <span className="muted-cell" title={`${dateTime(row.starts_at)} → ${dateTime(row.resets_at)}`}>{resetCountdown(row.resets_at, now)}</span>
       : <span className="muted-cell" title={t(row.stale ? "Awaiting window refresh" : "Usage unavailable")}>{row.stale ? t("Refreshing...") : "—"}</span>)}</td>
   </>;
 }

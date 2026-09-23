@@ -408,7 +408,7 @@ function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
                     title={`${integer(item.tokens)} / ${item.token_quota ? integer(item.token_quota) : "∞"}`}
                   />
                 </td>
-                <td>{dateTime(item.resets_at)}</td>
+                <td>{item.state === "idle" ? t("Starts on first use") : item.state === "expired" ? t("Starts on next use") : dateTime(item.resets_at)}</td>
               </tr>
             ))}
           </tbody>
