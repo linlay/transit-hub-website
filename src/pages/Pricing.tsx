@@ -32,8 +32,6 @@ export function Pricing() {
    const billing:PriceBilling={mode};
    if(mode==="tokens") {
     billing.cache_write_cost_micro_per_1m_tokens=optionalAmount("cache_write");
-    billing.default_max_output_tokens=Number(form.get("default_output")||4096);
-    billing.max_output_tokens=Number(form.get("max_output")||8192);
    }
    if(mode==="image") billing.image_prices=rules.map(r=>({size:r.size.trim(),quality:r.quality.trim(),cost_micro:decimalToMicro(r.amount)}));
    save.mutate({protocol:String(form.get("protocol")),public_model:String(form.get("public_model")).trim(),currency:"CNY",billing,
@@ -60,8 +58,6 @@ export function Pricing() {
      <label>{t("Cache hit CNY / 1M")}<input name="cache_hit" defaultValue={amount(editing?.input_cache_hit_cost_micro_per_1m_tokens)} placeholder={t("Use input price")} type="number" min="0" step="0.000001"/></label>
      <label>{t("Cache write CNY / 1M")}<input name="cache_write" defaultValue={amount(editing?.billing?.cache_write_cost_micro_per_1m_tokens)} placeholder={t("Use input price")} type="number" min="0" step="0.000001"/></label>
      <label>{t("Output CNY / 1M")}<input name="output" defaultValue={amount(editing?.output_cost_micro_per_1m_tokens)} type="number" min="0" step="0.000001"/></label>
-     <label>{t("Default output tokens")}<input name="default_output" defaultValue={editing?.billing?.default_max_output_tokens||4096} type="number" min="1" required/></label>
-     <label>{t("Maximum output tokens")}<input name="max_output" defaultValue={editing?.billing?.max_output_tokens||8192} type="number" min="1" required/></label>
     </div>}
     {mode==="image" && <div>
      <p>{t("Empty size or quality matches any value. Specific rules take priority.")}</p>

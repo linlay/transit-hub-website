@@ -184,8 +184,6 @@ export type PriceBilling = {
  mode: "tokens" | "image" | "free";
  cache_write_cost_micro_per_1m_tokens?: number | null;
  image_prices?: Array<{size: string; quality: string; cost_micro: number}>;
- default_max_output_tokens?: number;
- max_output_tokens?: number;
 };
 export type ModelPrice = {
  billing?: PriceBilling;
