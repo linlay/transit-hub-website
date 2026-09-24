@@ -54,7 +54,7 @@ export function Dashboard() {
           <>
             <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
             <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
-            <MetricCard label={t("Cost")} value={integer(Math.round((data?.total_cost_micro ?? 0) / MICRO_PER_CREDIT))} detail={t("Recorded consumption")} />
+            <MetricCard label={t("Cost (Credits)")} value={integer(Math.round((data?.total_cost_micro ?? 0) / MICRO_PER_CREDIT))} detail={t("Recorded consumption")} />
             <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
             <MetricCard
               label={t("Error rate (%)")}

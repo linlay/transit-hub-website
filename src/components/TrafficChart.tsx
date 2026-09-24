@@ -92,7 +92,7 @@ function TrafficTooltip({ active, item }: { active?: boolean; item?: TrafficBuck
               <tr key={model.model}>
                 <td>{model.model || t("Unknown model")}</td>
                 <td>{integer(model.requests)}</td>
-                <td>{integer(model.total_tokens)}</td>
+                <td title={integer(model.total_tokens)}>{compactTokenCount(model.total_tokens)}</td>
               </tr>
             ))}
             {!models.length ? <tr><td colSpan={3}>{t("Model breakdown unavailable")}</td></tr> : null}
@@ -101,7 +101,7 @@ function TrafficTooltip({ active, item }: { active?: boolean; item?: TrafficBuck
             <tr>
               <th>{t("Total")}</th>
               <td>{integer(item.requests)}</td>
-              <td>{integer(item.total_tokens)}</td>
+              <td title={integer(item.total_tokens)}>{compactTokenCount(item.total_tokens)}</td>
             </tr>
           </tfoot>
         </table>

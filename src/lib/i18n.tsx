@@ -128,6 +128,7 @@ const zhCN: Record<string, string> = {
   Tokens: "词元（Token）",
   Credits: "点数（Credits）",
   Cost: "成本",
+  "Cost (Credits)": "成本（Credits）",
   "Active devices": "活跃设备",
   "Error rate": "错误率",
   "Error rate (%)": "错误率（%）",
