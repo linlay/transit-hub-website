@@ -20,7 +20,6 @@ import { trafficSelections, trafficTimeRange } from "../lib/trafficFilters";
 export function Traffic() {
   const { t, locale } = useI18n();
   const [params, setParams] = useSearchParams();
-  const [now, setNow] = useState(Date.now);
   const [logsOpen, setLogsOpen] = useState(false);
   const range = ["today", "yesterday", "7d", "30d", "custom"].includes(params.get("range") ?? "") ? params.get("range")! : "7d";
   const bucket = ["hour", "day", "month"].includes(params.get("bucket") ?? "") ? params.get("bucket")! : "day";
@@ -32,18 +31,24 @@ export function Traffic() {
   const status = ["success", "failed"].includes(params.get("status") ?? "") ? params.get("status")! : "";
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
-  const dates = trafficTimeRange(range, from, to, offset, now);
+  const dates = trafficTimeRange(range, from, to, offset, Date.now());
   const query = { ...dates, bucket, timezone_offset: offset, exclusive_end: true, api_key_ids: JSON.stringify(keys), models: JSON.stringify(models), provider, status };
-  const analytics = useQuery({ queryKey: ["traffic-analytics", query], queryFn: () => api.trafficAnalytics(query), enabled: Boolean(dates), refetchInterval: range === "today" || range === "7d" || range === "30d" ? false : PAGE_REFETCH_INTERVAL_MS });
-  const data = analytics.data;
+  const [logsQuery, setLogsQuery] = useState(query);
+  const analytics = useQuery({
+    // Keep the cache identity tied to filters, not the moving end timestamp.
+    queryKey: ["traffic-analytics", { range, from, to, bucket, offset, keys, models, provider, status }],
+    queryFn: async () => {
+      const request = { ...query, ...trafficTimeRange(range, from, to, offset, Date.now()) };
+      return { result: await api.trafficAnalytics(request), request };
+    },
+    enabled: Boolean(dates),
+    refetchInterval: logsOpen ? false : PAGE_REFETCH_INTERVAL_MS,
+    refetchOnWindowFocus: !logsOpen,
+  });
+  const data = analytics.data?.result;
   const [cachedOptions, setCachedOptions] = useState<TrafficAnalytics["options"]>({ keys: [], models: [], providers: [] });
   useEffect(() => { if (data) setCachedOptions(data.options); }, [data]);
   const options = data?.options ?? cachedOptions;
-  useEffect(() => {
-    if (!["today", "7d", "30d"].includes(range) || logsOpen) return;
-    const timer = window.setInterval(() => setNow(Date.now()), PAGE_REFETCH_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, [range, logsOpen]);
   const summary = data?.summary;
   const items = data?.items ?? [];
 
@@ -53,18 +58,13 @@ export function Traffic() {
       if (value === undefined || value === "" || value === "[]") next.delete(key); else next.set(key, value);
     }
     setParams(next);
-    setNow(Date.now());
   }
   function select(field: "keys" | "models", values: string[]) { change({ [field]: JSON.stringify(values) }); }
-  function refresh() {
-    if (range === "today" || range === "7d" || range === "30d") setNow(Date.now());
-    else return analytics.refetch();
-  }
-  usePageActions(<RefreshButton disabled={!dates} isRefreshing={analytics.isFetching} onClick={refresh} />, [dates?.from, dates?.to, analytics.isFetching, range, analytics.refetch]);
+  usePageActions(<RefreshButton disabled={!dates} isRefreshing={analytics.isFetching} onClick={() => analytics.refetch()} />, [Boolean(dates), analytics.isFetching, analytics.refetch]);
 
   return <section className="page traffic-page">
     <section className="panel traffic-filters">
-      <div className="panel-heading"><div><h2>{t("Traffic analysis")}</h2><span>{t("All charts follow the filters below")}</span></div><button type="button" className="icon-text" onClick={() => { setParams({}); setNow(Date.now()); }}>{t("Reset")}</button></div>
+      <div className="panel-heading"><div><h2>{t("Traffic analysis")}</h2><span>{t("All charts follow the filters below")}</span></div><button type="button" className="icon-text" onClick={() => { setParams({}); }}>{t("Reset")}</button></div>
       <div className="traffic-filter-grid">
         <label>{t("Time range")}<select value={range} onChange={(e) => change({ range: e.target.value })}>
           <option value="today">{t("Today")}</option><option value="yesterday">{t("Yesterday")}</option><option value="7d">{t("Last 7 days")}</option><option value="30d">{t("Last 30 days")}</option><option value="custom">{t("Custom dates")}</option>
@@ -82,7 +82,8 @@ export function Traffic() {
       {keys.length || models.length ? <div className="traffic-selected">{keys.map((id) => <button className="icon-text" type="button" key={`key-${id}`} onClick={() => select("keys", keys.filter((value) => value !== id))}>{t("Key")}: {options.keys.find((option) => option.id === id)?.name || id || t("Unknown")} ×</button>)}{models.map((id) => <button className="icon-text" type="button" key={`model-${id}`} onClick={() => select("models", models.filter((value) => value !== id))}>{t("Model")}: {id || t("Unknown")} ×</button>)}</div> : null}
       <p className="traffic-note">{t("Based on retained request logs; bucketed by completion time.")}</p>
     </section>
-    {!dates ? <div className="form-error" role="alert">{t("Choose a valid start and end date")}</div> : analytics.isPending ? <section className="panel" role="status">{t("Loading analytics...")}</section> : analytics.error ? isTelemetryError(analytics.error) ? <TelemetryUnavailable /> : <div className="form-error" role="alert">{t("Unable to load analytics")}</div> : <>
+    {data && analytics.error ? <div className="form-error" role="status">{t("Unable to refresh analytics; showing the last successful results")}</div> : null}
+    {!dates ? <div className="form-error" role="alert">{t("Choose a valid start and end date")}</div> : analytics.isPending ? <section className="panel" role="status">{t("Loading analytics...")}</section> : analytics.error && !data ? isTelemetryError(analytics.error) ? <TelemetryUnavailable /> : <div className="form-error" role="alert">{t("Unable to load analytics")}</div> : <>
       <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} />
         <MetricCard label={t("Tokens")} value={compactTokenCount(summary?.total_tokens ?? 0)} />
@@ -91,16 +92,16 @@ export function Traffic() {
         <MetricCard label={t("Failure rate")} value={new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(summary?.requests ? summary.error_requests / summary.requests : 0)} />
         <MetricCard label={t("Average latency (ms)")} value={integer(Math.round(summary?.average_latency_ms ?? 0))} />
       </div>
-      <div className="traffic-results-toolbar"><span>{t("Filtered results")} · {timezone}</span><button className="icon-text" type="button" onClick={() => setLogsOpen(true)}>{t("View matching requests")}</button></div>
+      <div className="traffic-results-toolbar"><span>{t("Filtered results")} · {timezone}</span><button className="icon-text" type="button" onClick={() => { setLogsQuery(analytics.data?.request ?? query); setLogsOpen(true); }}>{t("View matching requests")}</button></div>
       {!items.length ? <section className="panel">{t("No requests match these filters")}</section> : <div className="traffic-charts-grid">
-        <section className="panel"><div className="panel-heading"><div><h2>{t("Call trend")}</h2><span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span></div></div><TrafficChart items={items} /></section>
-        <section className="panel"><div className="panel-heading"><h2>{t("Activity and spend")}</h2></div><UsageChart items={items} metric="credits" /></section>
+        <section className="panel"><div className="panel-heading"><div><h2>{t("Call trend")}</h2><span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span></div></div><TrafficChart items={items} animate={false} /></section>
+        <section className="panel"><div className="panel-heading"><h2>{t("Activity and spend")}</h2></div><UsageChart items={items} metric="credits" animate={false} /></section>
         <TrafficRankingChart title="Model ranking" rows={data?.models ?? []} onSelect={(id) => select("models", [id])} />
         {keys.length !== 1 ? <TrafficRankingChart title="API Key ranking" rows={data?.keys ?? []} onSelect={(id) => select("keys", [id])} /> : null}
         <TrafficMetricsChart items={items} kind="tokens" />
         <TrafficMetricsChart items={items} kind="quality" />
       </div>}
     </>}
-    {logsOpen && dates ? <TrafficLogsDialog key={JSON.stringify(query)} query={query} timezone={timezone} onClose={() => setLogsOpen(false)} /> : null}
+    {logsOpen && dates ? <TrafficLogsDialog query={logsQuery} timezone={timezone} onClose={() => setLogsOpen(false)} /> : null}
   </section>;
 }

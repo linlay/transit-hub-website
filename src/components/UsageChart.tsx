@@ -5,10 +5,11 @@ import type { TrafficBucket } from "../lib/types";
 
 type UsageChartProps = {
   items: TrafficBucket[];
+  animate?: boolean;
   metric?: "average_requests" | "credits";
 };
 
-export function UsageChart({ items, metric = "average_requests" }: UsageChartProps) {
+export function UsageChart({ items, metric = "average_requests", animate = true }: UsageChartProps) {
   const { t } = useI18n();
   const showCredits = metric === "credits";
   const data = items.map((item) => {
@@ -36,8 +37,8 @@ export function UsageChart({ items, metric = "average_requests" }: UsageChartPro
             ]}
           />
           <Legend />
-          <Bar yAxisId="keys" dataKey="unique_api_keys" name={t(showCredits ? "Active API keys" : "Unique API keys")} fill="#0a84ff" radius={[6, 6, 0, 0]} />
-          <Line yAxisId="activity" type="monotone" dataKey={showCredits ? "credits" : "average_requests_per_key"} name={t(showCredits ? "Spend (Credits)" : "Average requests per key")} stroke="#7c3aed" strokeWidth={2} dot={false} />
+          <Bar isAnimationActive={animate} yAxisId="keys" dataKey="unique_api_keys" name={t(showCredits ? "Active API keys" : "Unique API keys")} fill="#0a84ff" radius={[6, 6, 0, 0]} />
+          <Line isAnimationActive={animate} yAxisId="activity" type="monotone" dataKey={showCredits ? "credits" : "average_requests_per_key"} name={t(showCredits ? "Spend (Credits)" : "Average requests per key")} stroke="#7c3aed" strokeWidth={2} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

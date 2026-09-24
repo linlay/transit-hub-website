@@ -43,12 +43,12 @@ export function TrafficMetricsChart({ items, kind }: { items: TrafficBucket[]; k
           <Tooltip formatter={(value: number, name: string, entry) => [entry.dataKey === "cache_hit_rate" || entry.dataKey === "error_rate" ? new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(value) : entry.dataKey === "average_latency_ms" ? `${integer(Math.round(value))} ms` : integer(value), name]} />
           <Legend />
           {tokens ? <>
-            <Bar yAxisId="left" dataKey="request_tokens" stackId="tokens" name={t("Input")} fill="#0a84ff" />
-            <Bar yAxisId="left" dataKey="response_tokens" stackId="tokens" name={t("Output")} fill="#7c3aed" />
-            <Line yAxisId="right" dataKey="cache_hit_rate" name={t("Cache hit rate")} stroke="#12b76a" dot={false} strokeWidth={2} />
+            <Bar isAnimationActive={false} yAxisId="left" dataKey="request_tokens" stackId="tokens" name={t("Input")} fill="#0a84ff" />
+            <Bar isAnimationActive={false} yAxisId="left" dataKey="response_tokens" stackId="tokens" name={t("Output")} fill="#7c3aed" />
+            <Line isAnimationActive={false} yAxisId="right" dataKey="cache_hit_rate" name={t("Cache hit rate")} stroke="#12b76a" dot={false} strokeWidth={2} />
           </> : <>
-            <Bar yAxisId="left" dataKey="error_rate" name={t("Failure rate")} fill="#f97316" />
-            <Line yAxisId="right" dataKey="average_latency_ms" name={t("Average latency (ms)")} stroke="#7c3aed" dot={false} strokeWidth={2} />
+            <Bar isAnimationActive={false} yAxisId="left" dataKey="error_rate" name={t("Failure rate")} fill="#f97316" />
+            <Line isAnimationActive={false} yAxisId="right" dataKey="average_latency_ms" name={t("Average latency (ms)")} stroke="#7c3aed" dot={false} strokeWidth={2} />
           </>}
         </ComposedChart>
       </ResponsiveContainer>

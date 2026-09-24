@@ -9,6 +9,7 @@ const OTHER_MODELS_COLOR = "#64748b";
 
 type TrafficChartProps = {
   items: TrafficBucket[];
+  animate?: boolean;
 };
 
 type ModelSeries = {
@@ -24,7 +25,7 @@ type TrafficChartRow = {
   [key: string]: string | number;
 };
 
-export function TrafficChart({ items }: TrafficChartProps) {
+export function TrafficChart({ items, animate = true }: TrafficChartProps) {
   const { t } = useI18n();
   const { data, modelSeries } = buildChartData(items, t("Other models"), t("Unknown model"), t("Requests"));
 
@@ -44,7 +45,7 @@ export function TrafficChart({ items }: TrafficChartProps) {
           />
           <Legend />
           {modelSeries.map((series) => (
-            <Bar
+            <Bar isAnimationActive={animate}
               key={series.key}
               yAxisId="requests"
               dataKey={series.key}
@@ -53,7 +54,7 @@ export function TrafficChart({ items }: TrafficChartProps) {
               stackId="models"
             />
           ))}
-          <Line
+          <Line isAnimationActive={animate}
             yAxisId="tokens"
             type="monotone"
             dataKey="total_tokens"

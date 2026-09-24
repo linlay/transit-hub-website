@@ -33,6 +33,7 @@ const zhCN: Record<string, string> = {
   "Based on retained request logs; bucketed by completion time.": "统计基于保留的请求日志，按请求完成时间归入所选时区。",
   "Choose a valid start and end date": "请选择有效的开始和结束日期",
   "Loading analytics...": "正在加载统计…",
+  "Unable to refresh analytics; showing the last successful results": "更新统计失败，暂时显示上次成功的数据",
   "Unable to load analytics": "无法加载统计，请重试",
   "Distinct across selected range": "所选时间范围内去重",
   "Failure rate": "失败率",
