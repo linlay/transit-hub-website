@@ -11,7 +11,7 @@ import { TrafficMetricsChart, TrafficRankingChart } from "../components/TrafficA
 import { TrafficFilterSelect } from "../components/TrafficFilterSelect";
 import { TrafficLogsDialog } from "../components/TrafficLogsDialog";
 import { api, isTelemetryError } from "../lib/api";
-import { integer, MICRO_PER_CREDIT } from "../lib/format";
+import { compactTokenCount, integer, MICRO_PER_CREDIT } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficAnalytics } from "../lib/types";
@@ -85,7 +85,7 @@ export function Traffic() {
     {!dates ? <div className="form-error" role="alert">{t("Choose a valid start and end date")}</div> : analytics.isPending ? <section className="panel" role="status">{t("Loading analytics...")}</section> : analytics.error ? isTelemetryError(analytics.error) ? <TelemetryUnavailable /> : <div className="form-error" role="alert">{t("Unable to load analytics")}</div> : <>
       <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} />
-        <MetricCard label={t("Tokens")} value={integer(summary?.total_tokens ?? 0)} />
+        <MetricCard label={t("Tokens")} value={compactTokenCount(summary?.total_tokens ?? 0)} />
         <MetricCard label={t("Spend (Credits)")} value={integer(Math.round((summary?.cost_micro ?? 0) / MICRO_PER_CREDIT))} />
         <MetricCard label={t("Active API keys")} value={integer(summary?.unique_api_keys ?? 0)} detail={t("Distinct across selected range")} />
         <MetricCard label={t("Failure rate")} value={new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(summary?.requests ? summary.error_requests / summary.requests : 0)} />
