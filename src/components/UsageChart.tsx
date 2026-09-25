@@ -16,7 +16,7 @@ export function UsageChart({ items, metric = "average_requests", animate = true 
     const uniqueAPIKeys = item.unique_api_keys ?? 0;
     return {
       bucket: item.bucket,
-      credits: (item.cost_micro ?? 0) / MICRO_PER_CREDIT,
+      credits: (item.charged_microcredits ?? 0) / MICRO_PER_CREDIT,
       unique_api_keys: uniqueAPIKeys,
       average_requests_per_key: uniqueAPIKeys > 0 ? item.requests / uniqueAPIKeys : 0,
     };

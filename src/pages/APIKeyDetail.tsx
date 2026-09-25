@@ -1,4 +1,4 @@
-import { creditAmount, MICRO_PER_CREDIT } from "../lib/format";
+import { creditAmount, creditsInputValue } from "../lib/format";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, FileText, Save, Trash2, X } from "lucide-react";
@@ -6,7 +6,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
-import { QuotaInput, quotaValue } from "../components/QuotaInput";
+import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
@@ -97,17 +97,19 @@ export function APIKeyDetail() {
       return;
     }
     setModelError("");
+    try {
     update.mutate({
       name: String(form.get("name") ?? ""),
       description: String(form.get("description") ?? ""),
       status: String(form.get("status") ?? "active"),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
-      cost_quota_micro: quotaValue(form,"credits_quota") * MICRO_PER_CREDIT,
+      quota_microcredits: creditsQuotaValue(form,"credits_quota"),
       rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
       forced_expired: form.get("forced_expired") === "on",
     });
+    } catch (error) { setModelError(error instanceof Error ? error.message : String(error)); }
   }
 
   function refreshDetail() {
@@ -130,9 +132,9 @@ export function APIKeyDetail() {
     <section className="page">
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       <div className="credits-summary-grid">
-        <MetricCard label={t("Total Credits")} value={key?.cost_quota_micro ? creditAmount(key.cost_quota_micro) : "∞"} detail={t("Lifetime")} />
-        <MetricCard label={t("Credits used")} value={creditAmount(key?.used_cost_micro ?? 0)} detail={t("Since Credits enabled")} />
-        <MetricCard label={t("Credits remaining")} value={key?.cost_quota_micro ? creditAmount(key.cost_quota_micro - (key.used_cost_micro ?? 0)) : "∞"} detail={t("Negative balance means overage")} />
+        <MetricCard label={t("Total Credits")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits) : "∞"} detail={t("Lifetime")} />
+        <MetricCard label={t("Credits used")} value={creditAmount(key?.used_microcredits ?? 0)} detail={t("Since Credits enabled")} />
+        <MetricCard label={t("Credits remaining")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits - (key.used_microcredits ?? 0)) : "∞"} detail={t("Negative balance means overage")} />
       </div>
       {!telemetryUnavailable ? <div className="usage-summary-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
@@ -190,7 +192,7 @@ export function APIKeyDetail() {
                   <td title={integer(item.cache_hit_tokens)}>{compactTokenCount(item.cache_hit_tokens)}</td>
                   <td title={integer(item.cache_miss_tokens)}>{compactTokenCount(item.cache_miss_tokens)}</td>
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
-                  <td>{creditAmount(item.cost_micro)}</td>
+                  <td>{creditAmount(item.charged_microcredits)}</td>
                 </tr>
               ))}
               {!timeline.data?.items?.length ? (
@@ -275,7 +277,7 @@ export function APIKeyDetail() {
                     <td>{log.provider || t("none")}</td>
                     <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
                     <td>{nullablePercent(log.cache_hit_rate)}</td>
-                    <td title={JSON.stringify(log.price_snapshot ?? {})}>{creditAmount(log.cost_micro)}<small>{log.billing_status ?? "legacy"}</small></td>
+                    <td title={JSON.stringify(log.price_snapshot ?? {})}>{creditAmount(log.charged_microcredits)}<small>{log.billing_status ?? "legacy"}</small></td>
                   </tr>
                 ))}
               </tbody>
@@ -338,7 +340,7 @@ export function APIKeyDetail() {
                     <option value="disabled">{t("Disabled")}</option>
                   </select>
                 </label>
-                <QuotaInput key={`credits-${key.id}-${key.cost_quota_micro}`} label="Total Credits" name="credits_quota" initialValue={(key.cost_quota_micro ?? 0) / MICRO_PER_CREDIT} />
+                <QuotaInput key={`credits-${key.id}-${key.quota_microcredits}`} label="Total Credits" name="credits_quota" step="0.000001" initialValue={creditsInputValue(key.quota_microcredits ?? 0)} />
                 <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />
                 <QuotaInput key={`token-${key.id}-${key.token_quota}`} label="Token quota" name="token_quota" initialValue={key.token_quota} />
               </div>
@@ -399,7 +401,7 @@ function RateLimitUsagePanel({ items }: { items: RateLimitUsage[] }) {
               <tr key={item.window}>
                 <td>{t(windowLabel(item.window))}</td>
                 <td>
-                  <span>{item.cost_quota_micro ? creditAmount(item.cost_remaining_micro) : "∞"} {t("remaining")}</span><LimitProgress value={quotaRatio(item.cost_micro, item.cost_quota_micro)} label={`${creditAmount(item.cost_micro)} / ${item.cost_quota_micro ? creditAmount(item.cost_quota_micro) : "∞"}`} />
+                  <span>{item.quota_microcredits ? creditAmount(item.remaining_microcredits) : "∞"} {t("remaining")}</span><LimitProgress value={quotaRatio(item.charged_microcredits, item.quota_microcredits)} label={`${creditAmount(item.charged_microcredits)} / ${item.quota_microcredits ? creditAmount(item.quota_microcredits) : "∞"}`} />
                 </td>
                 <td>
                   <LimitProgress value={quotaRatio(item.requests, item.request_quota)} label={`${integer(item.requests)} / ${quotaLabel(item.request_quota)}`} />

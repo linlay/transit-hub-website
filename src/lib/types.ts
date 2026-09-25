@@ -5,7 +5,7 @@ export type RateLimit = {
   window: RateLimitWindow;
   request_quota: number;
   token_quota: number;
-  cost_quota_micro: number;
+  quota_microcredits: number;
 };
 
 export type RateLimitUsage = {
@@ -19,16 +19,16 @@ export type RateLimitUsage = {
   tokens: number;
   token_quota: number;
   token_remaining: number;
-  cost_micro: number;
-  cost_quota_micro: number;
-  cost_remaining_micro: number;
+  charged_microcredits: number;
+  quota_microcredits: number;
+  remaining_microcredits: number;
 };
 
 export type APIKey = {
-  used_cost_micro: number;
-  cost_remaining_micro?: number;
-  cost_unlimited?: boolean;
-  cost_quota_micro: number;
+  used_microcredits: number;
+  remaining_microcredits?: number;
+  credits_unlimited?: boolean;
+  quota_microcredits: number;
   id: string;
   name: string;
   description: string;
@@ -55,7 +55,7 @@ export type APIKey = {
 };
 
 export type JWTGrant = {
-  cost_quota_micro: number;
+  quota_microcredits: number;
   jti: string;
   name: string;
   description: string;
@@ -95,7 +95,7 @@ export type TrafficBucket = {
   cache_miss_tokens: number;
   cache_total_tokens: number;
   cache_hit_rate: number | null;
-  cost_micro: number;
+  charged_microcredits: number;
   error_requests: number;
   average_latency_ms: number;
   models?: TrafficModelUsage[];
@@ -112,7 +112,7 @@ export type Overview = {
   total_tokens: number;
   request_tokens: number;
   response_tokens: number;
-  total_cost_micro: number;
+  total_microcredits: number;
   error_requests: number;
   average_latency_ms: number;
   active_devices: number;
@@ -132,7 +132,7 @@ export type Overview = {
     request_used_ratio: number;
     token_used_ratio: number;
  cost_used_ratio?: number;
- cost_remaining_micro?: number;
+ remaining_microcredits?: number;
   }>;
   degraded_components?: string[];
 };
@@ -163,7 +163,7 @@ export type RequestLog = {
   cache_miss_tokens: number;
   cache_total_tokens: number;
   cache_hit_rate: number | null;
-  cost_micro: number;
+  charged_microcredits: number;
   estimated: boolean;
   error_type: string;
   created_at: string;
@@ -184,20 +184,20 @@ export type APISession = {
 };
 
 export type PriceBilling = {
- token_tiers?: Array<{above_input_tokens: number; input_cost_micro_per_1m_tokens: number; output_cost_micro_per_1m_tokens: number; input_cache_hit_cost_micro_per_1m_tokens?: number | null}>;
+ token_tiers?: Array<{above_input_tokens: number; input_microcredits_per_1m_tokens: number; output_microcredits_per_1m_tokens: number; input_cache_hit_microcredits_per_1m_tokens?: number | null}>;
  mode: "tokens" | "image" | "free";
- cache_write_cost_micro_per_1m_tokens?: number | null;
- image_prices?: Array<{size: string; quality: string; cost_micro: number}>;
+ cache_write_microcredits_per_1m_tokens?: number | null;
+ image_prices?: Array<{size: string; quality: string; charged_microcredits: number}>;
 };
 export type ModelPrice = {
  billing?: PriceBilling;
   id: string;
   protocol: string;
   public_model: string;
-  input_cost_micro_per_1m_tokens: number;
-  input_cache_hit_cost_micro_per_1m_tokens: number | null;
-  output_cost_micro_per_1m_tokens: number;
-  currency: string;
+  input_microcredits_per_1m_tokens: number;
+  input_cache_hit_microcredits_per_1m_tokens: number | null;
+  output_microcredits_per_1m_tokens: number;
+  unit: "CREDITS";
   created_at: string;
   updated_at: string;
 };
@@ -212,7 +212,7 @@ export type ProviderUsage = {
   cache_miss_tokens: number;
   cache_total_tokens: number;
   cache_hit_rate: number | null;
-  cost_micro: number;
+  charged_microcredits: number;
   error_requests: number;
   average_latency_ms: number;
 };
@@ -369,7 +369,7 @@ export type TrafficRanking = {
   name: string;
   requests: number;
   total_tokens: number;
-  cost_micro: number;
+  charged_microcredits: number;
 };
 
 export type TrafficOption = { id: string; name: string };

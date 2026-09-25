@@ -153,7 +153,7 @@ export function Providers() {
                   <td>{nullablePercent(item.cache_hit_rate)}</td>
                   <td>{integer(item.error_requests)}</td>
                   <td>{integer(item.average_latency_ms)} ms</td>
-                  <td>{formatCredits(item.cost_micro)}</td>
+                  <td>{formatCredits(item.charged_microcredits)}</td>
                 </tr>
               ))}
               {!usage.data?.items?.length ? (
@@ -369,7 +369,7 @@ function ProviderMetrics({ usage }: { usage: ProviderUsage }) {
       <MetricCard label={t("Requests")} value={integer(usage.requests)} detail={t("{count} failed", { count: integer(usage.error_requests) })} />
       <MetricCard label={t("Tokens")} value={compactTokenCount(usage.total_tokens)} detail={t("{count} input", { count: compactTokenCount(usage.request_tokens) })} />
       <MetricCard label={t("Cache hit")} value={nullablePercent(usage.cache_hit_rate)} detail={t("{count} cache tokens", { count: compactTokenCount(usage.cache_total_tokens) })} />
-      <MetricCard label={t("Cost")} value={formatCredits(usage.cost_micro)} detail={t("{count} ms avg", { count: integer(usage.average_latency_ms) })} />
+      <MetricCard label={t("Cost")} value={formatCredits(usage.charged_microcredits)} detail={t("{count} ms avg", { count: integer(usage.average_latency_ms) })} />
     </div>
   );
 }
@@ -385,7 +385,7 @@ function emptyProviderUsage(provider: string): ProviderUsage {
     cache_miss_tokens: 0,
     cache_total_tokens: 0,
     cache_hit_rate: null,
-    cost_micro: 0,
+    charged_microcredits: 0,
     error_requests: 0,
     average_latency_ms: 0,
   };

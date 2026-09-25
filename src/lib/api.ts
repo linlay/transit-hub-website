@@ -1,3 +1,4 @@
+import { encodeCreditsJSON, decodeCreditsJSON } from "./credits-wire";
 import type {
   AdminModel,
   AdminUser,
@@ -69,7 +70,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     const payload = (await response.json().catch(() => ({}))) as { error?: string; component?: string };
     throw new APIError(payload.error ?? `Request failed: ${response.status}`, response.status, payload.component);
   }
-  return response.json() as Promise<T>;
+  return decodeCreditsJSON(await response.text()) as T;
 }
 
 async function requestStream(path: string, body: unknown, signal?: AbortSignal): Promise<Response> {
@@ -81,7 +82,7 @@ async function requestStream(path: string, body: unknown, signal?: AbortSignal):
       Accept: "text/event-stream",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: encodeCreditsJSON(body),
   });
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as { error?: string; component?: string };
@@ -95,7 +96,7 @@ async function requestStream(path: string, body: unknown, signal?: AbortSignal):
 
 export const api = {
   login: (body: { username: string; password: string }) =>
-    request<{ user: AdminUser }>("/admin/auth/login", { method: "POST", body: JSON.stringify(body) }),
+    request<{ user: AdminUser }>("/admin/auth/login", { method: "POST", body: encodeCreditsJSON(body) }),
   me: () => request<{ user: AdminUser }>("/admin/auth/me"),
   logout: () => request<{ status: string }>("/admin/auth/logout", { method: "POST" }),
   overview: (query?: Record<string, string | number | boolean | undefined>) =>
@@ -104,19 +105,19 @@ export const api = {
     request<ListResponse<APIKey>>("/admin/api-keys", { query }),
   apiKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`),
   createAPIKey: (body: Partial<APIKey>) =>
-    request<APIKey & { key: string }>("/admin/api-keys", { method: "POST", body: JSON.stringify(body) }),
+    request<APIKey & { key: string }>("/admin/api-keys", { method: "POST", body: encodeCreditsJSON(body) }),
   updateAPIKey: (id: string, body: Partial<APIKey>) =>
-    request<APIKey>(`/admin/api-keys/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    request<APIKey>(`/admin/api-keys/${id}`, { method: "PATCH", body: encodeCreditsJSON(body) }),
   deleteAPIKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`, { method: "DELETE" }),
   batchAPIKeys: (body: { action: "delete" | "inactive"; ids?: string[]; issuer_jti?: string }) =>
-    request<APIKeyBatchResult>("/admin/api-keys/batch", { method: "POST", body: JSON.stringify(body) }),
+    request<APIKeyBatchResult>("/admin/api-keys/batch", { method: "POST", body: encodeCreditsJSON(body) }),
   jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<JWTGrant>>("/admin/jwt-grants", { query }),
   jwtGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`),
-  createJWTGrant: (body: { name: string; description?: string; issue_quota: number; request_quota: number; token_quota: number; cost_quota_micro?: number; allowed_models: string[]; rate_limits?: RateLimit[] }) =>
-    request<JWTGrant & { jwt: string }>("/admin/jwt-grants", { method: "POST", body: JSON.stringify(body) }),
+  createJWTGrant: (body: { name: string; description?: string; issue_quota: number; request_quota: number; token_quota: number; quota_microcredits?: number; allowed_models: string[]; rate_limits?: RateLimit[] }) =>
+    request<JWTGrant & { jwt: string }>("/admin/jwt-grants", { method: "POST", body: encodeCreditsJSON(body) }),
   updateJWTGrant: (jti: string, body: Record<string, unknown>) =>
-    request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: JSON.stringify(body) }),
+    request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "PATCH", body: encodeCreditsJSON(body) }),
   deleteJWTGrant: (jti: string, query?: { delete_api_keys?: boolean }) =>
     request<JWTGrant>(`/admin/jwt-grants/${jti}`, { method: "DELETE", query }),
   apiKeyUsage: (id: string) =>
@@ -142,16 +143,16 @@ export const api = {
     request<ListResponse<APISession>>("/admin/sessions", { query }),
   prices: () => request<ListResponse<ModelPrice>>("/admin/model-prices"),
   createPrice: (body: Partial<ModelPrice>) =>
-    request<ModelPrice>("/admin/model-prices", { method: "POST", body: JSON.stringify(body) }),
+    request<ModelPrice>("/admin/model-prices", { method: "POST", body: encodeCreditsJSON(body) }),
   updatePrice: (id: string, body: Partial<ModelPrice>) =>
-    request<ModelPrice>(`/admin/model-prices/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    request<ModelPrice>(`/admin/model-prices/${id}`, { method: "PATCH", body: encodeCreditsJSON(body) }),
   deletePrice: (id: string) => request<{ status: string }>(`/admin/model-prices/${id}`, { method: "DELETE" }),
   models: () => request<ListResponse<AdminModel>>("/admin/models"),
   model: (protocol: string, publicModel: string) =>
     request<AdminModel>("/admin/models/detail", { query: { protocol, public_model: publicModel } }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
   testProviderConnectivity: (body: ProviderConnectivityTestRequest) =>
-    request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: JSON.stringify(body) }),
+    request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: encodeCreditsJSON(body) }),
   playgroundChat: (body: PlaygroundChatRequest, signal?: AbortSignal) =>
     requestStream("/admin/playground/chat", body, signal),
   providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
@@ -159,8 +160,8 @@ export const api = {
   providerQuota: () => request<ProviderQuotaResponse>("/admin/providers/quota"),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),
   createUser: (body: { username: string; password: string; status?: string }) =>
-    request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(body) }),
+    request<AdminUser>("/admin/users", { method: "POST", body: encodeCreditsJSON(body) }),
   updateUser: (id: string, body: Partial<AdminUser> & { password?: string }) =>
-    request<AdminUser>(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    request<AdminUser>(`/admin/users/${id}`, { method: "PATCH", body: encodeCreditsJSON(body) }),
   deleteUser: (id: string) => request<AdminUser>(`/admin/users/${id}`, { method: "DELETE" }),
 };

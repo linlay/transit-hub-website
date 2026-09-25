@@ -87,7 +87,7 @@ export function Traffic() {
       <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} />
         <MetricCard label={t("Tokens")} value={compactTokenCount(summary?.total_tokens ?? 0)} />
-        <MetricCard label={t("Spend (Credits)")} value={integer(Math.round((summary?.cost_micro ?? 0) / MICRO_PER_CREDIT))} />
+        <MetricCard label={t("Spend (Credits)")} value={integer(Math.round((summary?.charged_microcredits ?? 0) / MICRO_PER_CREDIT))} />
         <MetricCard label={t("Active API keys")} value={integer(summary?.unique_api_keys ?? 0)} detail={t("Distinct across selected range")} />
         <MetricCard label={t("Failure rate")} value={new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(summary?.requests ? summary.error_requests / summary.requests : 0)} />
         <MetricCard label={t("Average latency (ms)")} value={integer(Math.round(summary?.average_latency_ms ?? 0))} />

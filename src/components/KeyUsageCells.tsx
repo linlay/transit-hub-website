@@ -5,7 +5,7 @@ import type { APIKey, RateLimit, RateLimitUsage, RateLimitWindow } from "../lib/
 
 const windows: RateLimitWindow[] = ["1h", "5h", "1d", "7d", "30d"];
 const windowNames = { "1h": "1 hour", "5h": "5 hours", "1d": "1 day", "7d": "7 days", "30d": "30 days" };
-type UsageRow = Omit<RateLimit, "window"> & { window: RateLimitWindow | "total"; requests?: number; tokens?: number; cost_micro?: number; resets_at?: string; stale?: boolean; state?: string; starts_at?: string };
+type UsageRow = Omit<RateLimit, "window"> & { window: RateLimitWindow | "total"; requests?: number; tokens?: number; charged_microcredits?: number; resets_at?: string; stale?: boolean; state?: string; starts_at?: string };
 
 function currentUsage(key: APIKey, window: string, now: number): RateLimitUsage | undefined {
   if (key.rate_limit_usage_unavailable) return undefined;
@@ -15,7 +15,7 @@ function currentUsage(key: APIKey, window: string, now: number): RateLimitUsage 
 export function keyHasWindowLimit(key: APIKey, now: number) {
   return (key.rate_limits ?? []).some((limit) => {
     const usage = currentUsage(key, limit.window, now);
-    return usage && ((limit.cost_quota_micro > 0 && usage.cost_micro >= limit.cost_quota_micro)
+    return usage && ((limit.quota_microcredits > 0 && usage.charged_microcredits >= limit.quota_microcredits)
       || (limit.request_quota > 0 && usage.requests >= limit.request_quota)
       || (limit.token_quota > 0 && usage.tokens >= limit.token_quota));
   });
@@ -29,13 +29,13 @@ function tone(used: number | undefined, limit: number) {
 export function KeyUsageCells({ apiKey: key, now }: { apiKey: APIKey; now: number }) {
   const { t } = useI18n();
   const rows: UsageRow[] = [
-    { window: "total", requests: key.used_requests, tokens: key.used_tokens, cost_micro: key.used_cost_micro,
-      request_quota: key.request_quota, token_quota: key.token_quota, cost_quota_micro: key.cost_quota_micro ?? 0 },
+    { window: "total", requests: key.used_requests, tokens: key.used_tokens, charged_microcredits: key.used_microcredits,
+      request_quota: key.request_quota, token_quota: key.token_quota, quota_microcredits: key.quota_microcredits ?? 0 },
     ...[...(key.rate_limits ?? [])].sort((a, b) => windows.indexOf(a.window) - windows.indexOf(b.window)).map((limit) => {
       const usage = currentUsage(key, limit.window, now);
       const previous = key.rate_limit_usage?.find((item) => item.window === limit.window);
       const waiting = !key.rate_limit_usage_unavailable && previous && (previous.state === "idle" || previous.state === "expired" || ((limit.window === "5h" || limit.window === "7d") && Date.parse(previous.resets_at) <= now));
-      return { ...limit, requests: waiting ? 0 : usage?.requests, tokens: waiting ? 0 : usage?.tokens, cost_micro: waiting ? 0 : usage?.cost_micro,
+      return { ...limit, requests: waiting ? 0 : usage?.requests, tokens: waiting ? 0 : usage?.tokens, charged_microcredits: waiting ? 0 : usage?.charged_microcredits,
         resets_at: usage?.resets_at, starts_at: usage?.starts_at, state: waiting ? (previous.state === "idle" ? "idle" : "expired") : undefined,
         stale: Boolean(previous && Date.parse(previous.resets_at) <= now) };
     }),
@@ -55,9 +55,9 @@ export function KeyUsageCells({ apiKey: key, now }: { apiKey: APIKey; now: numbe
   }
   return <>
     <td>{stack((row) => <span className="muted-cell" title={label(row)}>{row.window === "total" ? t("Total") : row.window}</span>)}</td>
-    <td>{stack((row) => <span className={tone(row.cost_micro, row.cost_quota_micro)} title={`${label(row)}: ${row.cost_micro === undefined ? t("Usage unavailable") : creditAmount(row.cost_micro) + " Credits"}`}>{row.cost_micro === undefined ? "—" : creditAmount(row.cost_micro)}</span>)}</td>
-    <td>{stack((row) => <span className={tone(row.cost_micro, row.cost_quota_micro)} title={`${label(row)}: ${row.cost_quota_micro ? creditAmount(row.cost_quota_micro) + " Credits" : t("Unlimited")} · ${quotaLabel(row.cost_micro, row.cost_quota_micro)}`}>
-      {row.cost_quota_micro ? creditAmount(row.cost_quota_micro) : <span className="muted-cell" aria-label={t("Unlimited")}>∞</span>}
+    <td>{stack((row) => <span className={tone(row.charged_microcredits, row.quota_microcredits)} title={`${label(row)}: ${row.charged_microcredits === undefined ? t("Usage unavailable") : creditAmount(row.charged_microcredits) + " Credits"}`}>{row.charged_microcredits === undefined ? "—" : creditAmount(row.charged_microcredits)}</span>)}</td>
+    <td>{stack((row) => <span className={tone(row.charged_microcredits, row.quota_microcredits)} title={`${label(row)}: ${row.quota_microcredits ? creditAmount(row.quota_microcredits) + " Credits" : t("Unlimited")} · ${quotaLabel(row.charged_microcredits, row.quota_microcredits)}`}>
+      {row.quota_microcredits ? creditAmount(row.quota_microcredits) : <span className="muted-cell" aria-label={t("Unlimited")}>∞</span>}
     </span>)}</td>
     <td>{stack((row) => usageValue(row, row.requests, row.request_quota, compactTokenCount))}</td>
     <td>{stack((row) => usageValue(row, row.tokens, row.token_quota, compactTokenCount))}</td>

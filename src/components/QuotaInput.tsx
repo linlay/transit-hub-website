@@ -1,18 +1,20 @@
+import { decimalToMicro } from "../lib/format";
 import { useId, useState } from "react";
 import { useI18n } from "../lib/i18n";
 
 type QuotaInputProps = {
   label: string;
   name: string;
-  initialValue?: number;
+  initialValue?: number | string;
+  step?: string;
 };
 
-export function QuotaInput({ label, name, initialValue = 0 }: QuotaInputProps) {
+export function QuotaInput({ label, name, initialValue = 0, step = "1" }: QuotaInputProps) {
   const { t } = useI18n();
   const inputId = useId();
   const checkId = useId();
-  const [unlimited, setUnlimited] = useState(initialValue === 0);
-  const [value, setValue] = useState(initialValue > 0 ? String(initialValue) : "");
+  const [unlimited, setUnlimited] = useState(Number(initialValue) === 0);
+  const [value, setValue] = useState(Number(initialValue) > 0 ? String(initialValue) : "");
 
   return (
     <div className="quota-input">
@@ -25,7 +27,8 @@ export function QuotaInput({ label, name, initialValue = 0 }: QuotaInputProps) {
           onChange={(event) => setValue(event.target.value)}
           placeholder={t(label)}
           type="number"
-          min="1"
+          min={step}
+          step={step}
           required={!unlimited}
           disabled={unlimited}
         />
@@ -49,4 +52,8 @@ export function quotaValue(form: FormData, name: string) {
     return 0;
   }
   return Number(form.get(name) || 0);
+}
+
+export function creditsQuotaValue(form: FormData, name: string) {
+ return form.get(`${name}_unlimited`) === "on" ? 0 : decimalToMicro(form.get(name));
 }

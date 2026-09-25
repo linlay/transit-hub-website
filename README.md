@@ -191,3 +191,7 @@ API 字段继续使用整数微元，不提交浮点 Credits。前后端需配�
 `/traffic` 支持时间范围、API Key/模型搜索多选、Provider、请求结果和统计时区筛选，条件保存在 URL。六类图表展示调用趋势、活跃度和花费、模型/Key 排行、词元与缓存、请求质量；点击排行可继续筛选，匹配日志在独立弹框内分页。
 
 此页面依赖配套后端的 `/admin/traffic/analytics` 和增强的 `/admin/logs`，上线时先更新后端。统计基于保留日志，默认最近 7 天、UTC+8，Credits 汇总显示整数。日期边界和 URL 筛选测试：`node scripts/traffic-filters.test.mjs`。
+
+## 原生 Credits
+
+模型价格、额度、消费统一使用 Credits，1 Credit = 1,000,000 micro-Credits。API 金额使用十进制整数字符串，`credits-wire.ts` 在边界转换并检查安全整数范围，表单支持六位小数。与 Server 的当前契约同步升级，不使用人民币换算或 v2 接口。

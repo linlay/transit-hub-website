@@ -4,7 +4,7 @@ import { compactNumber, compactTokenCount, integer, MICRO_PER_CREDIT, percent } 
 import { useI18n } from "../lib/i18n";
 import type { TrafficBucket, TrafficRanking } from "../lib/types";
 
-type RankingMetric = "requests" | "total_tokens" | "cost_micro";
+type RankingMetric = "requests" | "total_tokens" | "charged_microcredits";
 export function TrafficRankingChart({ title, rows, onSelect }: { title: string; rows: TrafficRanking[]; onSelect: (id: string) => void }) {
   const { t } = useI18n();
   const [metric, setMetric] = useState<RankingMetric>("requests");
@@ -14,14 +14,14 @@ export function TrafficRankingChart({ title, rows, onSelect }: { title: string; 
     <div className="panel-heading">
       <div><h2>{t(title)}</h2><span>{t("Click a row to filter")}</span></div>
       <select aria-label={t(title)} value={metric} onChange={(e) => setMetric(e.target.value as RankingMetric)}>
-        <option value="requests">{t("Requests")}</option><option value="total_tokens">{t("Tokens")}</option><option value="cost_micro">{t("Spend (Credits)")}</option>
+        <option value="requests">{t("Requests")}</option><option value="total_tokens">{t("Tokens")}</option><option value="charged_microcredits">{t("Spend (Credits)")}</option>
       </select>
     </div>
     <div className="traffic-ranking">
       {sorted.map((row) => <button type="button" className="traffic-ranking-row" key={row.id} onClick={() => onSelect(row.id)}>
         <span className="traffic-ranking-name" title={row.id}>{row.name || row.id || t("Unknown")}</span>
         <span className="traffic-ranking-bar" aria-hidden="true"><span style={{ width: `${Math.max(0, row[metric] / max * 100)}%` }} /></span>
-        <strong>{integer(metric === "cost_micro" ? Math.round(row[metric] / MICRO_PER_CREDIT) : row[metric])}</strong>
+        <strong>{integer(metric === "charged_microcredits" ? Math.round(row[metric] / MICRO_PER_CREDIT) : row[metric])}</strong>
       </button>)}
     </div>
   </section>;

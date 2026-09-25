@@ -1,4 +1,3 @@
-export const CURRENCY = "CNY";
 
 export type FormatLocale = "zh-CN" | "en-US";
 
@@ -22,20 +21,6 @@ export function integer(value: number) {
 
 export function decimal(value: number) {
   return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 1 }).format(value || 0);
-}
-
-export function formatCurrency(value: number) {
-  return new Intl.NumberFormat(currencyLocale(), { style: "currency", currency: CURRENCY, maximumFractionDigits: 4 }).format((value || 0) / 1_000_000);
-}
-
-export function formatCurrencyInteger(value: number) {
-  return new Intl.NumberFormat(currencyLocale(), { style: "currency", currency: CURRENCY, maximumFractionDigits: 0 }).format((value || 0) / 1_000_000);
-}
-
-export function currencyIntegerValue(value: number) {
-  return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(
-    Math.round((value || 0) / 1_000_000),
-  );
 }
 
 export function percentValue(value: number) {
@@ -66,22 +51,29 @@ export function quotaRatio(used: number, quota: number) {
   return Math.min(1, used / quota);
 }
 
-function currencyLocale() {
-  if (CURRENCY === "CNY") return currentLocale;
-  return currentLocale === "zh-CN" ? "zh-CN" : "en-US";
-}
 
 function initialFormatLocale(): FormatLocale {
   if (typeof navigator === "undefined") return "en-US";
   return navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
-export const MICRO_PER_CREDIT = 10_000;
+export const MICRO_PER_CREDIT = 1_000_000;
+export function creditsInputValue(value: number) {
+ if (!Number.isSafeInteger(value)) throw new Error("Invalid Credits amount");
+ const amount = BigInt(value);
+ const absolute = amount < 0n ? -amount : amount;
+ const whole = absolute / 1_000_000n;
+ const fraction = String(absolute % 1_000_000n).padStart(6, "0").replace(/0+$/, "");
+ return `${amount < 0n ? "-" : ""}${whole}${fraction ? "." + fraction : ""}`;
+}
 export function creditAmount(value: number) {
-  return new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 4 }).format(value / MICRO_PER_CREDIT);
+ const [whole, fraction] = creditsInputValue(value).split(".");
+ const negative = whole.startsWith("-");
+ const grouped = new Intl.NumberFormat(currentLocale).format(BigInt(negative ? whole.slice(1) : whole));
+ return `${negative ? "-" : ""}${grouped}${fraction ? "." + fraction : ""}`;
 }
 export function formatCredits(value: number) {
- return `${new Intl.NumberFormat(currentLocale, {maximumFractionDigits:4}).format((value || 0) / MICRO_PER_CREDIT)} ${currentLocale === "zh-CN" ? "点数" : "Credits"}`;
+ return `${creditAmount(value || 0)} Credits`;
 }
 // Parse decimal form inputs without binary floating point monetary arithmetic.
 export function decimalToMicro(value: FormDataEntryValue | string | null, scale = 1_000_000) {

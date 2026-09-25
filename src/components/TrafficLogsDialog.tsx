@@ -26,7 +26,7 @@ export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<
         {logs.isPending || logs.error || !logs.data?.items.length ? <tr><td colSpan={8}>{t(logs.isPending ? "Loading logs..." : logs.error ? "Unable to load logs" : "No requests yet.")}</td></tr> : null}
         {(logs.data?.items ?? []).map((log) => <tr key={log.id}>
           <td>{new Intl.DateTimeFormat(locale, { timeZone: timezone, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(log.created_at))}</td>
-          <td title={log.api_key_id}>{log.api_key_name || log.api_key_id}</td><td>{log.public_model}</td><td>{log.provider}</td><td>{log.status_code}{log.error_type ? <small>{log.error_type}</small> : null}</td><td>{integer(log.latency_ms)} ms</td><td>{integer(log.total_tokens)}</td><td>{creditAmount(log.cost_micro)}</td>
+          <td title={log.api_key_id}>{log.api_key_name || log.api_key_id}</td><td>{log.public_model}</td><td>{log.provider}</td><td>{log.status_code}{log.error_type ? <small>{log.error_type}</small> : null}</td><td>{integer(log.latency_ms)} ms</td><td>{integer(log.total_tokens)}</td><td>{creditAmount(log.charged_microcredits)}</td>
         </tr>)}
       </tbody></table></div>
     <div className="dialog-actions"><button type="button" className="icon-text" disabled={page === 0 || logs.isFetching} onClick={() => setPage(page - 1)}>{t("Previous page")}</button><span>{page + 1} / {Math.max(1, Math.ceil(total / 50))}</span><button type="button" className="icon-text" disabled={!logs.data || (page + 1) * 50 >= total || logs.isFetching} onClick={() => setPage(page + 1)}>{t("Next page")}</button></div>

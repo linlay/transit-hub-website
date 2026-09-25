@@ -1,4 +1,4 @@
-import { MICRO_PER_CREDIT } from "../lib/format";
+import { creditsInputValue } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
@@ -9,7 +9,7 @@ import { RowActions } from "../components/RowActions";
 import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
-import { QuotaInput, quotaValue } from "../components/QuotaInput";
+import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
@@ -133,15 +133,17 @@ export function APIKeys() {
       return;
     }
     setCreateModelError("");
+    try {
     create.mutate({
       name: String(form.get("name") ?? ""),
       description: String(form.get("description") ?? ""),
       request_quota: quotaValue(form, "request_quota"),
       token_quota: quotaValue(form, "token_quota"),
-      cost_quota_micro: quotaValue(form,"credits_quota") * MICRO_PER_CREDIT,
+      quota_microcredits: creditsQuotaValue(form,"credits_quota"),
       rate_limits: rateLimitValue(form, "rate_limits"),
       allowed_models: allowedModels,
     });
+    } catch (error) { setCreateModelError(error instanceof Error ? error.message : String(error)); }
   }
 
   function toggleSelection(id: string) {
@@ -345,7 +347,7 @@ export function APIKeys() {
           <form className="dialog-form" onSubmit={submit}>
             <input name="name" aria-label={t("Name")} placeholder={t("Name")} defaultValue={copySource ? t("{name} (copy)", { name: copySource.name }) : ""} required />
             <input name="description" aria-label={t("Description")} placeholder={t("Description")} defaultValue={copySource?.description ?? ""} />
-            <QuotaInput label="Total Credits" name="credits_quota" initialValue={(copySource?.cost_quota_micro ?? 0) / MICRO_PER_CREDIT} />
+            <QuotaInput label="Total Credits" name="credits_quota" step="0.000001" initialValue={creditsInputValue(copySource?.quota_microcredits ?? 0)} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={copySource?.request_quota ?? 0} />
             <QuotaInput label="Token quota" name="token_quota" initialValue={copySource?.token_quota ?? 0} />
             <RateLimitEditor name="rate_limits" initialValue={copySource?.rate_limits} />
