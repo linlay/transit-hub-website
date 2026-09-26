@@ -47,6 +47,20 @@ const colorsAfter = await legendColors();
 assert(colorsBefore['gpt-4.1']);assert.equal(colorsBefore['gpt-4.1'],colorsAfter['gpt-4.1']);
 assert.equal(colorsBefore['claude-sonnet'],colorsAfter['claude-sonnet']);
 fixtures['/admin/traffic']=trafficBefore;
+// Dense list panels reach the viewport bottom, and every page shares compact outer spacing.
+for(const path of ['/api-keys','/jwt-grants','/models','/sessions','/users']){
+ await go(path);
+ const geometry=await page.locator('.page').evaluate(node=>{
+  const panel=node.querySelector('.panel:has(> .data-table-scroll)');
+  const table=panel?.querySelector('.data-table-scroll');
+  return {padding:getComputedStyle(node).paddingLeft,pageBottom:node.getBoundingClientRect().bottom,panelBottom:panel?.getBoundingClientRect().bottom,tableBottom:table?.getBoundingClientRect().bottom,viewport:innerHeight};
+ });
+ assert.equal(geometry.padding,'16px',`${path} page padding`);
+ assert(Math.abs(geometry.pageBottom-geometry.viewport)<1,`${path} page fills viewport`);
+ assert(Math.abs(geometry.panelBottom-(geometry.viewport-16))<1,`${path} panel reaches bottom padding`);
+ assert(Math.abs(geometry.tableBottom-(geometry.panelBottom-13))<1,`${path} table reaches panel edge ${JSON.stringify(geometry)}`);
+}
+await go('/');assert.equal(await page.locator('.page').evaluate(node=>getComputedStyle(node).paddingLeft),'16px','dashboard page padding');
 // Input debounce and URL state, keep old rows during a delayed query.
 await go('/api-keys');queries=[];delay=500;
 const tableTopBefore = await page.locator('.data-table-scroll').evaluate(e=>e.getBoundingClientRect().top);
@@ -123,6 +137,6 @@ await page.locator('.data-table-scroll').evaluate(e=>{e.scrollTop=0;e.scrollLeft
 await page.getByRole('link',{name:'Production app',exact:true}).click();await page.getByRole('button',{name:'Back to API keys',exact:true}).click();
 await page.waitForTimeout(150);assert((await page.locator('.data-table-scroll').evaluate(e=>e.scrollLeft))>100);
 await page.getByRole('button',{name:'Create key',exact:true}).click();await page.screenshot({path:dir+'/modal-light.png'});await page.keyboard.press('Escape');
-assert.deepEqual(errors,[]);console.log('PASS: stable model colors, debounce, URL/back navigation, retained rows, tooltip, modal focus, delete retry, form errors, query errors, auth outage, sticky table and scroll restoration');
+assert.deepEqual(errors,[]);console.log('PASS: compact page spacing, full-height lists, stable model colors, debounce, URL/back navigation, retained rows, tooltip, modal focus, delete retry, form errors, query errors, auth outage, sticky table and scroll restoration');
 await browser.close();
 })().catch(async e=>{if(globalThis.qaPage){await qaPage.screenshot({path:dir+'/failure.png'});console.log('url',qaPage.url());console.log((await qaPage.locator('body').innerText()).slice(-2500));}console.error(e);process.exit(1)});

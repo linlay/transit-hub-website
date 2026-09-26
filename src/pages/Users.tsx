@@ -40,7 +40,7 @@ export function Users() {
   }
 
   return (
-    <section className="page">
+    <section className="page list-page">
       <section className="panel">
         <form ref={formRef} className="inline-form" onChange={() => { if (create.isSuccess) create.reset(); }} onSubmit={submit}>
           <input aria-label={t("Username")} disabled={create.isPending} name="username" placeholder={t("Username")} required />

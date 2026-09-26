@@ -63,7 +63,7 @@ export function Models() {
   }
 
   return (
-    <section className="page">
+    <section className="page list-page">
       <section className="panel models-catalog-panel">
         <div className="toolbar models-toolbar">
           <div className="models-filters">

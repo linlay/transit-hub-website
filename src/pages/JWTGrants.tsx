@@ -183,7 +183,7 @@ export function JWTGrants() {
   );
 
   return (
-    <section className="page">
+    <section className="page list-page">
       <section className="panel credential-panel">
         <div className="toolbar filters">
           <label className="search">

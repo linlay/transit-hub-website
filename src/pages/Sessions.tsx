@@ -29,7 +29,7 @@ export function Sessions() {
   usePageActions(<RefreshButton isRefreshing={sessions.isFetching} onClick={() => sessions.refetch()} />, [sessions.isFetching, sessions.refetch]);
 
   return (
-    <section className="page">
+    <section className="page list-page">
       {isTelemetryError(sessions.error) ? <TelemetryUnavailable /> : null}
       {!isTelemetryError(sessions.error) ? <section className="panel">
         <div className="toolbar">

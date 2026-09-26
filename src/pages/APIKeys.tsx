@@ -199,7 +199,7 @@ export function APIKeys() {
   );
 
   return (
-    <section className="page api-keys-page">
+    <section className="page list-page api-keys-page">
       <section className="panel credential-panel">
         <div className="toolbar filters">
           <label className="search">
