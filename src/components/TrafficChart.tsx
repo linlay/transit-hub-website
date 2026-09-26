@@ -1,10 +1,10 @@
+import { modelColor } from "../lib/modelColor";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { compactNumber, compactTokenCount, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import type { TrafficBucket } from "../lib/types";
 
 const MAX_MODEL_SERIES = 8;
-const MODEL_COLORS = ["#0a84ff", "#7c3aed", "#f97316", "#0891b2", "#db2777", "#d97706", "#4f46e5", "#dc2626"];
 const OTHER_MODELS_COLOR = "#64748b";
 
 type TrafficChartProps = {
@@ -129,7 +129,7 @@ function buildChartData(items: TrafficBucket[], otherLabel: string, unknownLabel
   if (totals.size === 0) {
     return {
       data: items.map(({ bucket, requests, total_tokens }) => ({ bucket, requests, total_tokens })),
-      modelSeries: [{ key: "requests", label: requestsLabel, color: MODEL_COLORS[0] }],
+      modelSeries: [{ key: "requests", label: requestsLabel, color: "#0a84ff" }],
     };
   }
 
@@ -147,7 +147,7 @@ function buildChartData(items: TrafficBucket[], otherLabel: string, unknownLabel
     key: `model_${index}`,
     model,
     label: model || unknownLabel,
-    color: MODEL_COLORS[index],
+    color: modelColor(model),
   }));
   if (hasOtherModels) {
     modelSeries.push({ key: "model_other", label: otherLabel, color: OTHER_MODELS_COLOR });

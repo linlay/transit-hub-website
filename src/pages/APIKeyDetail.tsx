@@ -1,8 +1,10 @@
+import { QueryFeedback } from "../components/QueryFeedback";
+import { useConfirm } from "../components/ConfirmProvider";
 import { IconButton } from "../components/IconButton";
 import { creditAmount, creditsInputValue } from "../lib/format";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, FileText, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, Ban, FileText, Save, Trash2, X } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
@@ -23,7 +25,9 @@ export function APIKeyDetail() {
   const { t } = useI18n();
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const { hash } = useLocation();
+  const { hash, state } = useLocation();
+  const confirm = useConfirm();
+  const backTo = typeof state?.from === "string" && /^\/api-keys(?:\?|$)/.test(state.from) ? state.from : "/api-keys";
   const queryClient = useQueryClient();
   const [logsOpen, setLogsOpen] = useState(false);
   const [bucket, setBucket] = useState("day");
@@ -63,7 +67,7 @@ export function APIKeyDetail() {
   });
   const remove = useMutation({
     mutationFn: () => api.deleteAPIKey(id),
-    onSuccess: () => navigate("/api-keys", { replace: true }),
+    onSuccess: () => navigate(backTo, { replace: true }),
   });
   const inactive = useMutation({
     mutationFn: () => api.batchAPIKeys({ action: "inactive", ids: [id] }),
@@ -117,7 +121,8 @@ export function APIKeyDetail() {
     return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), ...(logsOpen ? [logs.refetch()] : [])]);
   }
 
-  usePageActions(<RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} />, [
+  usePageActions(<><IconButton label={t("Back to API keys")} onClick={() => navigate(backTo)}><ArrowLeft size={16} /></IconButton><RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} /></>, [
+    backTo, t,
     id,
     isRefreshing,
     logsOpen,
@@ -129,22 +134,26 @@ export function APIKeyDetail() {
     logs.refetch,
   ]);
 
+  if (!key) return <section className="page"><section className="panel"><QueryFeedback query={detail} /></section></section>;
+
   return (
     <section className="page">
+      <QueryFeedback query={detail} />
+      <QueryFeedback query={usage} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       <div className="credits-summary-grid">
         <MetricCard label={t("Total Credits")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits) : "∞"} detail={t("Lifetime")} />
         <MetricCard label={t("Credits used")} value={creditAmount(key?.used_microcredits ?? 0)} detail={t("Since Credits enabled")} />
         <MetricCard label={t("Credits remaining")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits - (key.used_microcredits ?? 0)) : "∞"} detail={t("Negative balance means overage")} />
       </div>
-      {!telemetryUnavailable ? <div className="usage-summary-grid">
+      {!telemetryUnavailable && usage.data ? <div className="usage-summary-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} detail={t("Recorded calls")} />
         <MetricCard label={t("Tokens")} value={<span title={integer(summary?.total_tokens ?? 0)}>{compactTokenCount(summary?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
         <MetricCard label={t("Cache hit")} value={nullablePercent(summary?.cache_hit_rate)} detail={<span title={integer(summary?.cache_total_tokens ?? 0)}>{t("{count} cache tokens", { count: compactTokenCount(summary?.cache_total_tokens ?? 0) })}</span>} />
         <MetricCard label={t("Active devices")} value={integer(usage.data?.active_devices ?? 0)} detail={t("Current window")} />
       </div> : null}
 
-      <RateLimitUsagePanel items={usage.data?.rate_limit_usage ?? []} />
+      {usage.data ? <RateLimitUsagePanel items={usage.data.rate_limit_usage ?? []} /> : null}
 
       {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
@@ -166,7 +175,8 @@ export function APIKeyDetail() {
             </select>
           </div>
         </div>
-        <TrafficChart items={timeline.data?.items ?? []} />
+        <QueryFeedback query={timeline} />
+        {timeline.data ? <TrafficChart items={timeline.data.items ?? []} /> : null}
         <div className="table-wrap">
           <table>
             <thead>
@@ -199,7 +209,7 @@ export function APIKeyDetail() {
               {!timeline.data?.items?.length ? (
                 <tr>
                   <td colSpan={9} className="muted-cell">
-                    {t("No traffic in this range.")}
+                    {timeline.isPending ? t("Loading...") : timeline.isError ? t("Unable to load data.") : t("No traffic in this range.")}
                   </td>
                 </tr>
               ) : null}
@@ -213,6 +223,7 @@ export function APIKeyDetail() {
           <h2>{t("Sessions")}</h2>
           <span>{t("Device IDs and sources")}</span>
         </div>
+        <QueryFeedback query={sessions} />
         <div className="table-wrap">
           <table>
             <thead>
@@ -298,9 +309,9 @@ export function APIKeyDetail() {
               <IconButton label={t("View logs")} className="icon-text" onClick={() => setLogsOpen(true)} type="button"><FileText size={16} /></IconButton>
               <StatusPill active={key.status === "active"} label={key.status === "active" ? "Active" : "Disabled"} />
               {key.status === "active" ? (
-                <IconButton label={t("Inactive")} className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm(t("Inactive this key?")) && inactive.mutate()} type="button"><Ban size={16} /></IconButton>
+                <IconButton label={t("Inactive")} className="icon-text" disabled={inactive.isPending} onClick={() => confirm({ message: t("Inactive {name}?", { name: key.name }), action: () => inactive.mutateAsync() })} type="button"><Ban size={16} /></IconButton>
               ) : null}
-              <IconButton label={t("Delete")} className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm(t("Delete this key?")) && remove.mutate()} type="button"><Trash2 size={16} /></IconButton>
+              <IconButton label={t("Delete")} className="icon-text danger" disabled={remove.isPending} onClick={() => confirm({ message: t("Delete {name}?", { name: key.name }), label: t("Delete"), action: () => remove.mutateAsync() })} type="button"><Trash2 size={16} /></IconButton>
               {savedMessage ? <span className="saved-text">{t("Saved")}</span> : null}
               <IconButton label={t("Save")} className="primary" disabled={update.isPending} form="api-key-settings" type="submit"><Save size={16} /></IconButton>
             </div>

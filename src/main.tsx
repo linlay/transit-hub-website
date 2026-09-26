@@ -3,7 +3,10 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { api } from "./lib/api";
+import { QueryFeedback } from "./components/QueryFeedback";
+import { ConfirmProvider } from "./components/ConfirmProvider";
+import { TooltipProvider } from "./components/TooltipProvider";
+import { api, APIError } from "./lib/api";
 import { APP_BASE_URL } from "./lib/env";
 import { I18nProvider, useI18n } from "./lib/i18n";
 import { ThemeProvider } from "./lib/theme";
@@ -35,7 +38,8 @@ function RequireAuth() {
   const { t } = useI18n();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
   if (me.isLoading) return <div className="boot">{t("Loading Transit Hub...")}</div>;
-  if (me.isError) return <Navigate to="/login" replace />;
+  if (me.error instanceof APIError && me.error.status === 401) return <Navigate to="/login" replace />;
+  if (me.isError) return <div className="boot"><QueryFeedback query={me} /></div>;
   return <Layout />;
 }
 
@@ -44,26 +48,30 @@ function App() {
     <I18nProvider>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter basename={APP_BASE_URL}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route element={<RequireAuth />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/models" element={<Models />} />
-                <Route path="/models/:protocol/:modelId" element={<ModelDetail />} />
-                <Route path="/api-keys" element={<APIKeys />} />
-                <Route path="/api-keys/:id" element={<APIKeyDetail />} />
-                <Route path="/jwt-grants" element={<JWTGrants />} />
-                <Route path="/sessions" element={<Sessions />} />
-                <Route path="/traffic" element={<Traffic />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/providers" element={<Providers />} />
-                <Route path="/playground" element={<Playground />} />
-                <Route path="/provider-tests" element={<Navigate to="/playground" replace />} />
-                <Route path="/users" element={<Users />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
+          <TooltipProvider>
+            <ConfirmProvider>
+              <BrowserRouter basename={APP_BASE_URL}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route element={<RequireAuth />}>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/models" element={<Models />} />
+                    <Route path="/models/:protocol/:modelId" element={<ModelDetail />} />
+                    <Route path="/api-keys" element={<APIKeys />} />
+                    <Route path="/api-keys/:id" element={<APIKeyDetail />} />
+                    <Route path="/jwt-grants" element={<JWTGrants />} />
+                    <Route path="/sessions" element={<Sessions />} />
+                    <Route path="/traffic" element={<Traffic />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/providers" element={<Providers />} />
+                    <Route path="/playground" element={<Playground />} />
+                    <Route path="/provider-tests" element={<Navigate to="/playground" replace />} />
+                    <Route path="/users" element={<Users />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </ConfirmProvider>
+          </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </I18nProvider>

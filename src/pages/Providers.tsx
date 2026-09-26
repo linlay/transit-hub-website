@@ -1,3 +1,4 @@
+import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -82,6 +83,9 @@ export function Providers() {
 
   return (
     <section className="page">
+      <QueryFeedback query={providers} />
+      {!telemetryUnavailable ? <QueryFeedback query={usage} /> : null}
+      <QueryFeedback query={quota} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       {!telemetryUnavailable ? <section className="panel">
         <div className="panel-heading">
@@ -93,10 +97,10 @@ export function Providers() {
             <thead>
               <tr>
                 <th>{t("Provider")}</th>
-                <th>{t("Requests")}</th>
-                <th>{t("Input")}</th>
-                <th>{t("Output")}</th>
-                <th className="sortable">
+                <th className="numeric">{t("Requests")}</th>
+                <th className="numeric">{t("Input")}</th>
+                <th className="numeric">{t("Output")}</th>
+                <th className="sortable numeric">
                   <button className="sort-header" type="button" onClick={() => toggleSort("total_tokens")}>
                     {t("Total")}
                     {sortKey === "total_tokens" ? (
@@ -106,7 +110,7 @@ export function Providers() {
                     )}
                   </button>
                 </th>
-                <th className="sortable">
+                <th className="sortable numeric">
                   <button className="sort-header" type="button" onClick={() => toggleSort("cache_hit_tokens")}>
                     {t("Cache hit")}
                     {sortKey === "cache_hit_tokens" ? (
@@ -116,7 +120,7 @@ export function Providers() {
                     )}
                   </button>
                 </th>
-                <th className="sortable">
+                <th className="sortable numeric">
                   <button className="sort-header" type="button" onClick={() => toggleSort("cache_miss_tokens")}>
                     {t("Cache miss")}
                     {sortKey === "cache_miss_tokens" ? (
@@ -126,32 +130,32 @@ export function Providers() {
                     )}
                   </button>
                 </th>
-                <th>{t("Hit rate")}</th>
-                <th>{t("Errors")}</th>
-                <th>{t("Avg latency")}</th>
-                <th>{t("Cost")}</th>
+                <th className="numeric">{t("Hit rate")}</th>
+                <th className="numeric">{t("Errors")}</th>
+                <th className="numeric">{t("Avg latency")}</th>
+                <th className="numeric">{t("Cost")}</th>
               </tr>
             </thead>
             <tbody>
               {sortedItems.map((item) => (
                 <tr key={item.provider}>
                   <td>{item.provider}</td>
-                  <td>{integer(item.requests)}</td>
-                  <td>{compactTokenCount(item.request_tokens)}</td>
-                  <td>{compactTokenCount(item.response_tokens)}</td>
-                  <td>{compactTokenCount(item.total_tokens)}</td>
-                  <td>{compactTokenCount(item.cache_hit_tokens)}</td>
-                  <td>{compactTokenCount(item.cache_miss_tokens)}</td>
-                  <td>{nullablePercent(item.cache_hit_rate)}</td>
-                  <td>{integer(item.error_requests)}</td>
-                  <td>{integer(item.average_latency_ms)} ms</td>
-                  <td>{formatCredits(item.charged_microcredits)}</td>
+                  <td className="numeric">{integer(item.requests)}</td>
+                  <td className="numeric">{compactTokenCount(item.request_tokens)}</td>
+                  <td className="numeric">{compactTokenCount(item.response_tokens)}</td>
+                  <td className="numeric">{compactTokenCount(item.total_tokens)}</td>
+                  <td className="numeric">{compactTokenCount(item.cache_hit_tokens)}</td>
+                  <td className="numeric">{compactTokenCount(item.cache_miss_tokens)}</td>
+                  <td className="numeric">{nullablePercent(item.cache_hit_rate)}</td>
+                  <td className="numeric">{integer(item.error_requests)}</td>
+                  <td className="numeric">{integer(item.average_latency_ms)} ms</td>
+                  <td className="numeric">{formatCredits(item.charged_microcredits)}</td>
                 </tr>
               ))}
               {!usage.data?.items?.length ? (
                 <tr>
                   <td colSpan={11} className="muted-cell">
-                    {t("No provider usage recorded yet.")}
+                    {usage.isPending ? t("Loading...") : usage.isError ? t("Unable to load data.") : t("No provider usage recorded yet.")}
                   </td>
                 </tr>
               ) : null}
@@ -170,7 +174,7 @@ export function Providers() {
             </div>
             {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, t("Test provider"))}
           </div>
-          {!telemetryUnavailable ? <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} /> : null}
+          {!telemetryUnavailable && usage.data ? <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} /> : null}
           {(quotaByProvider.get(provider.name)?.length ?? 0) > 0 ? <ProviderQuotaSummary items={quotaByProvider.get(provider.name) ?? []} /> : null}
           <div className="provider-grid">
             <div>
@@ -216,7 +220,7 @@ export function Providers() {
                     <tr>
                       <th>{t("Pool")}</th>
                       <th>{t("Account")}</th>
-                      <th>{t("Requests")}</th>
+                      <th className="numeric">{t("Requests")}</th>
                       <th>{t("Tokens")}</th>
                       <th>{t("Weight")}</th>
                       <th>{t("Circuit")}</th>

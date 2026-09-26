@@ -14,6 +14,18 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Refresh failed; showing previous results.": "刷新失败，正在显示上次的结果。",
+  "Unable to load data.": "数据加载失败。",
+  "Updating results...": "正在更新结果…",
+  "Retry": "重试",
+  "Confirm action": "确认操作",
+  "Confirm": "确认",
+  "Processing...": "正在处理…",
+  "Operation completed.": "操作已完成。",
+  "Saved.": "已保存。",
+  "User created.": "用户已创建。",
+  "Back to API keys": "返回 API 密钥",
+
   "Traffic analysis": "流量分析",
   "All charts follow the filters below": "图表、汇总和日志共用以下筛选条件",
   "Yesterday": "昨天",

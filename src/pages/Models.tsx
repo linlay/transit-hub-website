@@ -1,3 +1,4 @@
+import { useListScroll } from "../lib/useListScroll";
 import { IconButton } from "../components/IconButton";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ export function Models() {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const models = useQuery({ queryKey: ["models"], queryFn: api.models, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  useListScroll(Boolean(models.data));
   const query = params.get("q") ?? "";
   const protocol = params.get("protocol") ?? "";
   const type = params.get("type") ?? "";
@@ -96,8 +98,8 @@ export function Models() {
         {!models.isLoading && !models.isError && allModels.length === 0 ? <EmptyState title="No models loaded." /> : null}
         {!models.isLoading && !models.isError && allModels.length > 0 && filtered.length === 0 ? <EmptyState title="No models match the current filters." /> : null}
         {filtered.length > 0 ? (
-          <div className="table-wrap models-table-wrap">
-            <table>
+          <div className="table-wrap models-table-wrap data-table-scroll">
+            <table className="pinned-table">
               <thead>
                 <tr>
                   <th>{t("Model")}</th>

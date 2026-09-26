@@ -1,9 +1,13 @@
+import { useListFilters, useDebouncedValue } from "../lib/useListFilters";
+import { useListScroll } from "../lib/useListScroll";
+import { useConfirm } from "../components/ConfirmProvider";
+import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
 import { ListChecks, X, ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { creditsInputValue } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
 import { CredentialTime } from "../components/CredentialTime";
 import { RowActions } from "../components/RowActions";
@@ -30,13 +34,18 @@ export function APIKeys() {
     const timer = window.setInterval(() => setNow(Date.now()), 15_000);
     return () => window.clearInterval(timer);
   }, []);
-  const [params] = useSearchParams();
+  const { params, setFilters } = useListFilters();
+  const confirm = useConfirm();
   type SortKey = "used_requests" | "used_tokens" | "last_used_at" | null;
   type SortDir = "asc" | "desc";
-  const [search, setSearch] = useState(params.get("search") ?? "");
-  const [status, setStatus] = useState("all");
-  const [source, setSource] = useState(params.get("source") ?? "all");
-  const [issuerJTI, setIssuerJTI] = useState(params.get("issuer_jti") ?? "");
+  const search = params.get("search") ?? "";
+  const setSearch = (value: string) => setFilters({ search: value });
+  const status = params.get("status") ?? "all";
+  const setStatus = (value: string) => setFilters({ status: value });
+  const source = params.get("source") ?? "all";
+  const setSource = (value: string) => setFilters({ source: value });
+  const issuerJTI = params.get("issuer_jti") ?? "";
+  const setIssuerJTI = (value: string) => setFilters({ issuer_jti: value });
   const [createOpen, setCreateOpen] = useState(false);
   const [copySource, setCopySource] = useState<APIKey | null>(null);
   const [createdKey, setCreatedKey] = useState("");
@@ -44,13 +53,17 @@ export function APIKeys() {
   const [copyMessage, setCopyMessage] = useState("");
   const [selecting, setSelecting] = useState(false);
   const [selectedIDs, setSelectedIDs] = useState<Set<string>>(() => new Set());
-  const [sortKey, setSortKey] = useState<SortKey>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const sortKey: SortKey = ["used_requests", "used_tokens", "last_used_at"].includes(params.get("sort") ?? "") ? params.get("sort") as SortKey : null;
+  const sortDir: SortDir = params.get("dir") === "desc" ? "desc" : "asc";
+  const debouncedSearch = useDebouncedValue(search);
+  const debouncedIssuer = useDebouncedValue(issuerJTI);
   const keys = useQuery({
-    queryKey: ["api-keys", search, status, source, issuerJTI],
-    queryFn: () => api.apiKeys({ search, status, source, issuer_jti: issuerJTI }),
+    queryKey: ["api-keys", debouncedSearch, status, source, debouncedIssuer],
+    placeholderData: keepPreviousData,
+    queryFn: () => api.apiKeys({ search: debouncedSearch, status, source, issuer_jti: debouncedIssuer }),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
+  useListScroll(Boolean(keys.data));
   const providers = useQuery({
     queryKey: ["providers"],
     queryFn: api.providers,
@@ -92,17 +105,7 @@ export function APIKeys() {
   const isRefreshing = keys.isFetching || providers.isFetching;
 
   function toggleSort(key: Exclude<SortKey, null>) {
-    if (sortKey === key) {
-      if (sortDir === "asc") {
-        setSortDir("desc");
-      } else {
-        setSortKey(null);
-        setSortDir("asc");
-      }
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+    setFilters(sortKey !== key ? { sort: key, dir: "asc" } : sortDir === "asc" ? { sort: key, dir: "desc" } : { sort: null, dir: null });
   }
 
   function sortIcon(key: Exclude<SortKey, null>) {
@@ -174,23 +177,17 @@ export function APIKeys() {
   function batchSelected(action: "delete" | "inactive") {
     const ids = Array.from(selectedIDs);
     if (ids.length === 0) return;
-    if (window.confirm(t(action === "delete" ? "Delete {count} selected API keys?" : "Inactive {count} selected API keys?", { count: ids.length }))) {
-      batch.mutate({ action, ids });
-    }
+    confirm({ message: t(action === "delete" ? "Delete {count} selected API keys?" : "Inactive {count} selected API keys?", { count: ids.length }), action: () => batch.mutateAsync({ action, ids }) });
   }
 
   function deleteByIssuerJTI() {
     const value = issuerJTI.trim();
     if (!value) return;
-    if (window.confirm(t("Delete API keys issued by {value}?", { value }))) {
-      batch.mutate({ action: "delete", issuer_jti: value });
-    }
+    confirm({ message: t("Delete API keys issued by {value}?", { value }), action: () => batch.mutateAsync({ action: "delete", issuer_jti: value }) });
   }
 
   function inactiveKey(id: string, name: string) {
-    if (window.confirm(t("Inactive {name}?", { name }))) {
-      batch.mutate({ action: "inactive", ids: [id] });
-    }
+    confirm({ message: t("Inactive {name}?", { name }), action: () => batch.mutateAsync({ action: "inactive", ids: [id] }) });
   }
 
   usePageActions(
@@ -209,12 +206,12 @@ export function APIKeys() {
             <Search size={16} />
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search keys")} />
           </label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <select aria-label={t("Status")} value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
           </select>
-          <select value={source} onChange={(event) => setSource(event.target.value)}>
+          <select aria-label={t("Source")} value={source} onChange={(event) => setSource(event.target.value)}>
             <option value="all">{t("All sources")}</option>
             <option value="admin">{t("Admin")}</option>
             <option value="jwt">JWT</option>
@@ -234,10 +231,10 @@ export function APIKeys() {
             <IconButton label={t("Delete selected")} className="icon-text danger" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("delete")} type="button"><Trash2 size={16} /></IconButton>
           </div>
         ) : null}
-        {keys.error ? <div className="error-text" role="alert">{keys.error.message}</div> : null}
+        <QueryFeedback query={keys} />
         {batch.error ? <div className="error-text">{batch.error.message}</div> : null}
-        <div className="table-wrap credential-table-wrap">
-          <table className="credential-table key-table">
+        <div className="table-wrap credential-table-wrap data-table-scroll">
+          <table className={`credential-table key-table pinned-table ${selecting ? "has-selection" : ""}`}>
             <thead>
               <tr>
                 {selecting ? (
@@ -250,16 +247,16 @@ export function APIKeys() {
                 <th className="credential-source-col">{t("Source")} / {t("Issuer Name")}</th>
                 <th className="key-models-col">{t("Models")}</th>
                 <th className="key-period-col">{t("Period")}</th>
-                <th className="key-spend-col">{t("Spent")}<span className="key-column-hint">Credits</span></th>
-                <th className="key-limit-col">{t("Limit")}<span className="key-column-hint">Credits</span></th>
-                <th className="sortable credential-usage-col" aria-sort={sortKey === "used_requests" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+                <th className="key-spend-col numeric">{t("Spent")}<span className="key-column-hint">Credits</span></th>
+                <th className="key-limit-col numeric">{t("Limit")}<span className="key-column-hint">Credits</span></th>
+                <th className="sortable credential-usage-col numeric" aria-sort={sortKey === "used_requests" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_requests")}>
                     {t("Requests")}
                     {sortIcon("used_requests")}
                   </button>
                   <span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>
                 </th>
-                <th className="sortable credential-usage-col" aria-sort={sortKey === "used_tokens" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+                <th className="sortable credential-usage-col numeric" aria-sort={sortKey === "used_tokens" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
                   <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_tokens")}>
                     {t("Tokens")}
                     {sortIcon("used_tokens")}
@@ -285,7 +282,7 @@ export function APIKeys() {
                     </td>
                   ) : null}
                   <td>
-                    <Link className="table-link cell-ellipsis" title={key.name} to={`/api-keys/${key.id}`}>
+                    <Link className="table-link cell-ellipsis" title={key.name} state={{ from: `/api-keys${params.size ? `?${params}` : ""}` }} to={`/api-keys/${key.id}`}>
                       {key.name}
                     </Link>
                     <small>{key.key_prefix}</small>
@@ -305,10 +302,10 @@ export function APIKeys() {
                   <td><CredentialTime value={key.last_used_at} /></td>
                   <td className="row-actions-cell">
                     <RowActions label={t("Actions for {name}", { name: key.name })} items={[
-                      { label: t("Edit"), icon: <Pencil size={15} />, onSelect: () => navigate(`/api-keys/${key.id}#api-key-settings`) },
+                      { label: t("Edit"), icon: <Pencil size={15} />, onSelect: () => navigate(`/api-keys/${key.id}#api-key-settings`, { state: { from: `/api-keys${params.size ? `?${params}` : ""}` } }) },
                       { label: t("Duplicate"), icon: <Copy size={15} />, onSelect: () => openCreateDialog(key) },
                       ...(key.status === "active" ? [{ label: t("Inactive"), icon: <Ban size={15} />, onSelect: () => inactiveKey(key.id, key.name) }] : []),
-                      { label: t("Delete"), icon: <Trash2 size={15} />, danger: true, onSelect: () => { if (window.confirm(t("Delete {name}?", { name: key.name }))) remove.mutate(key.id); } },
+                      { label: t("Delete"), icon: <Trash2 size={15} />, danger: true, onSelect: () => confirm({ message: t("Delete {name}?", { name: key.name }), action: () => remove.mutateAsync(key.id) }) },
                     ]} />
                   </td>
                 </tr>
@@ -326,7 +323,7 @@ export function APIKeys() {
       </section>
 
       {createOpen ? (
-        <ModalDialog title="Create API Key" onClose={() => setCreateOpen(false)}>
+        <ModalDialog title="Create API Key" busy={create.isPending} onClose={() => setCreateOpen(false)}>
           <form className="dialog-form" onSubmit={submit}>
             <input name="name" aria-label={t("Name")} placeholder={t("Name")} defaultValue={copySource ? t("{name} (copy)", { name: copySource.name }) : ""} required />
             <input name="description" aria-label={t("Description")} placeholder={t("Description")} defaultValue={copySource?.description ?? ""} />
@@ -345,7 +342,7 @@ export function APIKeys() {
             {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {create.error ? <span className="error-text">{create.error.message}</span> : null}
             <div className="dialog-actions">
-              <IconButton label={t("Close")} className="icon-text" onClick={() => setCreateOpen(false)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Close")} className="icon-text" disabled={create.isPending} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></IconButton>
               <IconButton label={t("Create")} className="primary" disabled={create.isPending || Boolean(createdKey)} type="submit"><Plus size={16} /></IconButton>
             </div>
           </form>

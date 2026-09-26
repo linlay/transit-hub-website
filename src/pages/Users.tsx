@@ -1,7 +1,9 @@
+import { QueryFeedback } from "../components/QueryFeedback";
+import { useConfirm } from "../components/ConfirmProvider";
 import { IconButton } from "../components/IconButton";
-import { FormEvent } from "react";
+import { FormEvent, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
@@ -12,12 +14,14 @@ import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
 export function Users() {
   const { t } = useI18n();
+  const confirm = useConfirm();
+  const formRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
   const users = useQuery({ queryKey: ["users"], queryFn: api.users, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   usePageActions(<RefreshButton isRefreshing={users.isFetching} onClick={() => users.refetch()} />, [users.isFetching, users.refetch]);
   const create = useMutation({
     mutationFn: api.createUser,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => { formRef.current?.reset(); return queryClient.invalidateQueries({ queryKey: ["users"] }); },
   });
   const disable = useMutation({
     mutationFn: api.deleteUser,
@@ -26,26 +30,28 @@ export function Users() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (create.isPending) return;
     const form = new FormData(event.currentTarget);
     create.mutate({
       username: String(form.get("username") ?? ""),
       password: String(form.get("password") ?? ""),
       status: "active",
     });
-    event.currentTarget.reset();
   }
 
   return (
     <section className="page">
       <section className="panel">
-        <form className="inline-form" onSubmit={submit}>
-          <input name="username" placeholder={t("Username")} required />
-          <input name="password" placeholder={t("Password")} required type="password" />
-          <IconButton label={t("Create")} className="primary" type="submit"><Plus size={16} /></IconButton>
+        <form ref={formRef} className="inline-form" onChange={() => { if (create.isSuccess) create.reset(); }} onSubmit={submit}>
+          <input aria-label={t("Username")} disabled={create.isPending} name="username" placeholder={t("Username")} required />
+          <input aria-label={t("Password")} disabled={create.isPending} name="password" placeholder={t("Password")} required type="password" />
+          <IconButton label={t(create.isPending ? "Processing..." : "Create")} className="primary" disabled={create.isPending} type="submit">{create.isPending ? <Loader2 className="spin" size={16} /> : <Plus size={16} />}</IconButton>
         </form>
+        {create.error ? <div className="error-text" role="alert">{create.error.message}</div> : create.isSuccess ? <span className="saved-text" role="status">{t("User created.")}</span> : null}
       </section>
       <section className="panel">
-        <div className="table-wrap">
+        <QueryFeedback query={users} />
+        <div className="table-wrap data-table-scroll">
           <table>
             <thead>
               <tr>
@@ -66,14 +72,14 @@ export function Users() {
                   <td>{dateTime(user.last_login_at)}</td>
                   <td>{dateTime(user.created_at)}</td>
                   <td>
-                    <IconButton label={t("Delete")} className="icon-button danger" onClick={() => disable.mutate(user.id)} type="button"><Trash2 size={16} /></IconButton>
+                    <IconButton label={t("Delete")} className="icon-button danger" disabled={disable.isPending} onClick={() => confirm({ message: t("Delete {name}?", { name: user.username }), label: t("Delete"), action: () => disable.mutateAsync(user.id) })} type="button"><Trash2 size={16} /></IconButton>
                   </td>
                 </tr>
               ))}
               {!users.data?.items?.length ? (
                 <tr>
                   <td colSpan={5} className="muted-cell">
-                    {t("No users configured.")}
+                    {users.isPending ? t("Loading...") : users.isError ? t("Unable to load data.") : t("No users configured.")}
                   </td>
                 </tr>
               ) : null}

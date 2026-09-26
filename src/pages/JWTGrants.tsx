@@ -1,9 +1,11 @@
+import { useListFilters, useDebouncedValue } from "../lib/useListFilters";
+import { useListScroll } from "../lib/useListScroll";
+import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
 import { X, Save, FileX2, Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { formatCredits, creditsInputValue } from "../lib/format";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { FormEvent, useMemo, useState } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePageActions } from "../components/Layout";
 import { CredentialTime } from "../components/CredentialTime";
 import { RowActions } from "../components/RowActions";
@@ -24,10 +26,10 @@ import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 export function JWTGrants() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const [params] = useSearchParams();
-  const searchParam = params.get("search") ?? "";
-  const [search, setSearch] = useState(searchParam);
-  const [status, setStatus] = useState("all");
+  const { params, setFilters } = useListFilters();
+  const search = params.get("search") ?? "";
+  const status = params.get("status") ?? "all";
+  const debouncedSearch = useDebouncedValue(search);
   const [createOpen, setCreateOpen] = useState(false);
   const [copySource, setCopySource] = useState<JWTGrant | null>(null);
   const [editing, setEditing] = useState<JWTGrant | null>(null);
@@ -39,10 +41,12 @@ export function JWTGrants() {
   const [createCopyMessage, setCreateCopyMessage] = useState("");
   const [viewCopyMessage, setViewCopyMessage] = useState("");
   const grants = useQuery({
-    queryKey: ["jwt-grants", search, status],
-    queryFn: () => api.jwtGrants({ search, status }),
+    queryKey: ["jwt-grants", debouncedSearch, status],
+    placeholderData: keepPreviousData,
+    queryFn: () => api.jwtGrants({ search: debouncedSearch, status }),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
+  useListScroll(Boolean(grants.data));
   const providers = useQuery({
     queryKey: ["providers"],
     queryFn: api.providers,
@@ -82,9 +86,6 @@ export function JWTGrants() {
     },
   });
 
-  useEffect(() => {
-    setSearch(searchParam);
-  }, [searchParam]);
 
   function openCreateDialog(source: JWTGrant | null = null) {
     setCopySource(source);
@@ -187,16 +188,17 @@ export function JWTGrants() {
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search grants")} />
+            <input value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search grants")} />
           </label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <select value={status} onChange={(event) => setFilters({ status: event.target.value })}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
           </select>
         </div>
-        <div className="table-wrap credential-table-wrap">
-          <table className="credential-table grant-table">
+        <QueryFeedback query={grants} />
+        <div className="table-wrap credential-table-wrap data-table-scroll">
+          <table className="credential-table grant-table pinned-table">
             <thead>
               <tr>
                 <th className="credential-name-col">{t("Name")}</th>
@@ -244,7 +246,7 @@ export function JWTGrants() {
               {!grants.data?.items?.length ? (
                 <tr>
                   <td colSpan={8} className="muted-cell">
-                    {t("No JWT grants found.")}
+                    {grants.isPending ? t("Loading...") : grants.isError ? t("Unable to load data.") : t("No JWT grants found.")}
                   </td>
                 </tr>
               ) : null}
@@ -254,7 +256,7 @@ export function JWTGrants() {
       </section>
 
       {createOpen ? (
-        <ModalDialog title="Create JWT grant" onClose={() => setCreateOpen(false)}>
+        <ModalDialog title="Create JWT grant" busy={createGrant.isPending} onClose={() => setCreateOpen(false)}>
           <form className="dialog-form" onSubmit={submitGrant}>
             <input name="name" aria-label={t("Name")} placeholder={t("Name")} defaultValue={copySource ? t("{name} (copy)", { name: copySource.name }) : ""} required />
             <input name="description" aria-label={t("Description")} placeholder={t("Description")} defaultValue={copySource?.description ?? ""} />
@@ -274,7 +276,7 @@ export function JWTGrants() {
             {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {createGrant.error ? <span className="error-text">{createGrant.error.message}</span> : null}
             <div className="dialog-actions">
-              <IconButton label={t("Close")} className="icon-text" onClick={() => setCreateOpen(false)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Close")} className="icon-text" disabled={createGrant.isPending} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></IconButton>
               <IconButton label={t("Create")} className="primary" disabled={createGrant.isPending || Boolean(createdJWT)} type="submit"><Plus size={16} /></IconButton>
             </div>
           </form>
@@ -282,7 +284,7 @@ export function JWTGrants() {
       ) : null}
 
       {editing ? (
-        <ModalDialog title="Edit JWT grant" onClose={() => setEditing(null)}>
+        <ModalDialog title="Edit JWT grant" busy={updateGrant.isPending} onClose={() => setEditing(null)}>
           <form key={editing.jti} className="dialog-form" onSubmit={submitGrantPatch}>
             <select name="status" defaultValue={editing.status}>
               <option value="active">{t("Active")}</option>
@@ -297,7 +299,7 @@ export function JWTGrants() {
             {editModelError ? <span className="error-text">{editModelError}</span> : null}
             {updateGrant.error ? <span className="error-text">{updateGrant.error.message}</span> : null}
             <div className="dialog-actions">
-              <IconButton label={t("Close")} className="icon-text" onClick={() => setEditing(null)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Close")} className="icon-text" disabled={updateGrant.isPending} onClick={() => setEditing(null)} type="button"><X size={16} /></IconButton>
               <IconButton label={t("Save")} className="primary" disabled={updateGrant.isPending} type="submit"><Save size={16} /></IconButton>
             </div>
           </form>
@@ -326,14 +328,14 @@ export function JWTGrants() {
       {viewGrant.error ? <span className="error-text">{viewGrant.error.message}</span> : null}
 
       {deleting ? (
-        <ModalDialog title="Delete JWT grant" onClose={() => setDeleting(null)}>
+        <ModalDialog title="Delete JWT grant" busy={removeGrant.isPending} onClose={() => setDeleting(null)}>
           <div className="dialog-form">
             <p className="dialog-copy">
               {t("Delete")} <strong>{deleting.name}</strong>? {t("Choose whether issued API keys should remain active.")}
             </p>
             {removeGrant.error ? <span className="error-text">{removeGrant.error.message}</span> : null}
             <div className="dialog-actions">
-              <IconButton label={t("Cancel")} className="icon-text" onClick={() => setDeleting(null)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Cancel")} className="icon-text" disabled={removeGrant.isPending} onClick={() => setDeleting(null)} type="button"><X size={16} /></IconButton>
               <IconButton label={t("Grant only")} className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: false })} type="button"><FileX2 size={16} /></IconButton>
               <IconButton label={t("Grant and API keys")} className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: true })} type="button"><Trash2 size={16} /></IconButton>
             </div>

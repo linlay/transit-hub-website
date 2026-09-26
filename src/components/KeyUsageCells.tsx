@@ -55,12 +55,12 @@ export function KeyUsageCells({ apiKey: key, now }: { apiKey: APIKey; now: numbe
   }
   return <>
     <td>{stack((row) => <span className="muted-cell" title={label(row)}>{row.window === "total" ? t("Total") : row.window}</span>)}</td>
-    <td>{stack((row) => <span className={tone(row.charged_microcredits, row.quota_microcredits)} title={`${label(row)}: ${row.charged_microcredits === undefined ? t("Usage unavailable") : creditAmount(row.charged_microcredits) + " Credits"}`}>{row.charged_microcredits === undefined ? "—" : creditAmount(row.charged_microcredits)}</span>)}</td>
-    <td>{stack((row) => <span className={tone(row.charged_microcredits, row.quota_microcredits)} title={`${label(row)}: ${row.quota_microcredits ? creditAmount(row.quota_microcredits) + " Credits" : t("Unlimited")} · ${quotaLabel(row.charged_microcredits, row.quota_microcredits)}`}>
+    <td className="numeric">{stack((row) => <span className={tone(row.charged_microcredits, row.quota_microcredits)} title={`${label(row)}: ${row.charged_microcredits === undefined ? t("Usage unavailable") : creditAmount(row.charged_microcredits) + " Credits"}`}>{row.charged_microcredits === undefined ? "—" : creditAmount(row.charged_microcredits)}</span>)}</td>
+    <td className="numeric">{stack((row) => <span className={tone(row.charged_microcredits, row.quota_microcredits)} title={`${label(row)}: ${row.quota_microcredits ? creditAmount(row.quota_microcredits) + " Credits" : t("Unlimited")} · ${quotaLabel(row.charged_microcredits, row.quota_microcredits)}`}>
       {row.quota_microcredits ? creditAmount(row.quota_microcredits) : <span className="muted-cell" aria-label={t("Unlimited")}>∞</span>}
     </span>)}</td>
-    <td>{stack((row) => usageValue(row, row.requests, row.request_quota, compactTokenCount))}</td>
-    <td>{stack((row) => usageValue(row, row.tokens, row.token_quota, compactTokenCount))}</td>
+    <td className="numeric">{stack((row) => usageValue(row, row.requests, row.request_quota, compactTokenCount))}</td>
+    <td className="numeric">{stack((row) => usageValue(row, row.tokens, row.token_quota, compactTokenCount))}</td>
     <td>{stack((row) => row.window === "total" ? <span className="muted-cell">—</span> : row.state
       ? <span className="muted-cell" title={t(row.state === "idle" ? "Starts on first use" : "Starts on next use")}>{t("Awaiting use")}</span> : row.resets_at
       ? <span className="muted-cell" title={`${dateTime(row.starts_at)} → ${dateTime(row.resets_at)}`}>{resetCountdown(row.resets_at, now)}</span>

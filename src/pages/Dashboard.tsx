@@ -1,3 +1,4 @@
+import { QueryFeedback } from "../components/QueryFeedback";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePageActions } from "../components/Layout";
@@ -46,8 +47,11 @@ export function Dashboard() {
     [range, isRefreshing, overview.refetch, traffic.refetch, t],
   );
 
+  if (!data) return <section className="page"><section className="panel"><QueryFeedback query={overview} /></section></section>;
+
   return (
     <section className="page">
+      <QueryFeedback query={overview} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       <div className="metrics-grid">
         {!telemetryUnavailable ? (
@@ -84,7 +88,8 @@ export function Dashboard() {
             </select>
           </div>
         </div>
-        <TrafficChart items={trafficItems} />
+        <QueryFeedback query={traffic} />
+        {traffic.data ? <TrafficChart items={trafficItems} /> : null}
       </section> : null}
 
       {!telemetryUnavailable ? <section className="panel">
@@ -94,7 +99,7 @@ export function Dashboard() {
             <span>{t("Active API keys and total Credits by {bucket}", { bucket: t(bucket) })}</span>
           </div>
         </div>
-        <UsageChart items={trafficItems} metric="credits" />
+        {traffic.data ? <UsageChart items={trafficItems} metric="credits" /> : null}
       </section> : null}
 
       <section className="panel">
