@@ -335,6 +335,20 @@ td small,
   font-size: 13px;
 }
 
+.sidebar-menu-theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sidebar-theme-options {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .sidebar-user-dropdown button:hover {
   background: var(--color-neutral-soft);
 }

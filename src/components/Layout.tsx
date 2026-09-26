@@ -148,17 +148,24 @@ function UserMenu({ username, onLogout }: { username: string; onLogout: () => vo
               <option value="en-US">English</option>
             </select>
           </label>
-          <label className="sidebar-menu-select">
+          <div className="sidebar-menu-select sidebar-menu-theme">
             <span>
               {themeIcon(theme)}
               {t("Theme")}
             </span>
-            <select aria-label={t("Theme")} value={theme} onChange={(event) => setTheme(event.target.value as ThemePreference)}>
-              <option value="system">{t("System")}</option>
-              <option value="light">{t("Light")}</option>
-              <option value="dark">{t("Dark")}</option>
-            </select>
-          </label>
+            <div className="sidebar-theme-options" role="group" aria-label={t("Theme")}>
+              {(["system", "light", "dark"] as const).map((preference) => (
+                <IconButton
+                  key={preference}
+                  label={t(preference === "system" ? "System" : preference === "light" ? "Light" : "Dark")}
+                  aria-pressed={theme === preference}
+                  onClick={() => setTheme(preference)}
+                >
+                  {themeIcon(preference)}
+                </IconButton>
+              ))}
+            </div>
+          </div>
           <IconButton label={t("Logout")} onClick={onLogout} type="button">
             <LogOut size={16} />
           </IconButton>
