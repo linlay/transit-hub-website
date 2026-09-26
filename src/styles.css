@@ -1,38 +1,47 @@
+/* Shared materials apply to every route, including login and detail pages. */
 :root {
-  --color-bg: #f5f6f8;
-  --color-surface: #fff;
-  --color-surface-subtle: #fbfcfd;
-  --color-surface-muted: #f7f9fb;
-  --color-surface-raised: #fff;
-  --color-text: #17202a;
-  --color-text-muted: #68717c;
-  --color-text-soft: #56616d;
-  --color-text-strong-muted: #505a65;
-  --color-border: #e1e5ea;
-  --color-border-soft: #edf0f3;
-  --color-border-control: #d7dce2;
-  --color-primary: #0a84ff;
-  --color-primary-strong: #0a64d6;
-  --color-primary-soft: #eef5ff;
-  --color-primary-border: #d8e8ff;
+  --color-bg: #edf1f8;
+  --color-surface: rgba(255, 255, 255, 0.60);
+  --color-surface-subtle: rgba(255, 255, 255, 0.36);
+  --color-surface-muted: rgba(231, 238, 249, 0.55);
+  --color-surface-raised: rgba(250, 252, 255, 0.88);
+  --color-text: #1d2637;
+  --color-text-muted: #5c687c;
+  --color-text-soft: #4f5f76;
+  --color-text-strong-muted: #42516a;
+  --color-border: rgba(255, 255, 255, 0.76);
+  --color-border-soft: rgba(63, 84, 123, 0.10);
+  --color-border-control: rgba(82, 107, 148, 0.22);
+  --color-primary: #007aff;
+  --color-primary-strong: #005dc5;
+  --color-primary-soft: rgba(0, 122, 255, 0.10);
+  --color-primary-border: rgba(0, 122, 255, 0.24);
   --color-success: #187443;
-  --color-success-soft: #e7f7ed;
+  --color-success-soft: rgba(52, 199, 89, 0.12);
   --color-danger: #b42318;
-  --color-danger-soft: #fff1f0;
-  --color-danger-border: #ffd7d4;
-  --color-neutral-soft: #eef0f3;
-  --color-control-soft: #f2f4f7;
-  --color-secret-bg: #f8fbff;
-  --color-secret-border: #dbe5ef;
-  --shadow-panel: 0 8px 24px rgba(15, 23, 42, 0.04);
-  --shadow-menu: 0 12px 32px rgba(15, 23, 42, 0.12);
-  --shadow-dialog: 0 24px 64px rgba(15, 23, 42, 0.2);
-  --shadow-toast: 0 18px 48px rgba(15, 23, 42, 0.18);
-  --overlay-dialog: rgba(23, 32, 42, 0.42);
-  --sidebar-bg: rgba(255, 255, 255, 0.88);
-  --topbar-bg: rgba(245, 246, 248, 0.86);
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --color-danger-soft: rgba(255, 59, 48, 0.09);
+  --color-danger-border: rgba(255, 59, 48, 0.24);
+  --color-neutral-soft: rgba(111, 130, 159, 0.12);
+  --color-control-soft: rgba(255, 255, 255, 0.48);
+  --color-secret-bg: rgba(222, 238, 255, 0.50);
+  --color-secret-border: rgba(0, 122, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.86);
+  --glass-blur: blur(24px) saturate(145%);
+  --glass-fallback: #f7f9fd;
+  --glass-field: rgba(255, 255, 255, 0.54);
+  --glass-hover: rgba(255, 255, 255, 0.78);
+  --glass-accent: linear-gradient(160deg, #379eff, #006ae6);
+  --shadow-panel: inset 0 1px 0 var(--glass-highlight), 0 8px 32px rgba(39, 63, 108, 0.06), 0 1px 3px rgba(39, 63, 108, 0.04);
+  --shadow-menu: inset 0 1px 0 var(--glass-highlight), 0 16px 44px rgba(39, 63, 108, 0.16);
+  --shadow-dialog: inset 0 1px 0 var(--glass-highlight), 0 32px 96px rgba(24, 43, 78, 0.22);
+  --shadow-toast: var(--shadow-menu);
+  --overlay-dialog: rgba(37, 50, 77, 0.24);
+  --sidebar-bg: rgba(248, 251, 255, 0.50);
+  --topbar-bg: rgba(250, 252, 255, 0.64);
+  --ambient-blue: rgba(115, 172, 255, 0.30);
+  --ambient-lilac: rgba(183, 162, 238, 0.25);
+  --ambient-mint: rgba(115, 209, 204, 0.19);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
   color: var(--color-text);
   background: var(--color-bg);
   font-synthesis: none;
@@ -41,38 +50,45 @@
 }
 
 :root[data-theme="dark"] {
-  --color-bg: #11161d;
-  --color-surface: #171e27;
-  --color-surface-subtle: #141b23;
-  --color-surface-muted: #1d2631;
-  --color-surface-raised: #1b2430;
-  --color-text: #e7edf5;
-  --color-text-muted: #97a6b8;
-  --color-text-soft: #b7c2cf;
-  --color-text-strong-muted: #c6d0dc;
-  --color-border: #2b3643;
-  --color-border-soft: #26313e;
-  --color-border-control: #344150;
-  --color-primary: #4c9dff;
-  --color-primary-strong: #85bdff;
-  --color-primary-soft: #162d47;
-  --color-primary-border: #26486d;
-  --color-success: #58c58a;
-  --color-success-soft: #163626;
-  --color-danger: #ff8a80;
-  --color-danger-soft: #421f20;
-  --color-danger-border: #6e3435;
-  --color-neutral-soft: #222c38;
-  --color-control-soft: #202a36;
-  --color-secret-bg: #132335;
-  --color-secret-border: #2d4964;
-  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.22);
-  --shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.36);
-  --shadow-dialog: 0 24px 64px rgba(0, 0, 0, 0.46);
-  --shadow-toast: 0 18px 48px rgba(0, 0, 0, 0.42);
-  --overlay-dialog: rgba(0, 0, 0, 0.62);
-  --sidebar-bg: rgba(23, 30, 39, 0.9);
-  --topbar-bg: rgba(17, 22, 29, 0.86);
+  --color-bg: #101722;
+  --color-surface: rgba(31, 41, 58, 0.62);
+  --color-surface-subtle: rgba(33, 45, 63, 0.40);
+  --color-surface-muted: rgba(58, 74, 98, 0.34);
+  --color-surface-raised: rgba(32, 43, 61, 0.92);
+  --color-text: #edf3ff;
+  --color-text-muted: #a5b4cb;
+  --color-text-soft: #b8c7dc;
+  --color-text-strong-muted: #c9d5e7;
+  --color-border: rgba(188, 213, 255, 0.14);
+  --color-border-soft: rgba(188, 213, 255, 0.10);
+  --color-border-control: rgba(188, 213, 255, 0.22);
+  --color-primary: #63adff;
+  --color-primary-strong: #91c6ff;
+  --color-primary-soft: rgba(73, 156, 255, 0.17);
+  --color-primary-border: rgba(110, 181, 255, 0.30);
+  --color-success: #75dfa6;
+  --color-success-soft: rgba(48, 209, 88, 0.13);
+  --color-danger: #ff9b93;
+  --color-danger-soft: rgba(255, 69, 58, 0.14);
+  --color-danger-border: rgba(255, 122, 113, 0.28);
+  --color-neutral-soft: rgba(150, 175, 210, 0.13);
+  --color-control-soft: rgba(150, 175, 210, 0.10);
+  --color-secret-bg: rgba(48, 100, 155, 0.18);
+  --color-secret-border: rgba(104, 168, 229, 0.25);
+  --glass-highlight: rgba(223, 236, 255, 0.10);
+  --glass-fallback: #202b3d;
+  --glass-field: rgba(14, 24, 39, 0.38);
+  --glass-hover: rgba(129, 165, 215, 0.16);
+  --glass-accent: linear-gradient(160deg, #278cf1, #0864cf);
+  --shadow-panel: inset 0 1px 0 var(--glass-highlight), 0 8px 32px rgba(0, 0, 0, 0.14);
+  --shadow-menu: inset 0 1px 0 var(--glass-highlight), 0 16px 44px rgba(0, 0, 0, 0.36);
+  --shadow-dialog: inset 0 1px 0 var(--glass-highlight), 0 32px 96px rgba(0, 0, 0, 0.46);
+  --overlay-dialog: rgba(3, 8, 18, 0.50);
+  --sidebar-bg: rgba(22, 32, 49, 0.58);
+  --topbar-bg: rgba(24, 35, 52, 0.70);
+  --ambient-blue: rgba(43, 93, 170, 0.25);
+  --ambient-lilac: rgba(100, 73, 159, 0.21);
+  --ambient-mint: rgba(39, 122, 129, 0.16);
 }
 
 * {
@@ -1301,6 +1317,10 @@ td small {
   gap: 18px;
 }
 
+.provider-grid > div {
+  min-width: 0;
+}
+
 .provider-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1793,7 +1813,7 @@ td small {
   .provider-metrics,
   .provider-grid,
   .connectivity-target {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .model-detail-grid {
@@ -2082,6 +2102,15 @@ td small {
   margin-top: 8px;
 }
 
+.traffic-tooltip-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: baseline;
+}
+
 .traffic-tooltip th,
 .traffic-tooltip td {
   padding: 7px 10px;
@@ -2141,3 +2170,162 @@ td small {
 
 .traffic-page .metrics-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .traffic-page .metric-value { overflow-wrap: anywhere; }
+
+/* Glass material and interaction layer. Keep nested content lightweight;
+   only major surfaces and floating overlays need backdrop compositing. */
+body {
+  background:
+    radial-gradient(ellipse at 8% 0%, var(--ambient-blue), transparent 55%),
+    radial-gradient(ellipse at 94% 16%, var(--ambient-lilac), transparent 52%),
+    radial-gradient(ellipse at 62% 100%, var(--ambient-mint), transparent 56%),
+    var(--color-bg);
+  background-attachment: fixed;
+}
+
+.sidebar,
+.topbar,
+.panel,
+.metric,
+.login-panel,
+.dialog,
+.api-key-logs-dialog,
+.sidebar-user-dropdown,
+.row-actions-menu,
+.traffic-filter-popover,
+.traffic-tooltip,
+.connectivity-toast,
+.chart .recharts-default-tooltip {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.sidebar {
+  z-index: 12;
+  border-right-color: var(--color-border);
+  box-shadow: inset -1px 0 0 var(--glass-highlight), 8px 0 32px rgba(25, 52, 96, 0.025);
+}
+
+.topbar {
+  z-index: 10;
+  height: auto;
+  min-height: 60px;
+  gap: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  box-shadow: inset 0 -1px 0 var(--glass-highlight);
+}
+
+.brand strong { font-size: 15px; letter-spacing: -0.3px; }
+.brand-mark, .login-logo, .playground-avatar {
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  border-radius: 12px;
+  background: var(--glass-accent);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 12px rgba(0, 105, 225, 0.18);
+}
+
+.sidebar nav { gap: 6px; }
+.sidebar a { min-height: 42px; border: 1px solid transparent; border-radius: 12px; }
+.sidebar a:hover { background: var(--glass-hover); }
+.sidebar a.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 3px 10px rgba(0, 100, 220, 0.05);
+  font-weight: 600;
+}
+.sidebar-user-trigger { min-height: 40px; border-radius: 12px; }
+
+.panel, .metric, .login-panel {
+  border-radius: 20px;
+  box-shadow: var(--shadow-panel);
+}
+.panel { min-width: 0; padding: 20px; }
+/* Raised hover/open state lets chart details and filters overlap nearby panels. */
+.panel:hover, .panel:focus-within { position: relative; z-index: 2; }
+.panel:has(.traffic-filter-select[open]) { position: relative; z-index: 3; }
+.metric { min-width: 0; }
+.metric-value { font-weight: 650; letter-spacing: -0.8px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.panel-heading h2, .page-heading h1, .model-detail-heading h1 { letter-spacing: -0.4px; }
+
+input, select, textarea, .search, .traffic-filter-select > summary {
+  border-radius: 11px;
+  background: var(--glass-field);
+  box-shadow: inset 0 1px 2px rgba(25, 45, 80, 0.035);
+}
+.search input { background: transparent; box-shadow: none; }
+.search:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-soft); }
+input::placeholder, textarea::placeholder { color: var(--color-text-muted); opacity: 1; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--color-primary); box-shadow: none; }
+select option { background: var(--glass-fallback); color: var(--color-text); }
+
+.primary, .icon-text, .icon-button { border-radius: 11px; }
+.primary {
+  background: var(--glass-accent);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 3px 10px rgba(0, 100, 220, 0.16);
+}
+.icon-text { background: var(--glass-field); border-color: var(--color-border-control); box-shadow: inset 0 1px 0 var(--glass-highlight); }
+.icon-button { border: 1px solid var(--color-border-soft); }
+button, .sidebar a, input, select, textarea, summary {
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.primary:hover:not(:disabled) { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 5px 16px rgba(0, 100, 220, 0.28); }
+.icon-text:hover:not(:disabled), .icon-button:hover:not(:disabled) { background: var(--glass-hover); border-color: var(--color-border-control); }
+.icon-button.danger:hover:not(:disabled) { background: var(--color-danger-soft); border-color: var(--color-danger-border); }
+:where(button, a, summary):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+
+.table-wrap { border-radius: 12px; }
+thead { background: var(--color-surface-subtle); }
+th { text-transform: none; }
+tbody tr:hover { background: var(--color-surface-subtle); }
+tbody tr:last-child td { border-bottom: 0; }
+.pill { border: 1px solid var(--color-border-soft); }
+.model-detail-field, .code-panel, .playground-messages, .playground-bubble,
+.provider-quota-account, .secret-box { border-radius: 14px; }
+.model-option, .model-picker-toggle { border-radius: 10px; }
+.model-option:has(input:checked) { background: var(--color-primary-soft); border-color: var(--color-primary-border); }
+
+.dialog, .api-key-logs-dialog { border-radius: 24px; background: var(--color-surface-raised); padding: 24px; }
+.dialog-backdrop, .api-key-logs-dialog::backdrop {
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+.sidebar-user-dropdown, .row-actions-menu, .traffic-filter-popover,
+.traffic-tooltip, .connectivity-toast, .chart .recharts-default-tooltip {
+  border-radius: 16px;
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-menu);
+}
+.sidebar-user-dropdown button, .row-actions-menu button { border-radius: 9px; }
+.connectivity-toast { top: 76px; }
+.login-screen { background: transparent; }
+.login-panel { width: min(100%, 410px); padding: 36px; gap: 18px; border-radius: 28px; }
+.login-logo { width: 48px; height: 48px; border-radius: 15px; }
+.login-panel h1 { letter-spacing: -0.8px; font-weight: 650; }
+.login-panel input, .login-panel .primary { min-height: 44px; }
+
+@media (max-width: 760px) {
+  .sidebar { z-index: 12; border-right: 0; border-bottom: 1px solid var(--color-border); padding: 18px 16px; }
+  .sidebar nav { gap: 4px 8px; }
+  .sidebar-footer { margin-top: 14px; }
+  .page { padding-top: 20px; gap: 14px; }
+  .panel { padding: 16px; border-radius: 16px; }
+  .topbar { gap: 8px; }
+  .panel-heading { align-items: flex-start; flex-wrap: wrap; }
+  .dialog, .api-key-logs-dialog { padding: 18px; border-radius: 20px; }
+  .login-panel { padding: 28px; }
+  .playground-panel .settings-grid.three { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Readable solid materials for unsupported browsers or reduced transparency. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root, :root[data-theme="dark"] { --color-surface: var(--glass-fallback); --color-surface-raised: var(--glass-fallback); --sidebar-bg: var(--glass-fallback); --topbar-bg: var(--glass-fallback); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root, :root[data-theme="dark"] { --glass-blur: none; --color-surface: var(--glass-fallback); --color-surface-raised: var(--glass-fallback); --sidebar-bg: var(--glass-fallback); --topbar-bg: var(--glass-fallback); }
+  .dialog-backdrop, .api-key-logs-dialog::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+}

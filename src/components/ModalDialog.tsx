@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useI18n } from "../lib/i18n";
 
@@ -23,7 +24,7 @@ export function ModalDialog({ title, children, onClose }: ModalDialogProps) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div className="dialog-backdrop">
       <div aria-modal="true" className="dialog" role="dialog">
         <div className="dialog-header">
@@ -34,6 +35,7 @@ export function ModalDialog({ title, children, onClose }: ModalDialogProps) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -14,6 +14,7 @@ type TrafficChartProps = {
 
 type ModelSeries = {
   key: string;
+  model?: string;
   label: string;
   color: string;
 };
@@ -39,7 +40,7 @@ export function TrafficChart({ items, animate = true }: TrafficChartProps) {
           <YAxis yAxisId="tokens" orientation="right" tickFormatter={compactTokenCount} tickLine={false} axisLine={false} />
           <Tooltip
             content={({ active, label }) => (
-              <TrafficTooltip active={active} item={items.find((item) => item.bucket === String(label))} />
+              <TrafficTooltip active={active} item={items.find((item) => item.bucket === String(label))} modelSeries={modelSeries} />
             )}
             wrapperStyle={{ pointerEvents: "auto", zIndex: 10 }}
           />
@@ -69,7 +70,7 @@ export function TrafficChart({ items, animate = true }: TrafficChartProps) {
   );
 }
 
-function TrafficTooltip({ active, item }: { active?: boolean; item?: TrafficBucket }) {
+function TrafficTooltip({ active, item, modelSeries }: { active?: boolean; item?: TrafficBucket; modelSeries: ModelSeries[] }) {
   const { t } = useI18n();
   if (!active || !item) return null;
 
@@ -90,7 +91,14 @@ function TrafficTooltip({ active, item }: { active?: boolean; item?: TrafficBuck
           <tbody>
             {models.map((model) => (
               <tr key={model.model}>
-                <td>{model.model || t("Unknown model")}</td>
+                <td>
+                  <span
+                    className="traffic-tooltip-swatch"
+                    style={{ backgroundColor: modelSeries.find((series) => series.model === model.model)?.color ?? OTHER_MODELS_COLOR }}
+                    aria-hidden="true"
+                  />
+                  {model.model || t("Unknown model")}
+                </td>
                 <td>{integer(model.requests)}</td>
                 <td title={integer(model.total_tokens)}>{compactTokenCount(model.total_tokens)}</td>
               </tr>
@@ -137,6 +145,7 @@ function buildChartData(items: TrafficBucket[], otherLabel: string, unknownLabel
   const keyByModel = new Map(selectedModels.map((model, index) => [model, `model_${index}`]));
   const modelSeries: ModelSeries[] = selectedModels.map((model, index) => ({
     key: `model_${index}`,
+    model,
     label: model || unknownLabel,
     color: MODEL_COLORS[index],
   }));

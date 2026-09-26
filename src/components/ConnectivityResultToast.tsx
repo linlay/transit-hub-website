@@ -1,4 +1,5 @@
 import { CheckCircle2, X, XCircle } from "lucide-react";
+import { createPortal } from "react-dom";
 import { integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import type { ProviderConnectivityTestResult } from "../lib/types";
@@ -16,7 +17,7 @@ export function ConnectivityResultToast({ label, result, onClose }: Connectivity
   const title = result.ok ? t("Connected") : t("Connection failed");
   const status = result.status_code > 0 ? `${result.status_code} · ${integer(result.latency_ms)} ms` : t("Failed");
 
-  return (
+  return createPortal(
     <div className={`connectivity-toast ${result.ok ? "good" : "bad"}`} role="status">
       <div className="connectivity-toast-header">
         <div className="connectivity-toast-title">
@@ -55,6 +56,7 @@ export function ConnectivityResultToast({ label, result, onClose }: Connectivity
         </div>
       ) : null}
       {result.error ? <div className="connectivity-toast-error">{result.error}</div> : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
