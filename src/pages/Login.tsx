@@ -1,6 +1,7 @@
+import { IconButton } from "../components/IconButton";
+import { LogIn, RadioTower } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { RadioTower } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useI18n } from "../lib/i18n";
@@ -46,9 +47,7 @@ export function Login() {
           />
         </label>
         {login.error ? <div className="form-error">{login.error.message}</div> : null}
-        <button className="primary" disabled={login.isPending} type="submit">
-          {login.isPending ? t("Signing in...") : t("Sign in")}
-        </button>
+        <IconButton label={login.isPending ? t("Signing in...") : t("Sign in")} className="primary" disabled={login.isPending} type="submit"><LogIn size={16} /></IconButton>
       </form>
     </main>
   );

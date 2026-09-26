@@ -1,3 +1,4 @@
+import { IconButton } from "./IconButton";
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { copyText } from "../lib/clipboard";
@@ -27,10 +28,7 @@ export function CopyableCodeBlock({ title, code }: { title: string; code: string
           <span aria-live="polite" className={status === "failed" ? "code-copy-status failed" : "code-copy-status"}>
             {status === "copied" ? t("Copied.") : status === "failed" ? t("Copy failed.") : ""}
           </span>
-          <button aria-label={t("Copy {title}", { title })} className="icon-text compact" onClick={copy} type="button">
-            {status === "copied" ? <Check size={15} /> : <Copy size={15} />}
-            {t("Copy")}
-          </button>
+          <IconButton label={t("Copy {title}", { title })} className="icon-text compact" onClick={copy} type="button">{status === "copied" ? <Check size={15} /> : <Copy size={15} />}</IconButton>
         </div>
       </div>
       <pre tabIndex={0}><code>{code}</code></pre>

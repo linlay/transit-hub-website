@@ -1,3 +1,5 @@
+import { IconButton } from "./IconButton";
+import { ListChecks } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useI18n } from "../lib/i18n";
 import type { ProviderSnapshot } from "../lib/types";
@@ -52,9 +54,7 @@ export function ModelWhitelistInput({ models, selected = [] }: ModelWhitelistInp
       <legend>
         <span>{t("Allowed models")}</span>
         {models.length ? (
-          <button className="model-picker-toggle" onClick={toggleAll} type="button">
-            {allSelected ? t("Clear all") : t("Select all")}
-          </button>
+          <IconButton label={allSelected ? t("Clear all") : t("Select all")} aria-pressed={allSelected} className="model-picker-toggle" onClick={toggleAll} type="button"><ListChecks size={16} /></IconButton>
         ) : null}
       </legend>
       {models.length ? (

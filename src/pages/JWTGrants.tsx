@@ -1,7 +1,8 @@
+import { IconButton } from "../components/IconButton";
+import { X, Save, FileX2, Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { formatCredits, creditsInputValue } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
 import { CredentialTime } from "../components/CredentialTime";
@@ -175,10 +176,7 @@ export function JWTGrants() {
   usePageActions(
     <>
       <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([grants.refetch(), providers.refetch()])} />
-      <button className="primary" onClick={() => openCreateDialog()} type="button">
-        <Plus size={16} />
-        {t("Create grant")}
-      </button>
+      <IconButton label={t("Create grant")} className="primary" onClick={() => openCreateDialog()} type="button"><Plus size={16} /></IconButton>
     </>,
     [isRefreshing, grants.refetch, providers.refetch, t],
   );
@@ -269,22 +267,15 @@ export function JWTGrants() {
             {createdJWT ? (
               <div className="secret-box">
                 <code>{createdJWT}</code>
-                <button className="icon-button" onClick={copyCreatedJWT} title={t("Copy JWT")} type="button">
-                  <Copy size={16} />
-                </button>
+                <IconButton label={t("Copy JWT")} className="icon-button" onClick={copyCreatedJWT} type="button"><Copy size={16} /></IconButton>
               </div>
             ) : null}
             {createCopyMessage ? <span className={createCopyMessage === "Copied." ? "muted-cell" : "error-text"}>{createCopyMessage}</span> : null}
             {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {createGrant.error ? <span className="error-text">{createGrant.error.message}</span> : null}
             <div className="dialog-actions">
-              <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">
-                {t("Close")}
-              </button>
-              <button className="primary" disabled={createGrant.isPending || Boolean(createdJWT)} type="submit">
-                <Plus size={16} />
-                {t("Create")}
-              </button>
+              <IconButton label={t("Close")} className="icon-text" onClick={() => setCreateOpen(false)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Create")} className="primary" disabled={createGrant.isPending || Boolean(createdJWT)} type="submit"><Plus size={16} /></IconButton>
             </div>
           </form>
         </ModalDialog>
@@ -306,12 +297,8 @@ export function JWTGrants() {
             {editModelError ? <span className="error-text">{editModelError}</span> : null}
             {updateGrant.error ? <span className="error-text">{updateGrant.error.message}</span> : null}
             <div className="dialog-actions">
-              <button className="icon-text" onClick={() => setEditing(null)} type="button">
-                {t("Close")}
-              </button>
-              <button className="primary" disabled={updateGrant.isPending} type="submit">
-                {t("Save")}
-              </button>
+              <IconButton label={t("Close")} className="icon-text" onClick={() => setEditing(null)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Save")} className="primary" disabled={updateGrant.isPending} type="submit"><Save size={16} /></IconButton>
             </div>
           </form>
         </ModalDialog>
@@ -324,18 +311,14 @@ export function JWTGrants() {
             {viewing.jwt ? (
               <div className="secret-box">
                 <code>{viewing.jwt}</code>
-                <button className="icon-button" onClick={copyViewingJWT} title="Copy JWT" type="button">
-                  <Copy size={16} />
-                </button>
+                <IconButton label={t("Copy JWT")} className="icon-button" onClick={copyViewingJWT} type="button"><Copy size={16} /></IconButton>
               </div>
             ) : (
               <span className="muted-cell">{t("JWT unavailable")}</span>
             )}
             {viewCopyMessage ? <span className={viewCopyMessage === "Copied." ? "muted-cell" : "error-text"}>{viewCopyMessage}</span> : null}
             <div className="dialog-actions">
-              <button className="icon-text" onClick={() => setViewing(null)} type="button">
-                {t("Close")}
-              </button>
+              <IconButton label={t("Close")} className="icon-text" onClick={() => setViewing(null)} type="button"><X size={16} /></IconButton>
             </div>
           </div>
         </ModalDialog>
@@ -350,17 +333,9 @@ export function JWTGrants() {
             </p>
             {removeGrant.error ? <span className="error-text">{removeGrant.error.message}</span> : null}
             <div className="dialog-actions">
-              <button className="icon-text" onClick={() => setDeleting(null)} type="button">
-                {t("Cancel")}
-              </button>
-              <button className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: false })} type="button">
-                <Trash2 size={16} />
-                {t("Grant only")}
-              </button>
-              <button className="primary" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: true })} type="button">
-                <Trash2 size={16} />
-                {t("Grant and API keys")}
-              </button>
+              <IconButton label={t("Cancel")} className="icon-text" onClick={() => setDeleting(null)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Grant only")} className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: false })} type="button"><FileX2 size={16} /></IconButton>
+              <IconButton label={t("Grant and API keys")} className="icon-text danger" disabled={removeGrant.isPending} onClick={() => removeGrant.mutate({ jti: deleting.jti, deleteAPIKeys: true })} type="button"><Trash2 size={16} /></IconButton>
             </div>
           </div>
         </ModalDialog>

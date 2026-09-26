@@ -1,6 +1,7 @@
+import { IconButton } from "./IconButton";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
 import { api } from "../lib/api";
 import { creditAmount, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -19,7 +20,7 @@ export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<
   }, []);
   const total = logs.data?.total ?? 0;
   return <dialog ref={dialogRef} className="api-key-logs-dialog" aria-labelledby="traffic-logs-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
-    <div className="dialog-header"><h2 id="traffic-logs-title">{t("Matching requests")}</h2><button autoFocus type="button" className="icon-button" aria-label={t("Close dialog")} onClick={onClose}><X size={16} /></button></div>
+    <div className="dialog-header"><h2 id="traffic-logs-title">{t("Matching requests")}</h2><IconButton label={t("Close dialog")} autoFocus type="button" className="icon-button" onClick={onClose}><X size={16} /></IconButton></div>
     <div className="panel-actions"><span>{t("Total")}: {integer(total)} · {timezone}</span><RefreshButton isRefreshing={logs.isFetching} onClick={() => logs.refetch()} /></div>
     <div className="table-wrap"><table><thead><tr>{["Time", "Key", "Model", "Provider", "Status", "Latency", "Tokens", "Spend (Credits)"].map((label) => <th key={label}>{t(label)}</th>)}</tr></thead>
       <tbody>
@@ -29,6 +30,6 @@ export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<
           <td title={log.api_key_id}>{log.api_key_name || log.api_key_id}</td><td>{log.public_model}</td><td>{log.provider}</td><td>{log.status_code}{log.error_type ? <small>{log.error_type}</small> : null}</td><td>{integer(log.latency_ms)} ms</td><td>{integer(log.total_tokens)}</td><td>{creditAmount(log.charged_microcredits)}</td>
         </tr>)}
       </tbody></table></div>
-    <div className="dialog-actions"><button type="button" className="icon-text" disabled={page === 0 || logs.isFetching} onClick={() => setPage(page - 1)}>{t("Previous page")}</button><span>{page + 1} / {Math.max(1, Math.ceil(total / 50))}</span><button type="button" className="icon-text" disabled={!logs.data || (page + 1) * 50 >= total || logs.isFetching} onClick={() => setPage(page + 1)}>{t("Next page")}</button></div>
+    <div className="dialog-actions"><IconButton label={t("Previous page")} type="button" className="icon-text" disabled={page === 0 || logs.isFetching} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></IconButton><span>{page + 1} / {Math.max(1, Math.ceil(total / 50))}</span><IconButton label={t("Next page")} type="button" className="icon-text" disabled={!logs.data || (page + 1) * 50 >= total || logs.isFetching} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></IconButton></div>
   </dialog>;
 }

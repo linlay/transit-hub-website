@@ -1,3 +1,4 @@
+import { IconButton } from "../components/IconButton";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Search, X } from "lucide-react";
@@ -84,10 +85,7 @@ export function Models() {
               {providers.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
             {hasFilters ? (
-              <button className="icon-text" onClick={clearFilters} type="button">
-                <X size={15} />
-                {t("Clear filters")}
-              </button>
+              <IconButton label={t("Clear filters")} className="icon-text" onClick={clearFilters} type="button"><X size={15} /></IconButton>
             ) : null}
           </div>
           <span className="results-count">{t("{count} of {total} models", { count: filtered.length, total: allModels.length })}</span>

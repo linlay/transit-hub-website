@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MoreHorizontal } from "lucide-react";
+import { IconButton } from "./IconButton";
 
 type Action = { label: string; icon: ReactNode; onSelect: () => void; danger?: boolean };
 
@@ -18,9 +19,12 @@ export function RowActions({ label, items }: { label: string; items: Action[] })
   function open() {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect) return;
-    const height = items.length * 36 + 12;
+    const columns = Math.min(4, items.length);
+    const size = window.matchMedia("(pointer: coarse)").matches ? 44 : 36;
+    const width = columns * size + 8;
+    const height = Math.ceil(items.length / columns) * size + 8;
     setPosition({
-      left: Math.max(8, Math.min(rect.right - 172, window.innerWidth - 180)),
+      left: Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)),
       top: rect.bottom + height + 8 > window.innerHeight ? Math.max(8, rect.top - height - 4) : rect.bottom + 4,
     });
   }
@@ -56,13 +60,13 @@ export function RowActions({ label, items }: { label: string; items: Action[] })
             if (event.key === "Tab") { event.preventDefault(); close(true); }
             const buttons = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>("button") ?? []);
             const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
-            if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+            if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
               event.preventDefault();
-              const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
+              const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (current + (["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : -1) + buttons.length) % buttons.length;
               buttons[next]?.focus();
             }
           }}>
-          {items.map((item) => <button key={item.label} role="menuitem" type="button" className={item.danger ? "danger" : ""} onClick={() => { close(true); item.onSelect(); }}>{item.icon}{item.label}</button>)}
+          {items.map((item) => <IconButton key={item.label} label={item.label} role="menuitem" type="button" className={item.danger ? "icon-button danger" : "icon-button"} onClick={() => { close(true); item.onSelect(); }}>{item.icon}</IconButton>)}
         </div>, document.body,
       ) : null}
     </>

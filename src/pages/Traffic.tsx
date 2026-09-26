@@ -1,3 +1,5 @@
+import { IconButton } from "../components/IconButton";
+import { RotateCcw, List, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -64,7 +66,7 @@ export function Traffic() {
 
   return <section className="page traffic-page">
     <section className="panel traffic-filters">
-      <div className="panel-heading"><div><h2>{t("Traffic analysis")}</h2><span>{t("All charts follow the filters below")}</span></div><button type="button" className="icon-text" onClick={() => { setParams({}); }}>{t("Reset")}</button></div>
+      <div className="panel-heading"><div><h2>{t("Traffic analysis")}</h2><span>{t("All charts follow the filters below")}</span></div><IconButton label={t("Reset")} type="button" className="icon-text" onClick={() => { setParams({}); }}><RotateCcw size={16} /></IconButton></div>
       <div className="traffic-filter-grid">
         <label>{t("Time range")}<select value={range} onChange={(e) => change({ range: e.target.value })}>
           <option value="today">{t("Today")}</option><option value="yesterday">{t("Yesterday")}</option><option value="7d">{t("Last 7 days")}</option><option value="30d">{t("Last 30 days")}</option><option value="custom">{t("Custom dates")}</option>
@@ -79,7 +81,16 @@ export function Traffic() {
         <summary>{t("Advanced filters")}</summary>
         <div className="traffic-custom-dates"><label>{t("Provider")}<select value={provider} onChange={(e) => change({ provider: e.target.value })}><option value="">{t("All")}</option>{options.providers.filter((item) => item.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}{provider && !options.providers.some((item) => item.id === provider) ? <option value={provider}>{provider}</option> : null}</select></label><label>{t("Request result")}<select value={status} onChange={(e) => change({ status: e.target.value })}><option value="">{t("All")}</option><option value="success">{t("Successful")}</option><option value="failed">{t("Failed")}</option></select></label></div>
       </details>
-      {keys.length || models.length ? <div className="traffic-selected">{keys.map((id) => <button className="icon-text" type="button" key={`key-${id}`} onClick={() => select("keys", keys.filter((value) => value !== id))}>{t("Key")}: {options.keys.find((option) => option.id === id)?.name || id || t("Unknown")} ×</button>)}{models.map((id) => <button className="icon-text" type="button" key={`model-${id}`} onClick={() => select("models", models.filter((value) => value !== id))}>{t("Model")}: {id || t("Unknown")} ×</button>)}</div> : null}
+      {keys.length || models.length ? <div className="traffic-selected">
+        {keys.map((id) => {
+          const name = `${t("Key")}: ${options.keys.find((option) => option.id === id)?.name || id || t("Unknown")}`;
+          return <span className="filter-chip" key={`key-${id}`}>{name}<IconButton label={`${t("Remove")}: ${name}`} onClick={() => select("keys", keys.filter((value) => value !== id))}><X size={14} /></IconButton></span>;
+        })}
+        {models.map((id) => {
+          const name = `${t("Model")}: ${id || t("Unknown")}`;
+          return <span className="filter-chip" key={`model-${id}`}>{name}<IconButton label={`${t("Remove")}: ${name}`} onClick={() => select("models", models.filter((value) => value !== id))}><X size={14} /></IconButton></span>;
+        })}
+      </div> : null}
       <p className="traffic-note">{t("Based on retained request logs; bucketed by completion time.")}</p>
     </section>
     {data && analytics.error ? <div className="form-error" role="status">{t("Unable to refresh analytics; showing the last successful results")}</div> : null}
@@ -92,7 +103,7 @@ export function Traffic() {
         <MetricCard label={t("Failure rate")} value={new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(summary?.requests ? summary.error_requests / summary.requests : 0)} />
         <MetricCard label={t("Average latency (ms)")} value={integer(Math.round(summary?.average_latency_ms ?? 0))} />
       </div>
-      <div className="traffic-results-toolbar"><span>{t("Filtered results")} · {timezone}</span><button className="icon-text" type="button" onClick={() => { setLogsQuery(analytics.data?.request ?? query); setLogsOpen(true); }}>{t("View matching requests")}</button></div>
+      <div className="traffic-results-toolbar"><span>{t("Filtered results")} · {timezone}</span><IconButton label={t("View matching requests")} className="icon-text" type="button" onClick={() => { setLogsQuery(analytics.data?.request ?? query); setLogsOpen(true); }}><List size={16} /></IconButton></div>
       {!items.length ? <section className="panel">{t("No requests match these filters")}</section> : <div className="traffic-charts-grid">
         <section className="panel"><div className="panel-heading"><div><h2>{t("Call trend")}</h2><span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span></div></div><TrafficChart items={items} animate={false} /></section>
         <section className="panel"><div className="panel-heading"><h2>{t("Activity and spend")}</h2></div><UsageChart items={items} metric="credits" animate={false} /></section>

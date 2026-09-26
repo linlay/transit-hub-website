@@ -1,3 +1,4 @@
+import { IconButton } from "../components/IconButton";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bot, Loader2, RotateCcw, Send, Square, User } from "lucide-react";
@@ -183,10 +184,7 @@ export function Playground() {
   usePageActions(
     <>
       <RefreshButton isRefreshing={providers.isFetching} onClick={() => providers.refetch()} />
-      <button className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button">
-        <RotateCcw size={16} />
-        {t("Clear")}
-      </button>
+      <IconButton label={t("Clear")} className="icon-text" disabled={isStreaming && messages.length === 0} onClick={resetConversation} type="button"><RotateCcw size={16} /></IconButton>
     </>,
     [providers.isFetching, providers.refetch, isStreaming, messages.length, t],
   );
@@ -323,15 +321,9 @@ export function Playground() {
           />
           <div className="dialog-actions">
             {isStreaming ? (
-              <button className="icon-text" onClick={stopStreaming} type="button">
-                <Square size={16} />
-                {t("Stop")}
-              </button>
+              <IconButton label={t("Stop")} className="icon-text" onClick={stopStreaming} type="button"><Square size={16} /></IconButton>
             ) : null}
-            <button className="primary" disabled={!providerName || !publicModel || !input.trim() || isStreaming} type="submit">
-              {isStreaming ? <Loader2 className="spin" size={16} /> : <Send size={16} />}
-              {t("Send")}
-            </button>
+            <IconButton label={t("Send")} className="primary" disabled={!providerName || !publicModel || !input.trim() || isStreaming} type="submit">{isStreaming ? <Loader2 className="spin" size={16} /> : <Send size={16} />}</IconButton>
           </div>
         </form>
       </section>

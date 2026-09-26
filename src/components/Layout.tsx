@@ -19,6 +19,7 @@ import {
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { IconButton } from "./IconButton";
 import { useI18n } from "../lib/i18n";
 import { useTheme, type ThemePreference } from "../lib/theme";
 
@@ -158,10 +159,9 @@ function UserMenu({ username, onLogout }: { username: string; onLogout: () => vo
               <option value="dark">{t("Dark")}</option>
             </select>
           </label>
-          <button onClick={onLogout} type="button">
+          <IconButton label={t("Logout")} onClick={onLogout} type="button">
             <LogOut size={16} />
-            {t("Logout")}
-          </button>
+          </IconButton>
         </div>
       ) : null}
     </div>

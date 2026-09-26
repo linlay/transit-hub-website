@@ -1,3 +1,4 @@
+import { IconButton } from "../components/IconButton";
 import { creditAmount, creditsInputValue } from "../lib/format";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -294,26 +295,14 @@ export function APIKeyDetail() {
               <span className="eyebrow">{t("Settings")}</span>
             </div>
             <div className="panel-actions">
-              <button className="icon-text" onClick={() => setLogsOpen(true)} type="button">
-                <FileText size={16} />
-                {t("View logs")}
-              </button>
+              <IconButton label={t("View logs")} className="icon-text" onClick={() => setLogsOpen(true)} type="button"><FileText size={16} /></IconButton>
               <StatusPill active={key.status === "active"} label={key.status === "active" ? "Active" : "Disabled"} />
               {key.status === "active" ? (
-                <button className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm(t("Inactive this key?")) && inactive.mutate()} type="button">
-                  <Ban size={16} />
-                  {t("Inactive")}
-                </button>
+                <IconButton label={t("Inactive")} className="icon-text" disabled={inactive.isPending} onClick={() => window.confirm(t("Inactive this key?")) && inactive.mutate()} type="button"><Ban size={16} /></IconButton>
               ) : null}
-              <button className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm(t("Delete this key?")) && remove.mutate()} type="button">
-                <Trash2 size={16} />
-                {t("Delete")}
-              </button>
+              <IconButton label={t("Delete")} className="icon-text danger" disabled={remove.isPending} onClick={() => window.confirm(t("Delete this key?")) && remove.mutate()} type="button"><Trash2 size={16} /></IconButton>
               {savedMessage ? <span className="saved-text">{t("Saved")}</span> : null}
-              <button className="primary" disabled={update.isPending} form="api-key-settings" type="submit">
-                <Save size={16} />
-                {t("Save")}
-              </button>
+              <IconButton label={t("Save")} className="primary" disabled={update.isPending} form="api-key-settings" type="submit"><Save size={16} /></IconButton>
             </div>
           </div>
           <form id="api-key-settings" className="settings-form" onSubmit={submit}>
@@ -474,9 +463,7 @@ function APIKeyLogsDialog({ children, onClose }: { children: ReactNode; onClose:
     <dialog ref={dialogRef} className="api-key-logs-dialog" aria-labelledby="api-key-logs-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
       <div className="dialog-header">
         <h2 id="api-key-logs-title">{t("Logs")}</h2>
-        <button autoFocus aria-label={t("Close dialog")} className="icon-button" onClick={onClose} type="button">
-          <X size={16} />
-        </button>
+        <IconButton label={t("Close dialog")} autoFocus className="icon-button" onClick={onClose} type="button"><X size={16} /></IconButton>
       </div>
       {children}
     </dialog>

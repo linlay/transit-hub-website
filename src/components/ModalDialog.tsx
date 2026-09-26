@@ -1,3 +1,4 @@
+import { IconButton } from "./IconButton";
 import { ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -29,9 +30,7 @@ export function ModalDialog({ title, children, onClose }: ModalDialogProps) {
       <div aria-modal="true" className="dialog" role="dialog">
         <div className="dialog-header">
           <h2>{t(title)}</h2>
-          <button aria-label={t("Close dialog")} className="icon-button" onClick={onClose} type="button">
-            <X size={16} />
-          </button>
+          <IconButton label={t("Close dialog")} className="icon-button" onClick={onClose} type="button"><X size={16} /></IconButton>
         </div>
         {children}
       </div>

@@ -2329,3 +2329,107 @@ tbody tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Compact controls: glass surfaces keep their edge; actions stay borderless. */
+.page { gap: 14px; padding: 24px; }
+.panel { padding: 16px; }
+.metric { min-height: 104px; padding: 14px; }
+.metric-value { margin: 10px 0 6px; font-size: 24px; }
+.panel-heading { margin-bottom: 12px; }
+.topbar { min-height: 52px; padding-top: 8px; padding-bottom: 8px; }
+
+.action-icon,
+.icon-text.action-icon,
+.icon-button.action-icon,
+.primary.action-icon,
+.sidebar-user-dropdown .action-icon,
+.row-actions-menu .action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-soft);
+  box-shadow: none;
+  vertical-align: middle;
+}
+.action-icon svg { flex: 0 0 auto; pointer-events: none; }
+.action-icon.primary { color: var(--color-primary-strong); background: var(--color-primary-soft); }
+.action-icon.danger { color: var(--color-danger); }
+.action-icon:hover:not(:disabled),
+.icon-text.action-icon:hover:not(:disabled),
+.icon-button.action-icon:hover:not(:disabled),
+.primary.action-icon:hover:not(:disabled) {
+  background: var(--color-neutral-soft);
+  box-shadow: none;
+}
+.action-icon.primary:hover:not(:disabled) { background: var(--color-primary-soft); color: var(--color-primary); }
+.action-icon.danger:hover:not(:disabled) { background: var(--color-danger-soft); color: var(--color-danger); }
+.action-icon:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.action-icon[aria-pressed="true"] { background: var(--color-primary-soft); color: var(--color-primary-strong); }
+.cell-model-link.action-icon { margin-top: 2px; width: 24px; height: 24px; min-height: 24px; }
+.model-picker-toggle.action-icon { width: 28px; height: 28px; min-height: 28px; }
+.login-panel .action-icon { justify-self: end; width: 40px; height: 40px; min-height: 40px; }
+
+input, select, textarea, .search, .traffic-filter-select > summary {
+  border-color: transparent;
+  box-shadow: none;
+}
+input:focus, select:focus, textarea:focus, .search:focus-within {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.search input:focus { outline: none; box-shadow: none; }
+.sidebar a.active { border-color: transparent; box-shadow: none; }
+.sidebar-user-trigger { border: 0; }
+.model-detail-field, .code-panel, .code-panel-heading,
+.playground-messages, .playground-bubble, .provider-quota-account,
+.model-option, .secret-box, .pill { border-color: transparent; }
+.model-option:has(input:checked) { border-color: transparent; }
+.provider-grid .metric { box-shadow: none; }
+
+.row-actions-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: max-content;
+  max-width: 152px;
+  padding: 6px;
+}
+.row-actions-menu .action-icon.danger { border: 0; border-radius: 9px; }
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding-left: 10px;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  color: var(--color-text-soft);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.table-actions, .panel-actions, .page-actions, .topbar-actions, .dialog-actions { gap: 6px; }
+.credential-table td { height: 64px; }
+.credential-table th, .credential-table td { padding-top: 10px; padding-bottom: 10px; }
+
+@media (max-width: 760px) {
+  .page { padding: 16px; }
+  .page-actions, .panel-actions, .dialog-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .topbar-actions > .action-icon { flex: 0 0 auto; }
+  .dialog-actions > .action-icon { width: 32px; }
+  .code-copy-actions { justify-content: flex-end; }
+}
+@media (pointer: coarse) {
+  .action-icon, .icon-text.action-icon, .icon-button.action-icon, .primary.action-icon { min-width: 40px; min-height: 40px; }
+  .row-actions-menu { max-width: 184px; }
+}

@@ -1,3 +1,4 @@
+import { IconButton } from "../components/IconButton";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Loader2 } from "lucide-react";
@@ -72,16 +73,7 @@ export function Providers() {
     const pending = connectivity.isPending && connectivity.pendingKey === target.resultKey;
     return (
       <div className="connection-test">
-        <button
-          aria-label={title}
-          className="icon-button"
-          disabled={connectivity.isPending}
-          onClick={() => connectivity.run({ ...target, label: title })}
-          title={title}
-          type="button"
-        >
-          {pending ? <Loader2 className="spin" size={16} /> : <Activity size={16} />}
-        </button>
+        <IconButton label={title} className="icon-button" disabled={connectivity.isPending} onClick={() => connectivity.run({ ...target, label: title })} type="button">{pending ? <Loader2 className="spin" size={16} /> : <Activity size={16} />}</IconButton>
       </div>
     );
   }

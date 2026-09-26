@@ -1,3 +1,4 @@
+import { IconButton } from "./IconButton";
 import { RefreshCw } from "lucide-react";
 import { useI18n } from "../lib/i18n";
 
@@ -12,9 +13,6 @@ export function RefreshButton({ onClick, isRefreshing, disabled = false, label =
   const { t } = useI18n();
 
   return (
-    <button className="icon-text" disabled={disabled || isRefreshing} onClick={onClick} type="button">
-      <RefreshCw className={isRefreshing ? "spin" : undefined} size={16} />
-      {t(label)}
-    </button>
+    <IconButton label={t(label)} className="icon-text" disabled={disabled || isRefreshing} onClick={onClick} type="button"><RefreshCw className={isRefreshing ? "spin" : undefined} size={16} /></IconButton>
   );
 }

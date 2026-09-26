@@ -1,3 +1,4 @@
+import { IconButton } from "../components/IconButton";
 import { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
@@ -40,10 +41,7 @@ export function Users() {
         <form className="inline-form" onSubmit={submit}>
           <input name="username" placeholder={t("Username")} required />
           <input name="password" placeholder={t("Password")} required type="password" />
-          <button className="primary" type="submit">
-            <Plus size={16} />
-            {t("Create")}
-          </button>
+          <IconButton label={t("Create")} className="primary" type="submit"><Plus size={16} /></IconButton>
         </form>
       </section>
       <section className="panel">
@@ -68,9 +66,7 @@ export function Users() {
                   <td>{dateTime(user.last_login_at)}</td>
                   <td>{dateTime(user.created_at)}</td>
                   <td>
-                    <button className="icon-button danger" onClick={() => disable.mutate(user.id)} type="button">
-                      <Trash2 size={16} />
-                    </button>
+                    <IconButton label={t("Delete")} className="icon-button danger" onClick={() => disable.mutate(user.id)} type="button"><Trash2 size={16} /></IconButton>
                   </td>
                 </tr>
               ))}

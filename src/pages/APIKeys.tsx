@@ -1,7 +1,8 @@
+import { IconButton } from "../components/IconButton";
+import { ListChecks, X, ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { creditsInputValue } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
 import { CredentialTime } from "../components/CredentialTime";
@@ -195,10 +196,7 @@ export function APIKeys() {
   usePageActions(
     <>
       <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
-      <button className="primary" onClick={() => openCreateDialog()} type="button">
-        <Plus size={16} />
-        {t("Create key")}
-      </button>
+      <IconButton label={t("Create key")} className="primary" onClick={() => openCreateDialog()} type="button"><Plus size={16} /></IconButton>
     </>,
     [isRefreshing, keys.refetch, providers.refetch, t],
   );
@@ -223,32 +221,17 @@ export function APIKeys() {
             <option value="access_token">{t("User-device binding")}</option>
           </select>
           <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
-          <button
-            className="icon-text"
-            onClick={() => {
+          <IconButton label={selecting ? t("Cancel selection") : t("Select keys")} aria-pressed={selecting} className="icon-text" onClick={() => {
               setSelecting((value) => !value);
               setSelectedIDs(new Set());
-            }}
-            type="button"
-          >
-            {selecting ? t("Cancel selection") : t("Select keys")}
-          </button>
-          <button className="icon-text danger" disabled={!issuerJTI.trim() || batch.isPending} onClick={deleteByIssuerJTI} type="button">
-            <Trash2 size={16} />
-            {t("Delete by Issuer JTI")}
-          </button>
+            }} type="button"><ListChecks size={16} /></IconButton>
+          <IconButton label={t("Delete by Issuer JTI")} className="icon-text danger" disabled={!issuerJTI.trim() || batch.isPending} onClick={deleteByIssuerJTI} type="button"><Trash2 size={16} /></IconButton>
         </div>
         {selecting ? (
           <div className="bulk-bar">
             <span>{t("Selected {count}", { count: selectedCount })}</span>
-            <button className="icon-text" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("inactive")} type="button">
-              <Ban size={16} />
-              {t("Inactive selected")}
-            </button>
-            <button className="icon-text danger" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("delete")} type="button">
-              <Trash2 size={16} />
-              {t("Delete selected")}
-            </button>
+            <IconButton label={t("Inactive selected")} className="icon-text" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("inactive")} type="button"><Ban size={16} /></IconButton>
+            <IconButton label={t("Delete selected")} className="icon-text danger" disabled={selectedCount === 0 || batch.isPending} onClick={() => batchSelected("delete")} type="button"><Trash2 size={16} /></IconButton>
           </div>
         ) : null}
         {keys.error ? <div className="error-text" role="alert">{keys.error.message}</div> : null}
@@ -355,22 +338,15 @@ export function APIKeys() {
             {createdKey ? (
               <div className="secret-box">
                 <code>{createdKey}</code>
-                <button className="icon-button" onClick={copyCreatedKey} title={t("Copy API key")} type="button">
-                  <Copy size={16} />
-                </button>
+                <IconButton label={t("Copy API key")} className="icon-button" onClick={copyCreatedKey} type="button"><Copy size={16} /></IconButton>
               </div>
             ) : null}
             {copyMessage ? <span className={copyMessage === "Copied." ? "muted-cell" : "error-text"}>{copyMessage}</span> : null}
             {createModelError ? <span className="error-text">{createModelError}</span> : null}
             {create.error ? <span className="error-text">{create.error.message}</span> : null}
             <div className="dialog-actions">
-              <button className="icon-text" onClick={() => setCreateOpen(false)} type="button">
-                {t("Close")}
-              </button>
-              <button className="primary" disabled={create.isPending || Boolean(createdKey)} type="submit">
-                <Plus size={16} />
-                {t("Create")}
-              </button>
+              <IconButton label={t("Close")} className="icon-text" onClick={() => setCreateOpen(false)} type="button"><X size={16} /></IconButton>
+              <IconButton label={t("Create")} className="primary" disabled={create.isPending || Boolean(createdKey)} type="submit"><Plus size={16} /></IconButton>
             </div>
           </form>
         </ModalDialog>

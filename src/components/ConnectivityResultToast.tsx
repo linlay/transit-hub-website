@@ -1,3 +1,4 @@
+import { IconButton } from "./IconButton";
 import { CheckCircle2, X, XCircle } from "lucide-react";
 import { createPortal } from "react-dom";
 import { integer } from "../lib/format";
@@ -27,9 +28,7 @@ export function ConnectivityResultToast({ label, result, onClose }: Connectivity
             <span>{label ?? t("Connectivity test")}</span>
           </div>
         </div>
-        <button aria-label={t("Close result")} className="icon-button" onClick={onClose} type="button">
-          <X size={14} />
-        </button>
+        <IconButton label={t("Close result")} className="icon-button" onClick={onClose} type="button"><X size={14} /></IconButton>
       </div>
       <div className="connectivity-toast-status">{status}</div>
       <dl className="connectivity-toast-details">

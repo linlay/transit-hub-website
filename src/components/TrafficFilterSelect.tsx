@@ -1,3 +1,5 @@
+import { IconButton } from "./IconButton";
+import { ListX } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../lib/i18n";
 import type { TrafficOption } from "../lib/types";
@@ -12,7 +14,7 @@ export function TrafficFilterSelect({ label, options, values, onChange }: { labe
     <summary>{t(label)} · {values.length ? `${values.length} ${t("selected")}` : t("All")}</summary>
     <div className="traffic-filter-popover">
       <input aria-label={`${t("Search")} ${t(label)}`} placeholder={t("Search")} value={search} onChange={(event) => setSearch(event.target.value)} />
-      <button className="icon-text" type="button" onClick={() => onChange([])}>{t("Clear selection")}</button>
+      <IconButton label={t("Clear selection")} className="icon-text" type="button" onClick={() => onChange([])}><ListX size={16} /></IconButton>
       <div className="traffic-filter-options">
         {matches.map((option) => <label className="mini-check" key={option.id}>
           <input type="checkbox" checked={values.includes(option.id)} disabled={!values.includes(option.id) && values.length >= 100} onChange={(event) => onChange(event.target.checked ? [...values, option.id] : values.filter((id) => id !== option.id))} />

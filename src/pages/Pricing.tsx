@@ -1,6 +1,7 @@
+import { IconButton } from "../components/IconButton";
+import { X, Save, Plus, Trash2, Pencil } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Pencil } from "lucide-react";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
 import { api } from "../lib/api";
@@ -66,11 +67,11 @@ export function Pricing() {
       <input aria-label={t("Size")} placeholder={t("Size")} value={rule.size} onChange={e=>setRules(rows=>rows.map((r,i)=>i===index?{...r,size:e.target.value}:r))}/>
       <input aria-label={t("Quality")} placeholder={t("Quality")} value={rule.quality} onChange={e=>setRules(rows=>rows.map((r,i)=>i===index?{...r,quality:e.target.value}:r))}/>
       <input aria-label={t("Credits per image")} placeholder={t("Credits per image")} value={rule.amount} type="number" min="0.000001" step="0.000001" required onChange={e=>setRules(rows=>rows.map((r,i)=>i===index?{...r,amount:e.target.value}:r))}/>
-      <button type="button" disabled={rules.length===1} onClick={()=>setRules(rows=>rows.filter((_,i)=>i!==index))}>{t("Remove")}</button>
+      <IconButton label={t("Remove")} type="button" disabled={rules.length===1} onClick={()=>setRules(rows=>rows.filter((_,i)=>i!==index))}><Trash2 size={16} /></IconButton>
      </div>)}
-     <button type="button" onClick={()=>setRules(rows=>[...rows,{size:"",quality:"",amount:""}])}>{t("Add price rule")}</button>
+     <IconButton label={t("Add price rule")} type="button" onClick={()=>setRules(rows=>[...rows,{size:"",quality:"",amount:""}])}><Plus size={16} /></IconButton>
     </div>}
-    <div className="pricing-meta"><button className="primary" type="submit" disabled={save.isPending}><Plus size={16}/>{t("Save")}</button>{editing && <button type="button" onClick={()=>select()}>{t("Cancel")}</button>}</div>
+    <div className="pricing-meta"><IconButton label={t("Save")} className="primary" type="submit" disabled={save.isPending}><Save size={16}/></IconButton>{editing && <IconButton label={t("Cancel")} type="button" onClick={()=>select()}><X size={16} /></IconButton>}</div>
    </form>
   </section>
   <section className="panel"><div className="table-wrap"><table>
@@ -82,7 +83,7 @@ export function Pricing() {
      {price.billing?.token_tiers?.map(tier => <div key={tier.above_input_tokens}>输入 &gt; {tier.above_input_tokens.toLocaleString()} tokens：{formatCredits(tier.input_microcredits_per_1m_tokens)} / {formatCredits(tier.output_microcredits_per_1m_tokens)}（输入 / 输出，每百万 tokens）</div>)}
      <div>{t("Cache hit / write per 1M")}: {formatCredits(price.input_cache_hit_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)} / {formatCredits(price.billing?.cache_write_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)}</div>
     </>}</td>
-    <td><button className="icon-button" aria-label={t("Edit")} onClick={()=>select(price)}><Pencil size={16}/></button><button className="icon-button danger" aria-label={t("Delete")} onClick={()=>remove.mutate(price.id)}><Trash2 size={16}/></button></td>
+    <td><IconButton label={t("Edit")} className="icon-button" onClick={()=>select(price)}><Pencil size={16}/></IconButton><IconButton label={t("Delete")} className="icon-button danger" onClick={()=>remove.mutate(price.id)}><Trash2 size={16}/></IconButton></td>
    </tr>)}{!prices.data?.items?.length && <tr><td colSpan={5}>{t("No prices configured.")}</td></tr>}</tbody>
   </table></div></section>
  </section>;
