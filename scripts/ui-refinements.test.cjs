@@ -55,12 +55,12 @@ for(const path of ['/api-keys','/jwt-grants','/models','/sessions','/users']){
   const table=panel?.querySelector('.data-table-scroll');
   return {padding:getComputedStyle(node).paddingLeft,pageBottom:node.getBoundingClientRect().bottom,panelBottom:panel?.getBoundingClientRect().bottom,tableBottom:table?.getBoundingClientRect().bottom,viewport:innerHeight};
  });
- assert.equal(geometry.padding,'16px',`${path} page padding`);
+ assert.equal(geometry.padding,'12px',`${path} page padding`);
  assert(Math.abs(geometry.pageBottom-geometry.viewport)<1,`${path} page fills viewport`);
- assert(Math.abs(geometry.panelBottom-(geometry.viewport-16))<1,`${path} panel reaches bottom padding`);
- assert(Math.abs(geometry.tableBottom-(geometry.panelBottom-13))<1,`${path} table reaches panel edge ${JSON.stringify(geometry)}`);
+ assert(Math.abs(geometry.panelBottom-(geometry.viewport-12))<1,`${path} panel reaches bottom padding`);
+ assert(Math.abs(geometry.tableBottom-(geometry.panelBottom-9))<1,`${path} table reaches panel edge ${JSON.stringify(geometry)}`);
 }
-await go('/');assert.equal(await page.locator('.page').evaluate(node=>getComputedStyle(node).paddingLeft),'16px','dashboard page padding');
+await go('/');assert.equal(await page.locator('.page').evaluate(node=>getComputedStyle(node).paddingLeft),'12px','dashboard page padding');
 // Input debounce and URL state, keep old rows during a delayed query.
 await go('/api-keys');queries=[];delay=500;
 const tableTopBefore = await page.locator('.data-table-scroll').evaluate(e=>e.getBoundingClientRect().top);
