@@ -12,6 +12,7 @@ import { UsageChart } from "../components/UsageChart";
 import { TrafficMetricsChart, TrafficRankingChart } from "../components/TrafficAnalyticsCharts";
 import { TrafficFilterSelect } from "../components/TrafficFilterSelect";
 import { TrafficLogsDialog } from "../components/TrafficLogsDialog";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, integer, MICRO_PER_CREDIT } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -67,6 +68,17 @@ export function Traffic() {
 
   return <section className="page traffic-page">
     <section className="panel traffic-filters" aria-label={t("Traffic analysis")}>
+      <ResponsiveFilters
+        count={keys.length + models.length + Number(Boolean(provider)) + Number(Boolean(status)) + Number(range !== "7d") + Number(bucket !== "day") + Number(offset !== 480)}
+        summary={[
+          range === "custom" ? `${from || "…"} – ${to || "…"}` : t(range === "today" ? "Today" : range === "yesterday" ? "Yesterday" : range === "30d" ? "Last 30 days" : "Last 7 days"),
+          t(bucket === "hour" ? "Hourly" : bucket === "month" ? "Monthly" : "Daily"),
+          offset === 0 ? "UTC" : "UTC+8",
+          provider,
+          status ? t(status === "success" ? "Successful" : "Failed") : "",
+        ].filter(Boolean).join(" · ")}
+        onReset={() => { setParams({}); setAdvancedOpen(false); }}
+      >
       <div className="traffic-filter-grid">
         <select aria-label={t("Time range")} title={t("Time range")} value={range} onChange={(e) => change({ range: e.target.value })}>
           <option value="today">{t("Today")}</option><option value="yesterday">{t("Yesterday")}</option><option value="7d">{t("Last 7 days")}</option><option value="30d">{t("Last 30 days")}</option><option value="custom">{t("Custom dates")}</option>
@@ -83,7 +95,7 @@ export function Traffic() {
           <IconButton label={t("Advanced filters")} aria-expanded={advancedOpen} aria-controls="traffic-advanced-filters" className={`icon-button${provider || status ? " has-filters" : ""}`} onClick={() => setAdvancedOpen((open) => !open)}>
             <SlidersHorizontal size={16} />
           </IconButton>
-          <IconButton label={t("Reset")} onClick={() => { setParams({}); setAdvancedOpen(false); }}><RotateCcw size={16} /></IconButton>
+          <IconButton className="icon-button traffic-filter-reset" label={t("Reset")} onClick={() => { setParams({}); setAdvancedOpen(false); }}><RotateCcw size={16} /></IconButton>
           <span className="traffic-filter-info" tabIndex={0} aria-label={`${t("All charts follow the filters below")}. ${t("Based on retained request logs; bucketed by completion time.")}`} title={`${t("All charts follow the filters below")}. ${t("Based on retained request logs; bucketed by completion time.")}`}>
             <Info size={15} aria-hidden="true" />
           </span>
@@ -94,6 +106,7 @@ export function Traffic() {
         <label>{t("Provider")}<select aria-label={t("Provider")} value={provider} onChange={(e) => change({ provider: e.target.value })}><option value="">{t("All")}</option>{options.providers.filter((item) => item.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}{provider && !options.providers.some((item) => item.id === provider) ? <option value={provider}>{provider}</option> : null}</select></label>
         <label>{t("Request result")}<select aria-label={t("Request result")} value={status} onChange={(e) => change({ status: e.target.value })}><option value="">{t("All")}</option><option value="success">{t("Successful")}</option><option value="failed">{t("Failed")}</option></select></label>
       </div>
+      </ResponsiveFilters>
       {keys.length || models.length ? <div className="traffic-selected">
         {keys.map((id) => {
           const name = `${t("Key")}: ${options.keys.find((option) => option.id === id)?.name || id || t("Unknown")}`;

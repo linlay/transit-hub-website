@@ -14,6 +14,10 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Filters": "筛选",
+  "Filter settings": "筛选条件",
+  "Filters apply immediately": "修改后立即生效，关闭即可查看结果。",
+  "Done": "完成",
   "Open navigation": "展开导航",
   "Close navigation": "收起导航",
   "Main navigation": "主导航",

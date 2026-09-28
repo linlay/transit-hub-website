@@ -2571,4 +2571,39 @@ td.numeric .key-usage-line { justify-content: flex-end; }
   .row-actions-trigger { width: 44px; height: 44px; }
   .credential-table .row-actions-cell { width: 52px; }
   .model-picker-toggle.action-icon { width: 44px; height: 44px; }
+
+  .metrics-grid, .traffic-page .metrics-grid,
+  .credits-summary-grid, .usage-summary-grid, .provider-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .metric { padding: 12px; min-height: 100px; }
+  .metric-value { font-size: 22px; }
+  .metric-label, .metric-detail { overflow-wrap: anywhere; }
+
+  .mobile-filter-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: var(--control-radius);
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+    font-size: 14px;
+  }
+  .mobile-filter-summary { font-size: 12px; color: var(--color-text-muted); overflow-wrap: anywhere; }
+  .api-key-filters .mobile-filter-summary { order: 1; flex-basis: 100%; }
+  .traffic-filters > .mobile-filter-summary { display: block; margin-top: 8px; }
+  .mobile-filter-note { margin: 0; font-size: 13px; color: var(--color-text-muted); }
+  .mobile-filter-content { display: grid; gap: 12px; }
+  .mobile-filter-content > input, .mobile-filter-content > select { width: 100%; min-width: 0; }
+  .mobile-filter-content .traffic-filter-popover { position: static; margin-top: 6px; box-shadow: none; }
+  .mobile-filter-content .traffic-filter-reset { display: none; }
+  .mobile-filter-content .traffic-custom-dates > label,
+  .mobile-filter-content .traffic-advanced > label { display: grid; width: 100%; gap: 6px; }
+  .mobile-filter-content .traffic-advanced select { width: 100%; }
+  .mobile-filter-footer { display: flex; justify-content: flex-end; gap: 10px; }
+  .mobile-filter-footer button { min-height: 44px; padding: 0 16px; }
 }

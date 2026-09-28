@@ -13,6 +13,7 @@ import { CredentialTime } from "../components/CredentialTime";
 import { RowActions } from "../components/RowActions";
 import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
@@ -201,11 +202,20 @@ export function APIKeys() {
   return (
     <section className="page list-page api-keys-page">
       <section className="panel credential-panel">
-        <div className="toolbar filters">
+        <div className="toolbar filters api-key-filters">
           <label className="search">
             <Search size={16} />
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search keys")} />
           </label>
+          <ResponsiveFilters
+            count={Number(status !== "all") + Number(source !== "all") + Number(Boolean(issuerJTI))}
+            summary={[
+              status !== "all" ? t(status === "active" ? "Active" : "Disabled") : "",
+              source !== "all" ? t(source === "admin" ? "Admin" : source === "jwt" ? "JWT" : "User-device binding") : "",
+              issuerJTI ? `${t("Issuer Name")}: ${issuerJTI}` : "",
+            ].filter(Boolean).join(" · ")}
+            onReset={() => setFilters({ status: null, source: null, issuer_jti: null })}
+          >
           <select aria-label={t("Status")} value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
@@ -217,7 +227,8 @@ export function APIKeys() {
             <option value="jwt">JWT</option>
             <option value="access_token">{t("User-device binding")}</option>
           </select>
-          <input value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
+          <input aria-label={t("Issuer Name")} value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
+          </ResponsiveFilters>
           <IconButton label={selecting ? t("Cancel selection") : t("Select keys")} aria-pressed={selecting} className="icon-text" onClick={() => {
               setSelecting((value) => !value);
               setSelectedIDs(new Set());
