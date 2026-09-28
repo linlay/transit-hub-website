@@ -7,6 +7,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { api } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
@@ -71,6 +72,15 @@ export function Models() {
               <Search size={16} />
               <input value={query} onChange={(event) => setFilter("q", event.target.value)} placeholder={t("Search models")} />
             </label>
+            <ResponsiveFilters
+              count={Number(Boolean(protocol)) + Number(Boolean(type)) + Number(Boolean(provider))}
+              summary={[protocol, type ? t(modelTypeLabel(type)) : "", provider].filter(Boolean).join(" · ")}
+              onReset={() => {
+                const next = new URLSearchParams(params);
+                ["protocol", "type", "provider"].forEach((key) => next.delete(key));
+                setParams(next, { replace: true });
+              }}
+            >
             <select aria-label={t("Filter by protocol")} value={protocol} onChange={(event) => setFilter("protocol", event.target.value)}>
               <option value="">{t("All protocols")}</option>
               <option value="openai">OpenAI</option>
@@ -86,6 +96,7 @@ export function Models() {
               <option value="">{t("All providers")}</option>
               {providers.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
+            </ResponsiveFilters>
             {hasFilters ? (
               <IconButton label={t("Clear filters")} className="icon-text" onClick={clearFilters} type="button"><X size={15} /></IconButton>
             ) : null}

@@ -2594,7 +2594,10 @@ td.numeric .key-usage-line { justify-content: flex-end; }
     font-size: 14px;
   }
   .mobile-filter-summary { font-size: 12px; color: var(--color-text-muted); overflow-wrap: anywhere; }
-  .api-key-filters .mobile-filter-summary { order: 1; flex-basis: 100%; }
+  .filters .mobile-filter-summary, .models-filters .mobile-filter-summary,
+  .session-filters .mobile-filter-summary { order: 1; flex-basis: 100%; }
+  .models-filters, .session-filters { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .models-filters > .mobile-filter-trigger, .models-filters > .action-icon { width: auto; }
   .traffic-filters > .mobile-filter-summary { display: block; margin-top: 8px; }
   .mobile-filter-note { margin: 0; font-size: 13px; color: var(--color-text-muted); }
   .mobile-filter-content { display: grid; gap: 12px; }

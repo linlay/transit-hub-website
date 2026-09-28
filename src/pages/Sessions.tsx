@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { StatusPill } from "../components/StatusPill";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { api, isTelemetryError } from "../lib/api";
@@ -32,15 +33,17 @@ export function Sessions() {
     <section className="page list-page">
       {isTelemetryError(sessions.error) ? <TelemetryUnavailable /> : null}
       {!isTelemetryError(sessions.error) ? <section className="panel">
-        <div className="toolbar">
+        <div className="toolbar session-filters">
           <label className="search">
             <Search size={16} />
             <input value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search device, source, key")} />
           </label>
+          <ResponsiveFilters count={Number(includeStale)} summary={includeStale ? t("Include stale") : ""} onReset={() => setFilters({ include_stale: null })}>
           <label className="check-row">
             <input checked={includeStale} onChange={(event) => setFilters({ include_stale: event.target.checked ? "true" : null })} type="checkbox" />
             {t("Include stale")}
           </label>
+          </ResponsiveFilters>
         </div>
         <QueryFeedback query={sessions} />
         <div className="table-wrap data-table-scroll">

@@ -11,6 +11,7 @@ import { CredentialTime } from "../components/CredentialTime";
 import { RowActions } from "../components/RowActions";
 import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaInput";
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
@@ -190,11 +191,13 @@ export function JWTGrants() {
             <Search size={16} />
             <input value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search grants")} />
           </label>
-          <select value={status} onChange={(event) => setFilters({ status: event.target.value })}>
+          <ResponsiveFilters count={Number(status !== "all")} summary={status !== "all" ? t(status === "active" ? "Active" : "Disabled") : ""} onReset={() => setFilters({ status: null })}>
+          <select aria-label={t("Status")} value={status} onChange={(event) => setFilters({ status: event.target.value })}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
           </select>
+          </ResponsiveFilters>
         </div>
         <QueryFeedback query={grants} />
         <div className="table-wrap credential-table-wrap data-table-scroll">

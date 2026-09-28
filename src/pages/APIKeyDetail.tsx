@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Ban, FileText, Save, Trash2, X } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { usePageActions } from "../components/Layout";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { MetricCard } from "../components/MetricCard";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaInput";
@@ -162,17 +163,21 @@ export function APIKeyDetail() {
             <span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span>
           </div>
           <div className="panel-actions">
-            <select value={range} onChange={(event) => setRange(event.target.value)}>
+            <ResponsiveFilters count={Number(range !== "14d") + Number(bucket !== "day")}
+              summary={`${t(range === "all" ? "All time" : range === "7d" ? "7 days" : range === "30d" ? "30 days" : "14 days")} · ${t(bucket === "hour" ? "Hourly" : bucket === "month" ? "Monthly" : "Daily")}`}
+              onReset={() => { setRange("14d"); setBucket("day"); }}>
+            <select aria-label={t("Time range")} value={range} onChange={(event) => setRange(event.target.value)}>
               <option value="7d">{t("7 days")}</option>
               <option value="14d">{t("14 days")}</option>
               <option value="30d">{t("30 days")}</option>
               <option value="all">{t("All time")}</option>
             </select>
-            <select value={bucket} onChange={(event) => setBucket(event.target.value)}>
+            <select aria-label={t("Granularity")} value={bucket} onChange={(event) => setBucket(event.target.value)}>
               <option value="day">{t("Daily")}</option>
               <option value="hour">{t("Hourly")}</option>
               <option value="month">{t("Monthly")}</option>
             </select>
+            </ResponsiveFilters>
           </div>
         </div>
         <QueryFeedback query={timeline} />
