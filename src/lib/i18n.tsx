@@ -14,6 +14,9 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Open navigation": "展开导航",
+  "Close navigation": "收起导航",
+  "Main navigation": "主导航",
   "Refresh failed; showing previous results.": "刷新失败，正在显示上次的结果。",
   "Unable to load data.": "数据加载失败。",
   "Updating results...": "正在更新结果…",

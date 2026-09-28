@@ -2500,3 +2500,75 @@ input:focus, select:focus, textarea:focus, .search:focus-within {
 th.numeric, td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
 th.numeric .sort-header { justify-content: flex-end; width: 100%; }
 td.numeric .key-usage-line { justify-content: flex-end; }
+
+/* Mobile uses normal page scrolling; wide tables keep their own scroll area. */
+.mobile-nav-toggle { display: none; }
+
+@media (max-width: 760px) {
+  :root { --control-height: 44px; }
+  .shell { grid-template-rows: auto minmax(0, 1fr); }
+
+  .sidebar { padding: 8px 12px; }
+  .sidebar .brand { padding: 0; min-height: 44px; }
+  .mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    height: 44px;
+    margin-left: auto;
+    border-radius: var(--control-radius);
+    background: transparent;
+    color: var(--color-text);
+  }
+  .sidebar nav, .sidebar-footer { display: none; }
+  .sidebar.mobile-nav-open nav { display: grid; margin-top: 12px; }
+  .sidebar.mobile-nav-open .sidebar-footer { display: block; }
+  .sidebar a, .sidebar-user-trigger { min-height: 44px; }
+  .sidebar-user-dropdown { left: auto; width: min(300px, calc(100vw - 24px)); }
+
+  .topbar { padding: 8px 12px; }
+  .topbar-page { flex: 1 1 auto; }
+  .topbar-actions { width: auto; max-width: 100%; }
+  .page { padding: 12px; }
+  .page > *, .panel > *, .dialog > *, .settings-grid > *, .dialog-form > * { min-width: 0; }
+  .panel { padding: 12px; }
+  .panel-heading > div { min-width: 0; overflow-wrap: anywhere; }
+  .table-wrap { width: 100%; min-width: 0; }
+  .data-table-scroll { scrollbar-gutter: auto; }
+
+  /* The pinned model/name columns can otherwise cover the entire phone. */
+  .pinned-table tr > :first-child:not([colspan]),
+  .pinned-table.has-selection tr > :nth-child(2):not([colspan]) { position: static; }
+  .pinned-table tr > :last-child:not([colspan]) { position: sticky; right: 0; }
+
+  .inline-form.grant-form, .pricing-fields { grid-template-columns: minmax(0, 1fr); }
+  .search, .filters, .models-filters { width: 100%; }
+  .toolbar.filters { flex-direction: row; align-items: center; }
+  .pricing-meta > input, .pricing-meta > select { width: 100%; min-width: 0; }
+  .traffic-filter-grid > select, .traffic-filter-grid > .traffic-filter-select { flex: 1 1 100%; width: 100%; }
+  .traffic-filter-popover { width: 100%; }
+  .traffic-custom-dates, .traffic-custom-dates > label { min-width: 0; max-width: 100%; }
+  .traffic-custom-dates input { min-width: 0; width: 100%; }
+
+  .dialog, .api-key-logs-dialog {
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 14px;
+  }
+  .dialog-header { align-items: flex-start; }
+  .dialog-header h2 { min-width: 0; overflow-wrap: anywhere; }
+  .dialog-actions { flex-wrap: wrap; }
+  .feedback-toast { left: 12px; right: 12px; bottom: 12px; overflow-wrap: anywhere; }
+  .feedback-toast > span { min-width: 0; }
+
+  /* 16px avoids automatic input zoom in mobile Safari. */
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea,
+  .search input, .sidebar-menu-select select, .filters > input,
+  .filters > select, .models-filters > select,
+  .traffic-filters select, .traffic-filters input:not([type="checkbox"]) { font-size: 16px; }
+  input:not([type="checkbox"]):not([type="radio"]), select { min-height: 44px; }
+  .row-actions-trigger { width: 44px; height: 44px; }
+  .credential-table .row-actions-cell { width: 52px; }
+  .model-picker-toggle.action-icon { width: 44px; height: 44px; }
+}

@@ -8,6 +8,7 @@ import {
   Gauge,
   KeyRound,
   LogOut,
+  Menu,
   Moon,
   Monitor,
   RadioTower,
@@ -15,6 +16,7 @@ import {
   Sun,
   Languages,
   Users,
+  X,
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -64,6 +66,9 @@ export function Layout() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const [pageActions, setPageActions] = useState<ReactNode>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mobileNavToggle = useRef<HTMLButtonElement>(null);
+  useEffect(() => setMobileNavOpen(false), [location.pathname]);
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
   const logout = useMutation({
     mutationFn: api.logout,
@@ -76,7 +81,12 @@ export function Layout() {
   return (
     <PageActionsContext.Provider value={setPageActions}>
       <div className="shell">
-        <aside className="sidebar">
+        <aside className={`sidebar${mobileNavOpen ? " mobile-nav-open" : ""}`} onKeyDown={(event) => {
+          if (event.key === "Escape" && mobileNavOpen) {
+            setMobileNavOpen(false);
+            mobileNavToggle.current?.focus();
+          }
+        }}>
           <div className="brand">
             <div className="brand-mark">
               <RadioTower size={20} />
@@ -85,10 +95,13 @@ export function Layout() {
               <strong>{t("Transit Hub")}</strong>
               <span>{t("Admin Console")}</span>
             </div>
+            <button ref={mobileNavToggle} className="mobile-nav-toggle" type="button" aria-label={t(mobileNavOpen ? "Close navigation" : "Open navigation")} aria-expanded={mobileNavOpen} aria-controls="main-navigation" onClick={() => setMobileNavOpen((open) => !open)}>
+              {mobileNavOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
-          <nav>
+          <nav id="main-navigation" aria-label={t("Main navigation")}>
             {nav.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === "/"}>
+              <NavLink key={item.to} to={item.to} end={item.to === "/"} onClick={() => setMobileNavOpen(false)}>
                 <item.icon size={18} />
                 <span>{t(item.label)}</span>
               </NavLink>
