@@ -2508,8 +2508,12 @@ td.numeric .key-usage-line { justify-content: flex-end; }
   :root { --control-height: 44px; }
   .shell { grid-template-rows: auto minmax(0, 1fr); }
 
-  .sidebar { padding: 8px 12px; }
-  .sidebar .brand { padding: 0; min-height: 44px; }
+  .sidebar { padding: 0 12px; }
+  .sidebar .brand { padding: 0; min-height: 44px; gap: 8px; }
+  .sidebar .brand-mark { width: 28px; height: 28px; border-radius: 9px; }
+  .sidebar .brand-mark svg { width: 17px; height: 17px; }
+  .sidebar .brand span { display: none; }
+  .sidebar.mobile-nav-open { padding-bottom: 12px; }
   .mobile-nav-toggle {
     display: inline-flex;
     align-items: center;
@@ -2527,7 +2531,7 @@ td.numeric .key-usage-line { justify-content: flex-end; }
   .sidebar a, .sidebar-user-trigger { min-height: 44px; }
   .sidebar-user-dropdown { left: auto; width: min(300px, calc(100vw - 24px)); }
 
-  .topbar { padding: 8px 12px; }
+  .topbar { min-height: 44px; padding: 0 12px; }
   .topbar-page { flex: 1 1 auto; }
   .topbar-actions { width: auto; max-width: 100%; }
   .page { padding: 12px; }
