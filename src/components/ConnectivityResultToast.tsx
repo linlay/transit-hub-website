@@ -49,6 +49,7 @@ export function ConnectivityResultToast({ label, result, onClose }: Connectivity
           <dd>{result.account || t("none")}</dd>
         </div>
       </dl>
+      {result.upstream_request_id ? <div><span>{t("Upstream request ID")}: </span><code>{result.upstream_request_id}</code></div> : null}
       {result.endpoint ? (
         <div className="connectivity-toast-endpoint" title={result.endpoint}>
           {result.endpoint}

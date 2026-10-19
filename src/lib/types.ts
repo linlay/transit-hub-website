@@ -138,6 +138,7 @@ export type Overview = {
 };
 
 export type RequestLog = {
+  upstream_request_id?: string;
  billing_status?: string;
  price_snapshot?: ModelPrice | null;
  started_at?: string;
@@ -247,6 +248,8 @@ export type ProviderQuotaAccount = {
 
 export type ProviderSnapshot = {
   providers: Array<{
+    request_id_header?: string;
+    request_id_response_header?: string;
     name: string;
     protocol: string;
     base_url: string;
@@ -278,6 +281,7 @@ export type ProviderConnectivityTestRequest = {
 };
 
 export type ProviderConnectivityTestResult = {
+  upstream_request_id?: string;
   ok: boolean;
   provider: string;
   protocol: string;

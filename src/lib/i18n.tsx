@@ -209,6 +209,7 @@ const zhCN: Record<string, string> = {
   Model: "模型",
   Provider: "供应商",
   Status: "状态",
+  "Upstream request ID": "上游请求 ID",
   Latency: "延迟",
   "API Keys issued by admins or JWT grants": "由管理员或 JWT 授权签发的 API 密钥",
   Search: "搜索",
