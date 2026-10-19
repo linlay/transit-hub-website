@@ -249,7 +249,6 @@ export type ProviderQuotaAccount = {
 export type ProviderSnapshot = {
   providers: Array<{
     request_id_header?: string;
-    request_id_response_header?: string;
     name: string;
     protocol: string;
     base_url: string;
