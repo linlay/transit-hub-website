@@ -28,9 +28,10 @@ export function APIKeyDetail() {
   const { t } = useI18n();
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const { hash, state } = useLocation();
+  const { hash, state, pathname } = useLocation();
+  const isEmployee = pathname.startsWith("/employee-keys/");
   const confirm = useConfirm();
-  const backTo = typeof state?.from === "string" && /^\/api-keys(?:\?|$)/.test(state.from) ? state.from : "/api-keys";
+  const backTo = typeof state?.from === "string" && /^\/(?:grant-keys|api-keys|employee-keys)(?:\?|$)/.test(state.from) ? state.from : isEmployee ? "/employee-keys" : "/grant-keys";
   const queryClient = useQueryClient();
   const [logsOpen, setLogsOpen] = useState(false);
   const [bucket, setBucket] = useState("day");
@@ -66,6 +67,7 @@ export function APIKeyDetail() {
       window.setTimeout(() => setSavedMessage(false), 1600);
       queryClient.invalidateQueries({ queryKey: ["api-key", id] });
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-keys"] });
     },
   });
   const remove = useMutation({
@@ -77,6 +79,7 @@ export function APIKeyDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["api-key", id] });
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-keys"] });
     },
   });
 
@@ -124,8 +127,8 @@ export function APIKeyDetail() {
     return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), ...(logsOpen ? [logs.refetch()] : [])]);
   }
 
-  usePageActions(<><IconButton label={t("Back to API keys")} onClick={() => navigate(backTo)}><ArrowLeft size={16} /></IconButton><RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} /></>, [
-    backTo, t,
+  usePageActions(<><IconButton label={t(isEmployee ? "Back to employees" : "Back to API keys")} onClick={() => navigate(backTo)}><ArrowLeft size={16} /></IconButton><RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} /></>, [
+    backTo, isEmployee, t,
     id,
     isRefreshing,
     logsOpen,
@@ -144,6 +147,11 @@ export function APIKeyDetail() {
       <QueryFeedback query={detail} />
       <QueryFeedback query={usage} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
+      {key.employee_identity ? <section className="panel employee-auth-identity">
+        <span>{t("Employee identity")}: <code>{key.employee_identity.subject}</code></span>
+        <span>{t("Identity claim")}: <code>{key.employee_identity.claim}</code></span>
+        <span>{t("Issuer")}: <code>{key.employee_identity.issuer}</code></span>
+      </section> : null}
       <div className="credits-summary-grid">
         <MetricCard label={t("Total Credits")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits) : "∞"} detail={t("Lifetime")} />
         <MetricCard label={t("Credits used")} value={creditAmount(key?.used_microcredits ?? 0)} detail={t("Since Credits enabled")} />

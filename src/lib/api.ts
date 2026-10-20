@@ -105,6 +105,9 @@ export const api = {
     request<Overview>("/admin/overview", { query }),
   apiKeys: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<APIKey>>("/admin/api-keys", { query }),
+  employeeKeys: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<ListResponse<APIKey>>("/admin/employee-keys", { query }),
+  employeeAuth: () => request<{ enabled: boolean; subject_claim: string; issuer?: string; audience?: string }>("/admin/employee-auth"),
   apiKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`),
   createAPIKey: (body: Partial<APIKey>) =>
     request<APIKey & { key: string }>("/admin/api-keys", { method: "POST", body: encodeCreditsJSON(body) }),

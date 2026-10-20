@@ -11,9 +11,9 @@ import { APP_BASE_URL } from "./lib/env";
 import { I18nProvider, useI18n } from "./lib/i18n";
 import { ThemeProvider } from "./lib/theme";
 import { APIKeyDetail } from "./pages/APIKeyDetail";
-import { APIKeys } from "./pages/APIKeys";
+import { GrantKeys, LegacyGrantKeysRedirect } from "./pages/GrantKeys";
+import { EmployeeKeys } from "./pages/EmployeeKeys";
 import { Dashboard } from "./pages/Dashboard";
-import { JWTGrants } from "./pages/JWTGrants";
 import { Login } from "./pages/Login";
 import { ModelDetail } from "./pages/ModelDetail";
 import { Models } from "./pages/Models";
@@ -58,9 +58,13 @@ function App() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/models" element={<Models />} />
                     <Route path="/models/:protocol/:modelId" element={<ModelDetail />} />
-                    <Route path="/api-keys" element={<APIKeys />} />
-                    <Route path="/api-keys/:id" element={<APIKeyDetail />} />
-                    <Route path="/jwt-grants" element={<JWTGrants />} />
+                    <Route path="/grant-keys" element={<GrantKeys />} />
+                    <Route path="/employee-keys" element={<EmployeeKeys />} />
+                    <Route path="/employee-keys/:id" element={<APIKeyDetail />} />
+                    <Route path="/grant-keys/:id" element={<APIKeyDetail />} />
+                    <Route path="/api-keys" element={<LegacyGrantKeysRedirect />} />
+                    <Route path="/api-keys/:id" element={<LegacyGrantKeysRedirect />} />
+                    <Route path="/jwt-grants" element={<LegacyGrantKeysRedirect />} />
                     <Route path="/sessions" element={<Sessions />} />
                     <Route path="/traffic" element={<Traffic />} />
                     <Route path="/usage-audit" element={<UsageAudit />} />

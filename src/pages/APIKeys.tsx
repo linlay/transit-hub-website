@@ -293,7 +293,7 @@ export function APIKeys() {
                     </td>
                   ) : null}
                   <td>
-                    <Link className="table-link cell-ellipsis" title={key.name} state={{ from: `/api-keys${params.size ? `?${params}` : ""}` }} to={`/api-keys/${key.id}`}>
+                    <Link className="table-link cell-ellipsis" title={key.name} state={{ from: `/grant-keys${params.size ? `?${params}` : ""}` }} to={`/grant-keys/${key.id}`}>
                       {key.name}
                     </Link>
                     <small>{key.key_prefix}</small>
@@ -305,7 +305,7 @@ export function APIKeys() {
                   <td>
                     <span>{key.source === "admin" ? t("Admin") : key.source === "access_token" ? t("User-device binding") : "JWT"}</span>
                     {key.issuer_jti ? (
-                      <small><Link className="cell-ellipsis" title={key.issuer_jti} to={`/jwt-grants?search=${encodeURIComponent(key.issuer_jti)}`}>{key.issuer_name || key.issuer_jti}</Link></small>
+                      <small><Link className="cell-ellipsis" title={key.issuer_jti} to={`/grant-keys?tab=jwt-grants&search=${encodeURIComponent(key.issuer_jti)}`}>{key.issuer_name || key.issuer_jti}</Link></small>
                     ) : <small className="muted-cell">—</small>}
                   </td>
                   <td><CredentialModels models={key.allowed_models} /></td>
@@ -313,7 +313,7 @@ export function APIKeys() {
                   <td><CredentialTime value={key.last_used_at} /></td>
                   <td className="row-actions-cell">
                     <RowActions label={t("Actions for {name}", { name: key.name })} items={[
-                      { label: t("Edit"), icon: <Pencil size={15} />, onSelect: () => navigate(`/api-keys/${key.id}#api-key-settings`, { state: { from: `/api-keys${params.size ? `?${params}` : ""}` } }) },
+                      { label: t("Edit"), icon: <Pencil size={15} />, onSelect: () => navigate(`/grant-keys/${key.id}#api-key-settings`, { state: { from: `/grant-keys${params.size ? `?${params}` : ""}` } }) },
                       { label: t("Duplicate"), icon: <Copy size={15} />, onSelect: () => openCreateDialog(key) },
                       ...(key.status === "active" ? [{ label: t("Inactive"), icon: <Ban size={15} />, onSelect: () => inactiveKey(key.id, key.name) }] : []),
                       { label: t("Delete"), icon: <Trash2 size={15} />, danger: true, onSelect: () => confirm({ message: t("Delete {name}?", { name: key.name }), action: () => remove.mutateAsync(key.id) }) },

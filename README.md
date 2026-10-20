@@ -6,7 +6,8 @@ Transit Hub Website 是 Transit Hub 的 React + Vite 管理后台。生产环境
 
 - Dashboard：请求、Token、成本、错误率和活跃设备概览。
 - Models：筛选运行态模型，查看公开模型到上游的映射、调用地址、curl 示例和脱敏 Provider YAML 模板。
-- API Keys / JWT Grants：管理客户端密钥、模型白名单、配额和签发授权。
+- 员工认证密钥：在 `/employee-keys` 查看员工身份、模型权限、累计用量、限流及日志；全局验签开关和身份属性由服务端配置控制。首次认证访问自动创建身份记录，不领取 API Key。
+- 授权型密钥：在 `/grant-keys` 统一管理 API 密钥和 JWT 授权，顶部默认显示 API 密钥，可切换至 JWT 授权（`?tab=jwt-grants`）；管理模型白名单、配额和签发授权。旧 `/api-keys`、`/jwt-grants` 和 API 密钥详情链接会保留查询参数并跳转到统一入口。
 - Sessions / Traffic：查看客户端连接、用量与请求日志。
 - Usage audit：按模型查看 usage 来源分布、成功响应缺少或无法解码 usage 的异常汇总，以及估算值与上游用量的校准比值。
 - Pricing / Providers：维护模型价格，查看 Provider、Pool、账号和连通状态。

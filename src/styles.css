@@ -385,6 +385,48 @@ td small,
   font-weight: 650;
 }
 
+.credential-navigation {
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.credential-navigation-links {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  gap: 20px;
+}
+
+.credential-navigation-links a {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.credential-navigation-links a:hover,
+.credential-navigation-links a[aria-current="page"] {
+  color: var(--color-primary);
+}
+
+.credential-navigation-links a[aria-current="page"] {
+  border-bottom-color: currentColor;
+}
+
+.credential-navigation-links a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  border-radius: 3px;
+}
+
+.employee-auth-policy .panel-heading { margin-bottom: 12px; }
+.employee-auth-identity { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 13px; }
+.employee-auth-identity > span { min-width: 0; overflow-wrap: anywhere; }
+.employee-keys-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px; }
+.employee-keys-table th:first-child { width: 190px; }
+
 .topbar-actions {
   display: flex;
   align-items: center;

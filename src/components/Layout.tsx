@@ -19,7 +19,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { IconButton } from "./IconButton";
@@ -29,8 +29,8 @@ import { useTheme, type ThemePreference } from "../lib/theme";
 const nav = [
   { to: "/", label: "Dashboard", icon: Gauge },
   { to: "/models", label: "Models", icon: Boxes },
-  { to: "/api-keys", label: "API Keys", icon: KeyRound },
-  { to: "/jwt-grants", label: "JWT Grants", icon: KeyRound },
+  { to: "/employee-keys", label: "Employee authentication keys", icon: ShieldCheck },
+  { to: "/grant-keys", label: "Authorization keys", icon: KeyRound },
   { to: "/sessions", label: "Sessions", icon: Cable },
   { to: "/traffic", label: "Traffic", icon: Activity },
   { to: "/usage-audit", label: "Usage audit", icon: ShieldCheck },
@@ -66,6 +66,8 @@ export function Layout() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
+  const isGrantKeys = location.pathname === "/grant-keys" || location.pathname.startsWith("/grant-keys/");
+  const isJWTGrants = location.pathname === "/grant-keys" && new URLSearchParams(location.search).get("tab") === "jwt-grants";
   const queryClient = useQueryClient();
   const [pageActions, setPageActions] = useState<ReactNode>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -115,7 +117,14 @@ export function Layout() {
         </aside>
         <main className="main">
           <header className="topbar">
-            <span className="topbar-page">{t(currentPageLabel(location.pathname))}</span>
+            <span className={`topbar-page${isGrantKeys ? " credential-navigation" : ""}`}>
+              {isGrantKeys ? (
+                <span role="navigation" aria-label={t("Authorization keys")} className="credential-navigation-links">
+                  <Link to="/grant-keys" aria-current={!isJWTGrants ? "page" : undefined}>{t("API Keys")}</Link>
+                  <Link to="/grant-keys?tab=jwt-grants" aria-current={isJWTGrants ? "page" : undefined}>{t("JWT Grants")}</Link>
+                </span>
+              ) : t(currentPageLabel(location.pathname))}
+            </span>
             <div className="topbar-actions">{pageActions}</div>
           </header>
           <Outlet />
