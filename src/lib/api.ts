@@ -152,6 +152,8 @@ export const api = {
   models: () => request<ListResponse<AdminModel>>("/admin/models"),
   model: (protocol: string, publicModel: string) =>
     request<AdminModel>("/admin/models/detail", { query: { protocol, public_model: publicModel } }),
+  setModelEnabled: (protocol: string, publicModel: string, enabled: boolean) =>
+    request<AdminModel>("/admin/models/detail", { method: "PATCH", query: { protocol, public_model: publicModel }, body: JSON.stringify({ enabled }) }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
   testProviderConnectivity: (body: ProviderConnectivityTestRequest) =>
     request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: encodeCreditsJSON(body) }),

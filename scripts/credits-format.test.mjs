@@ -34,3 +34,9 @@ console.log("Native Credits wire contract passed.");
 assert.equal(context.exports.creditsInputValue(Number.MAX_SAFE_INTEGER), "9007199254.740991");
 assert.equal(context.exports.decimalToMicro(context.exports.creditsInputValue(Number.MAX_SAFE_INTEGER)), Number.MAX_SAFE_INTEGER);
 assert.equal(formatCredits(-1), "-0.000001 Credits");
+
+assert.equal(context.exports.creditAmount(1499999, 0), "1");
+assert.equal(context.exports.creditAmount(1500000, 0), "2");
+assert.equal(context.exports.creditAmount(1234567, 2), "1.23");
+assert.equal(context.exports.creditAmount(-1234567, 2), "-1.23");
+assert.equal(context.exports.creditsInputValue(1234567), "1.234567");

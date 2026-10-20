@@ -1,3 +1,4 @@
+import { ModalDialog } from "../components/ModalDialog";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { useConfirm } from "../components/ConfirmProvider";
 import { IconButton } from "../components/IconButton";
@@ -17,14 +18,15 @@ export function Pricing() {
  const confirm = useConfirm();
  const client = useQueryClient();
  const prices = useQuery({queryKey:["prices"],queryFn:api.prices,refetchInterval:PAGE_REFETCH_INTERVAL_MS});
+ const [open,setOpen] = useState(false);
  const [editing,setEditing] = useState<ModelPrice>();
  const [mode,setMode] = useState<PriceBilling["mode"]>("tokens");
  const [rules,setRules] = useState([{size:"",quality:"",amount:""}]);
  const [error,setError] = useState("");
  const [revision,setRevision] = useState(0);
- usePageActions(<RefreshButton isRefreshing={prices.isFetching} onClick={()=>prices.refetch()} />,[prices.isFetching,prices.refetch]);
- const save = useMutation({mutationFn:(body:Partial<ModelPrice>)=>editing ? api.updatePrice(editing.id,body) : api.createPrice(body),onSuccess:()=>{client.invalidateQueries({queryKey:["prices"]});select();},onError:(err:Error)=>setError(err.message)});
+ const save = useMutation({mutationFn:(body:Partial<ModelPrice>)=>editing ? api.updatePrice(editing.id,body) : api.createPrice(body),onSuccess:()=>{client.invalidateQueries({queryKey:["prices"]});select();setOpen(false);},onError:(err:Error)=>setError(err.message)});
  const remove = useMutation({mutationFn:api.deletePrice,onSuccess:()=>client.invalidateQueries({queryKey:["prices"]}),onError:(err:Error)=>setError(err.message)});
+ usePageActions(<><IconButton label={t("Add price")} className="primary" disabled={save.isPending} onClick={()=>{save.reset();select();setOpen(true);}}><Plus size={16}/></IconButton><RefreshButton isRefreshing={prices.isFetching} onClick={()=>prices.refetch()} /></>,[prices.isFetching,prices.refetch,save.isPending]);
  function select(price?:ModelPrice) {
   setEditing(price); setMode(price?.billing?.mode ?? "tokens");setError("");setRevision(v=>v+1);
   setRules(price?.billing?.image_prices?.map(r=>({size:r.size,quality:r.quality,amount:creditsInputValue(r.charged_microcredits)})) ?? [{size:"",quality:"",amount:""}]);
@@ -50,6 +52,9 @@ export function Pricing() {
   <section className="panel">
    <p>{t("Prices are configured and charged directly in Credits.")}</p>
    {save.isSuccess && !error && <span className="saved-text" role="status">{t("Saved.")}</span>}
+   {error && !open && <p role="alert">{error}</p>}
+  </section>
+  {open && <ModalDialog title={editing ? "Edit price" : "Add price"} busy={save.isPending} onClose={()=>setOpen(false)}>
    {error && <p role="alert">{error}</p>}
    <form className="pricing-form" onChange={() => { if(save.isSuccess) save.reset(); }} key={revision} onSubmit={submit}>
     <div className="pricing-meta">
@@ -75,9 +80,9 @@ export function Pricing() {
      </div>)}
      <IconButton label={t("Add price rule")} type="button" onClick={()=>setRules(rows=>[...rows,{size:"",quality:"",amount:""}])}><Plus size={16} /></IconButton>
     </div>}
-    <div className="pricing-meta"><IconButton label={t("Save")} className="primary" type="submit" disabled={save.isPending}><Save size={16}/></IconButton>{editing && <IconButton label={t("Cancel")} type="button" onClick={()=>{save.reset();select();}}><X size={16} /></IconButton>}</div>
+    <div className="pricing-meta"><IconButton label={t("Save")} className="primary" type="submit" disabled={save.isPending}><Save size={16}/></IconButton><IconButton label={t("Cancel")} type="button" onClick={()=>setOpen(false)} disabled={save.isPending}><X size={16} /></IconButton></div>
    </form>
-  </section>
+  </ModalDialog>}
   <section className="panel"><QueryFeedback query={prices} /><div className="table-wrap data-table-scroll"><table>
    <thead><tr><th>{t("Protocol")}</th><th>{t("Model")}</th><th>{t("Billing mode")}</th><th>{t("Price")}</th><th/></tr></thead>
    <tbody>{(prices.data?.items??[]).map(price=><tr key={price.id}>
@@ -87,7 +92,7 @@ export function Pricing() {
      {price.billing?.token_tiers?.map(tier => <div key={tier.above_input_tokens}>输入 &gt; {tier.above_input_tokens.toLocaleString()} tokens：{formatCredits(tier.input_microcredits_per_1m_tokens)} / {formatCredits(tier.output_microcredits_per_1m_tokens)}（输入 / 输出，每百万 tokens）</div>)}
      <div>{t("Cache hit / write per 1M")}: {formatCredits(price.input_cache_hit_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)} / {formatCredits(price.billing?.cache_write_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)}</div>
     </>}</td>
-    <td><IconButton label={t("Edit")} className="icon-button" onClick={()=>{save.reset();select(price);}}><Pencil size={16}/></IconButton><IconButton label={t("Delete")} className="icon-button danger" disabled={remove.isPending} onClick={()=>confirm({ message:t("Delete {name}?", { name:price.public_model }), label:t("Delete"), action:()=>remove.mutateAsync(price.id) })}><Trash2 size={16}/></IconButton></td>
+    <td><IconButton label={t("Edit")} className="icon-button" onClick={()=>{save.reset();select(price);setOpen(true);}}><Pencil size={16}/></IconButton><IconButton label={t("Delete")} className="icon-button danger" disabled={remove.isPending} onClick={()=>confirm({ message:t("Delete {name}?", { name:price.public_model }), label:t("Delete"), action:()=>remove.mutateAsync(price.id) })}><Trash2 size={16}/></IconButton></td>
    </tr>)}{!prices.data?.items?.length && <tr><td colSpan={5}>{prices.isPending ? t("Loading...") : prices.isError ? t("Unable to load data.") : t("No prices configured.")}</td></tr>}</tbody>
   </table></div></section>
  </section>;

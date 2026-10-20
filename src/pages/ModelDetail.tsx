@@ -1,3 +1,4 @@
+import { ModelStatusControl } from "../components/ModelStatusControl";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
@@ -58,6 +59,7 @@ export function ModelDetail() {
             <code>{data.public_model}</code>
           </div>
           <div className="model-badges">
+            <ModelStatusControl model={data} />
             <span className="pill muted">{data.protocol}</span>
             <span className="pill muted">{t(modelTypeLabel(data.type))}</span>
             <span className="pill good">{data.provider}</span>

@@ -8,8 +8,8 @@ export function TrafficFilterSelect({ label, options, values, onChange }: { labe
   const { t } = useI18n();
   const [search, setSearch] = useState("");
   const known = new Set(options.map((option) => option.id));
-  const all = [...options, ...values.filter((id) => !known.has(id)).map((id) => ({ id, name: id }))];
-  const matches = all.filter((option) => `${option.name} ${option.id}`.toLowerCase().includes(search.toLowerCase()));
+  const all: TrafficOption[] = [...options, ...values.filter((id) => !known.has(id)).map((id) => ({ id, name: id }))];
+  const matches = all.filter((option) => `${option.name} ${option.key_prefix ?? ""} ${option.id}`.toLowerCase().includes(search.toLowerCase()));
   return <details className="traffic-filter-select">
     <summary>{t(label)} · {values.length ? `${values.length} ${t("selected")}` : t("All")}</summary>
     <div className="traffic-filter-popover">
@@ -18,7 +18,7 @@ export function TrafficFilterSelect({ label, options, values, onChange }: { labe
       <div className="traffic-filter-options">
         {matches.map((option) => <label className="mini-check" key={option.id}>
           <input type="checkbox" checked={values.includes(option.id)} disabled={!values.includes(option.id) && values.length >= 100} onChange={(event) => onChange(event.target.checked ? [...values, option.id] : values.filter((id) => id !== option.id))} />
-          <span>{option.name || option.id || t("Unknown")}<small>{option.name && option.name !== option.id ? option.id : ""}</small></span>
+          <span>{option.name || option.id || t("Unknown")}<small>{option.key_prefix ? option.key_prefix : label === "API keys" ? "" : option.name && option.name !== option.id ? option.id : ""}</small></span>
         </label>)}
         {!matches.length ? <span>{t("No matching options")}</span> : null}
       </div>

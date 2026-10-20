@@ -66,7 +66,8 @@ export function creditsInputValue(value: number) {
  const fraction = String(absolute % 1_000_000n).padStart(6, "0").replace(/0+$/, "");
  return `${amount < 0n ? "-" : ""}${whole}${fraction ? "." + fraction : ""}`;
 }
-export function creditAmount(value: number) {
+export function creditAmount(value: number, maximumFractionDigits?: number) {
+ if (maximumFractionDigits !== undefined) return new Intl.NumberFormat(currentLocale, { maximumFractionDigits }).format(value / MICRO_PER_CREDIT);
  const [whole, fraction] = creditsInputValue(value).split(".");
  const negative = whole.startsWith("-");
  const grouped = new Intl.NumberFormat(currentLocale).format(BigInt(negative ? whole.slice(1) : whole));

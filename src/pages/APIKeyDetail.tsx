@@ -1,7 +1,7 @@
 import { QueryFeedback } from "../components/QueryFeedback";
 import { useConfirm } from "../components/ConfirmProvider";
 import { IconButton } from "../components/IconButton";
-import { creditAmount, creditsInputValue } from "../lib/format";
+import { creditAmount as exactCreditAmount, creditsInputValue } from "../lib/format";
 import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Ban, FileText, Save, Trash2, X } from "lucide-react";
@@ -21,6 +21,8 @@ import { compactTokenCount, dateTime, integer, nullablePercent, quotaRatio } fro
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { RateLimitUsage } from "../lib/types";
+
+const creditAmount = (value: number) => exactCreditAmount(value, 2);
 
 export function APIKeyDetail() {
   const { t } = useI18n();

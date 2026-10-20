@@ -297,6 +297,7 @@ export type ProviderConnectivityTestResult = {
 };
 
 export type AdminModel = {
+  enabled?: boolean;
   protocol: string;
   type: string;
   public_model: string;
@@ -376,7 +377,7 @@ export type TrafficRanking = {
   charged_microcredits: number;
 };
 
-export type TrafficOption = { id: string; name: string };
+export type TrafficOption = { id: string; name: string; key_prefix?: string };
 export type TrafficAnalytics = {
   items: TrafficBucket[];
   summary: TrafficBucket;

@@ -109,7 +109,7 @@ export function Traffic() {
       </ResponsiveFilters>
       {keys.length || models.length ? <div className="traffic-selected">
         {keys.map((id) => {
-          const name = `${t("Key")}: ${options.keys.find((option) => option.id === id)?.name || id || t("Unknown")}`;
+          const name = `${t("Key")}: ${options.keys.find((option) => option.id === id)?.name || options.keys.find((option) => option.id === id)?.key_prefix || id || t("Unknown")}`;
           return <span className="filter-chip" key={`key-${id}`}>{name}<IconButton label={`${t("Remove")}: ${name}`} onClick={() => select("keys", keys.filter((value) => value !== id))}><X size={14} /></IconButton></span>;
         })}
         {models.map((id) => {

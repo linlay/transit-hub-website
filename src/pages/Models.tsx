@@ -1,3 +1,4 @@
+import { ModelStatusControl } from "../components/ModelStatusControl";
 import { useListScroll } from "../lib/useListScroll";
 import { IconButton } from "../components/IconButton";
 import { useMemo } from "react";
@@ -120,6 +121,7 @@ export function Models() {
                   <th>{t("Upstream model")}</th>
                   <th>{t("Effective pool")}</th>
                   <th>{t("Endpoint")}</th>
+                  <th>{t("Status")}</th>
                   <th aria-label={t("View details")} />
                 </tr>
               </thead>
@@ -153,6 +155,7 @@ export function Models() {
                         : model.effective_pool || t("Unavailable")}
                     </td>
                     <td className="mono">{model.gateway_path || t("Unsupported")}</td>
+                    <td><ModelStatusControl model={model} /></td>
                     <td><ArrowRight aria-hidden size={16} /></td>
                   </tr>
                 ))}
