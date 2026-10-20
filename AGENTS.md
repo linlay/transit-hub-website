@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-Transit Hub Website 是 Transit Hub 的管理后台前端，使用 React、Vite、TypeScript 构建。它面向内部管理员，提供登录、Dashboard、API Key、Session、Traffic、Pricing、Provider 和 User 管理页面。
+Transit Hub Website 是 Transit Hub 的管理后台前端，使用 React、Vite、TypeScript 构建。它面向内部管理员，提供登录、Dashboard、API Key、Session、Traffic、Usage audit（用量来源、异常汇总与估算校准）、Pricing、Provider 和 User 管理页面。
 
 生产环境中，website 是唯一对外暴露的入口。浏览器访问 website，前端以同源路径调用管理 API；Nginx 在容器内把管理 API 反向代理到运行时配置的后端 upstream。`TRANSIT_HUB_UPSTREAM` 必须在部署时显式配置。
 

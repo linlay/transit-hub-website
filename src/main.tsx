@@ -22,6 +22,7 @@ import { Playground } from "./pages/Playground";
 import { Providers } from "./pages/Providers";
 import { Sessions } from "./pages/Sessions";
 import { Traffic } from "./pages/Traffic";
+import { UsageAudit } from "./pages/UsageAudit";
 import { Users } from "./pages/Users";
 import "./styles.css";
 
@@ -62,6 +63,7 @@ function App() {
                     <Route path="/jwt-grants" element={<JWTGrants />} />
                     <Route path="/sessions" element={<Sessions />} />
                     <Route path="/traffic" element={<Traffic />} />
+                    <Route path="/usage-audit" element={<UsageAudit />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route path="/providers" element={<Providers />} />
                     <Route path="/playground" element={<Playground />} />

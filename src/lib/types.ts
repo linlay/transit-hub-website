@@ -139,6 +139,7 @@ export type Overview = {
 
 export type RequestLog = {
   upstream_request_id?: string;
+  usage_source?: UsageSource | "";
  billing_status?: string;
  price_snapshot?: ModelPrice | null;
  started_at?: string;
@@ -382,4 +383,33 @@ export type TrafficAnalytics = {
   models: TrafficRanking[];
   keys: TrafficRanking[];
   options: { keys: TrafficOption[]; models: TrafficOption[]; providers: TrafficOption[] };
+};
+
+export type UsageSource = "reported" | "missing" | "interrupted" | "undecodable" | "none";
+
+export type UsageSourceSummary = {
+  provider: string;
+  public_model: string;
+  usage_source: UsageSource;
+  requests: number;
+  success_requests: number;
+  charged_microcredits: number;
+  alerting: boolean;
+  last_seen_at: string;
+  last_status_code: number;
+  last_error_type: string;
+  last_upstream_request_id: string;
+};
+
+export type UsageCalibration = {
+  provider: string;
+  public_model: string;
+  samples: number;
+  reported_input_tokens: number;
+  estimated_input_tokens: number;
+  input_ratio: number | null;
+  output_samples: number;
+  reported_output_tokens: number;
+  estimated_output_tokens: number;
+  output_ratio: number | null;
 };

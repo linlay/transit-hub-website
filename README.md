@@ -8,6 +8,7 @@ Transit Hub Website 是 Transit Hub 的 React + Vite 管理后台。生产环境
 - Models：筛选运行态模型，查看公开模型到上游的映射、调用地址、curl 示例和脱敏 Provider YAML 模板。
 - API Keys / JWT Grants：管理客户端密钥、模型白名单、配额和签发授权。
 - Sessions / Traffic：查看客户端连接、用量与请求日志。
+- Usage audit：按模型查看 usage 来源分布、成功响应缺少或无法解码 usage 的异常汇总，以及估算值与上游用量的校准比值。
 - Pricing / Providers：维护模型价格，查看 Provider、Pool、账号和连通状态。
 - Playground / Users：调试模型路由和维护后台用户。
 

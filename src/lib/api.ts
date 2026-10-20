@@ -15,6 +15,8 @@ import type {
   ProviderQuotaResponse,
   ProviderSnapshot,
   ProviderUsageResponse,
+  UsageCalibration,
+  UsageSourceSummary,
   ProviderUsage,
   RateLimit,
   RateLimitUsage,
@@ -157,6 +159,10 @@ export const api = {
     requestStream("/admin/playground/chat", body, signal),
   providerUsage: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ProviderUsageResponse>("/admin/providers/usage", { query }),
+  usageSources: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<ListResponse<UsageSourceSummary>>("/admin/providers/usage-sources", { query }),
+  usageCalibration: (query?: Record<string, string | number | boolean | undefined>) =>
+    request<ListResponse<UsageCalibration>>("/admin/providers/usage-calibration", { query }),
   providerQuota: () => request<ProviderQuotaResponse>("/admin/providers/quota"),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),
   createUser: (body: { username: string; password: string; status?: string }) =>
