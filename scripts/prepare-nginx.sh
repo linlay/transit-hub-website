@@ -152,6 +152,24 @@ EOF
 EOF
 }
 
+write_provider_locations() {
+  prefix="$1"
+  for provider in bailian minimax; do
+    cat <<EOF
+    location ${prefix}/${provider}/ {
+        proxy_pass ${TRANSIT_HUB_UPSTREAM}/${provider}/;
+EOF
+    write_proxy_headers
+    cat <<'EOF'
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+EOF
+  done
+}
+
 write_app_locations() {
   if [ "$APP_INTERNAL_BASE_PATH" = "/" ]; then
     cat <<'EOF'
@@ -240,6 +258,7 @@ EOF
   write_admin_locations "$API_LOCATION_PREFIX"
   write_api_locations "$API_LOCATION_PREFIX"
   write_v1_locations "$API_LOCATION_PREFIX"
+  write_provider_locations "$API_LOCATION_PREFIX"
   write_app_locations
   cat <<'EOF'
 }

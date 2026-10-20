@@ -49,6 +49,9 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: rewriteProxyPath,
         },
+        ...Object.fromEntries(["/bailian", "/minimax"].map(path => [proxyPath(path), {
+          target: "http://localhost:8080", changeOrigin: true, rewrite: rewriteProxyPath, timeout: 600000, proxyTimeout: 600000,
+        }])),
         [proxyPath("/v1")]: {
           target: "http://localhost:8080",
           changeOrigin: true,

@@ -277,13 +277,14 @@ export function APIKeyDetail() {
                   <th>{t("Device")}</th>
                   <th>{t("Provider")}</th>
                   <th>{t("Tokens")}</th>
+                  <th>{t("Characters")}</th>
                   <th>{t("Cache")}</th>
                   <th>{t("Cost")}</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.isPending || logs.error || !logs.data?.items?.length ? (
-                  <tr><td colSpan={8} className={logs.error ? "error-text" : "muted-cell"}>
+                  <tr><td colSpan={9} className={logs.error ? "error-text" : "muted-cell"}>
                     {logs.isPending ? t("Loading logs...") : logs.error ? t("Unable to load logs") : t("No requests yet.")}
                   </td></tr>
                 ) : null}
@@ -291,10 +292,11 @@ export function APIKeyDetail() {
                   <tr key={log.id}>
                     <td>{dateTime(log.created_at)}</td>
                     <td>{log.public_model}</td>
-                    <td>{log.status_code}</td>
+                    <td>{log.status_code}{log.error_type ? <small>{log.error_type}</small> : null}</td>
                     <td>{log.device_id || t("none")}</td>
                     <td>{log.provider || t("none")}</td>
                     <td title={integer(log.total_tokens)}>{compactTokenCount(log.total_tokens)}</td>
+                    <td>{log.protocol.endsWith("_tts") ? integer(log.characters ?? 0) : "—"}</td>
                     <td>{nullablePercent(log.cache_hit_rate)}</td>
                     <td title={JSON.stringify(log.price_snapshot ?? {})}>{creditAmount(log.charged_microcredits)}<small>{log.billing_status ?? "legacy"}</small></td>
                   </tr>

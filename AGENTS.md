@@ -40,8 +40,8 @@ compose.yml               website 容器部署入口。
 
 ## API 访问约定
 
-- 开发态：`npm run dev`，Vite 将 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 `http://localhost:8080`。
-- 生产态：容器启动时生成 `runtime-config.js`，Nginx 将运行时 API 前缀下的 `/admin`、`/api`、`/v1` 代理到 `TRANSIT_HUB_UPSTREAM`。
+- 开发态：`npm run dev`，Vite 将 API 前缀下的 `/admin`、`/api`、`/v1`、`/bailian`、`/minimax` 代理到 `http://localhost:8080`。
+- 生产态：容器启动时生成 `runtime-config.js`，Nginx 将运行时 API 前缀下的 `/admin`、`/api`、`/v1`、`/bailian`、`/minimax` 代理到 `TRANSIT_HUB_UPSTREAM`。
 - 登录态依赖后端 HttpOnly Cookie，前端请求统一使用 `credentials: "include"`。
 - 管理后台不直接调用公开代理接口 `/v1/chat/completions` 或 `/v1/messages`。
 
@@ -59,3 +59,5 @@ compose.yml               website 容器部署入口。
 - 不要把生产 API 地址写入前端源码；优先使用同源相对 API 路径。
 - 修改部署文件后至少运行 `sh scripts/prepare-nginx.test.sh`、`npm run build` 和 `podman build -t transit-hub-website .`。
 - 如果 website 前面还有外部 HTTPS 反代，后端 `.env` 应根据实际域名设置 `CORS_ALLOWED_ORIGINS`，HTTPS Cookie 场景设置 `COOKIE_SECURE=true`。
+
+- TTS 管理展示使用 type=tts、协议 dashscope_tts/minimax_tts；Pricing 的 characters 模式通过 microcredits_per_10k_characters（整数字符串）定价，沿用 credits-wire 转换。请求日志 characters 独立展示，不混入 token。

@@ -135,6 +135,7 @@ function DetailField({ label, mono = false, children }: { label: string; mono?: 
 }
 
 function modelTypeLabel(type: string): string {
+  if (type === "tts") return "Speech synthesis";
   if (type === "chat") return "Chat";
   if (type === "embedding") return "Embedding";
   if (type === "image-generation") return "Image generation";

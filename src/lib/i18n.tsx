@@ -14,6 +14,11 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Speech synthesis": "语音合成",
+  "Per character": "按字符",
+  "Characters": "计费字符数",
+  "Credits / 10K characters": "每万计费字符 Credits",
+  "10K characters": "万计费字符",
   "Filters": "筛选",
   "Filter settings": "筛选条件",
   "Filters apply immediately": "修改后立即生效，关闭即可查看结果。",

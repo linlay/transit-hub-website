@@ -86,12 +86,15 @@ export function Models() {
               <option value="">{t("All protocols")}</option>
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
+              <option value="dashscope_tts">DashScope TTS</option>
+              <option value="minimax_tts">MiniMax TTS</option>
             </select>
             <select aria-label={t("Filter by model type")} value={type} onChange={(event) => setFilter("type", event.target.value)}>
               <option value="">{t("All model types")}</option>
               <option value="chat">{t("Chat")}</option>
               <option value="embedding">{t("Embedding")}</option>
               <option value="image-generation">{t("Image generation")}</option>
+              <option value="tts">{t("Speech synthesis")}</option>
             </select>
             <select aria-label={t("Filter by provider")} value={provider} onChange={(event) => setFilter("provider", event.target.value)}>
               <option value="">{t("All providers")}</option>
@@ -169,6 +172,7 @@ export function Models() {
 }
 
 function modelTypeLabel(type: string): string {
+  if (type === "tts") return "Speech synthesis";
   if (type === "chat") return "Chat";
   if (type === "embedding") return "Embedding";
   if (type === "image-generation") return "Image generation";

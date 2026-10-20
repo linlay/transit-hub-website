@@ -196,3 +196,9 @@ API 字段继续使用整数微元，不提交浮点 Credits。前后端需配�
 ## 原生 Credits
 
 模型价格、额度、消费统一使用 Credits，1 Credit = 1,000,000 micro-Credits。API 金额使用十进制整数字符串，`credits-wire.ts` 在边界转换并检查安全整数范围，表单支持六位小数。与 Server 的当前契约同步升级，不使用人民币换算或 v2 接口。
+
+## TTS 入口
+
+开发态 Vite 和生产 Nginx 增加 `/bailian/`、`/minimax/` 代理，保留 provider 前缀转发后端，使用与现有 API 相同的运行时 API base path。两个公开 POST 接口为 `/bailian/v1/services/aigc/multimodal-generation/generation`、`/minimax/v1/t2a_v2`；支持 Ingress rewrite，关闭响应缓冲并使用 3600 秒上游读写超时。外层反代也需放行这些路径。
+
+Pricing 支持 DashScope TTS / MiniMax TTS 协议和每万计费字符的 Credits 单价；Models 可筛选 TTS 并查看原生 curl 示例；流量日志和 Key 日志显示计费字符数。后端配置、字符计费与 Platform 接入见 server 的 `docs/tts.md`。

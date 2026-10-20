@@ -138,6 +138,7 @@ export type Overview = {
 };
 
 export type RequestLog = {
+  characters?: number;
   upstream_request_id?: string;
   usage_source?: UsageSource | "";
  billing_status?: string;
@@ -187,7 +188,8 @@ export type APISession = {
 
 export type PriceBilling = {
  token_tiers?: Array<{above_input_tokens: number; input_microcredits_per_1m_tokens: number; output_microcredits_per_1m_tokens: number; input_cache_hit_microcredits_per_1m_tokens?: number | null}>;
- mode: "tokens" | "image" | "free";
+ mode: "tokens" | "image" | "characters" | "free";
+ microcredits_per_10k_characters?: number | null;
  cache_write_microcredits_per_1m_tokens?: number | null;
  image_prices?: Array<{size: string; quality: string; charged_microcredits: number}>;
 };
@@ -257,7 +259,7 @@ export type ProviderSnapshot = {
     models: Array<{
       public: string;
       upstream: string;
-      type?: "chat" | "embedding" | "image-generation";
+      type?: "chat" | "embedding" | "image-generation" | "tts";
       pool: string;
       override_pool?: string;
       override_valid?: boolean;

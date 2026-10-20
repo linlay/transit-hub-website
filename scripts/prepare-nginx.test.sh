@@ -41,6 +41,10 @@ grep -F '<base href="/transit-hub/" data-runtime-base />' "$HTML_ROOT/transit-hu
 grep -F 'window.__TRANSIT_HUB_CONFIG__' "$HTML_ROOT/transit-hub/runtime-config.js" >/dev/null
 grep -F 'baseUrl: "/transit-hub"' "$HTML_ROOT/transit-hub/runtime-config.js" >/dev/null
 grep -F 'apiBaseUrl: "/gateway"' "$HTML_ROOT/transit-hub/runtime-config.js" >/dev/null
+grep -F 'location /gateway/bailian/' "$NGINX_CONF" >/dev/null
+grep -F 'location /gateway/minimax/' "$NGINX_CONF" >/dev/null
+grep -F 'proxy_pass http://transit-hub:8080/bailian/;' "$NGINX_CONF" >/dev/null
+grep -F 'proxy_pass http://transit-hub:8080/minimax/;' "$NGINX_CONF" >/dev/null
 grep -F 'location /gateway/admin/' "$NGINX_CONF" >/dev/null
 grep -F 'try_files $uri $uri/ /transit-hub/index.html;' "$NGINX_CONF" >/dev/null
 grep -F 'proxy_pass http://transit-hub:8080/admin/;' "$NGINX_CONF" >/dev/null
@@ -63,6 +67,8 @@ test ! -e "$HTML_ROOT/transit-hub"
 grep -F '<base href="/transit-hub/" data-runtime-base />' "$HTML_ROOT/index.html" >/dev/null
 grep -F 'baseUrl: "/transit-hub"' "$HTML_ROOT/runtime-config.js" >/dev/null
 grep -F 'apiBaseUrl: "/transit-hub"' "$HTML_ROOT/runtime-config.js" >/dev/null
+grep -F 'location /bailian/' "$NGINX_CONF" >/dev/null
+grep -F 'location /minimax/' "$NGINX_CONF" >/dev/null
 grep -F 'location /admin/' "$NGINX_CONF" >/dev/null
 grep -F 'proxy_pass http://transit-hub-server:80/admin/;' "$NGINX_CONF" >/dev/null
 grep -F 'try_files $uri $uri/ /index.html;' "$NGINX_CONF" >/dev/null
@@ -93,6 +99,8 @@ grep -F '<base href="/" data-runtime-base />' "$HTML_ROOT/index.html" >/dev/null
 grep -F 'baseUrl: "/"' "$HTML_ROOT/runtime-config.js" >/dev/null
 grep -F 'apiBaseUrl: "/"' "$HTML_ROOT/runtime-config.js" >/dev/null
 grep -F 'location / {' "$NGINX_CONF" >/dev/null
+grep -F 'location /bailian/' "$NGINX_CONF" >/dev/null
+grep -F 'location /minimax/' "$NGINX_CONF" >/dev/null
 grep -F 'location /admin/' "$NGINX_CONF" >/dev/null
 
 printf 'prepare-nginx runtime base path test passed\n'

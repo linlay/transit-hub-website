@@ -40,6 +40,7 @@ export function Pricing() {
    if(mode==="tokens") {
     billing.cache_write_microcredits_per_1m_tokens=optionalAmount("cache_write");
    }
+   if(mode==="characters") billing.microcredits_per_10k_characters=decimalToMicro(form.get("characters"));
    if(mode==="image") billing.image_prices=rules.map(r=>({size:r.size.trim(),quality:r.quality.trim(),charged_microcredits:decimalToMicro(r.amount)}));
    save.mutate({protocol:String(form.get("protocol")),public_model:String(form.get("public_model")).trim(),unit:"CREDITS",billing,
     input_microcredits_per_1m_tokens:mode==="tokens"?decimalToMicro(form.get("input")):0,
@@ -58,10 +59,10 @@ export function Pricing() {
    {error && <p role="alert">{error}</p>}
    <form className="pricing-form" onChange={() => { if(save.isSuccess) save.reset(); }} key={revision} onSubmit={submit}>
     <div className="pricing-meta">
-     <select name="protocol" defaultValue={editing?.protocol??"openai"} aria-label={t("Protocol")}><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option></select>
+     <select name="protocol" defaultValue={editing?.protocol??"openai"} aria-label={t("Protocol")}><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="dashscope_tts">DashScope TTS</option><option value="minimax_tts">MiniMax TTS</option></select>
      <input name="public_model" defaultValue={editing?.public_model} placeholder={t("Public model")} required readOnly={!!editing}/>
      <select value={mode} onChange={e=>setMode(e.target.value as PriceBilling["mode"])} aria-label={t("Billing mode")}>
-      <option value="tokens">{t("Per token")}</option><option value="image">{t("Per image")}</option><option value="free">{t("Free")}</option>
+      <option value="tokens">{t("Per token")}</option><option value="image">{t("Per image")}</option><option value="characters">{t("Per character")}</option><option value="free">{t("Free")}</option>
      </select>
     </div>
     {mode==="tokens" && <div className="pricing-fields">
@@ -70,6 +71,7 @@ export function Pricing() {
      <label>{t("Cache write Credits / 1M")}<input name="cache_write" defaultValue={amount(editing?.billing?.cache_write_microcredits_per_1m_tokens)} placeholder={t("Use input price")} type="number" min="0" step="0.000001"/></label>
      <label>{t("Output Credits / 1M")}<input name="output" defaultValue={amount(editing?.output_microcredits_per_1m_tokens)} type="number" min="0" step="0.000001"/></label>
     </div>}
+    {mode==="characters" && <div className="pricing-fields"><label>{t("Credits / 10K characters")}<input name="characters" defaultValue={amount(editing?.billing?.microcredits_per_10k_characters)} type="number" min="0.000001" step="0.000001" required/></label></div>}
     {mode==="image" && <div>
      <p>{t("Empty size or quality matches any value. Specific rules take priority.")}</p>
      {rules.map((rule,index)=><div className="pricing-image-rule" key={index}>
@@ -86,8 +88,8 @@ export function Pricing() {
   <section className="panel"><QueryFeedback query={prices} /><div className="table-wrap data-table-scroll"><table>
    <thead><tr><th>{t("Protocol")}</th><th>{t("Model")}</th><th>{t("Billing mode")}</th><th>{t("Price")}</th><th/></tr></thead>
    <tbody>{(prices.data?.items??[]).map(price=><tr key={price.id}>
-    <td>{price.protocol}</td><td>{price.public_model}</td><td>{t(price.billing?.mode==="free"?"Free":price.billing?.mode==="image"?"Per image":"Per token")}</td>
-    <td>{price.billing?.mode==="image" ? price.billing.image_prices?.map((r,i)=><div key={i}>{r.size||"*"} / {r.quality||"*"}: {formatCredits(r.charged_microcredits)}</div>) : price.billing?.mode==="free" ? formatCredits(0) : <>
+    <td>{price.protocol}</td><td>{price.public_model}</td><td>{t(price.billing?.mode==="free"?"Free":price.billing?.mode==="image"?"Per image":price.billing?.mode==="characters"?"Per character":"Per token")}</td>
+    <td>{price.billing?.mode==="image" ? price.billing.image_prices?.map((r,i)=><div key={i}>{r.size||"*"} / {r.quality||"*"}: {formatCredits(r.charged_microcredits)}</div>) : price.billing?.mode==="characters" ? <>{formatCredits(price.billing.microcredits_per_10k_characters ?? 0)} / {t("10K characters")}</> : price.billing?.mode==="free" ? formatCredits(0) : <>
      <div>{t("Input / output per 1M")}: {formatCredits(price.input_microcredits_per_1m_tokens)} / {formatCredits(price.output_microcredits_per_1m_tokens)}</div>
      {price.billing?.token_tiers?.map(tier => <div key={tier.above_input_tokens}>输入 &gt; {tier.above_input_tokens.toLocaleString()} tokens：{formatCredits(tier.input_microcredits_per_1m_tokens)} / {formatCredits(tier.output_microcredits_per_1m_tokens)}（输入 / 输出，每百万 tokens）</div>)}
      <div>{t("Cache hit / write per 1M")}: {formatCredits(price.input_cache_hit_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)} / {formatCredits(price.billing?.cache_write_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)}</div>

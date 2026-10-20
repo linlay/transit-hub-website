@@ -12,7 +12,13 @@ export function modelCurlExample(model: AdminModel): string {
 
   let body: Record<string, unknown>;
   let authHeader: string;
-  if (model.protocol === "anthropic" && model.type === "chat") {
+  if (model.protocol === "minimax_tts" && model.type === "tts") {
+    authHeader = "Authorization: Bearer $CLIENT_API_KEY";
+    body = {model: model.public_model, text: "hello", stream: false, output_format: "hex", voice_setting: {voice_id: "male-qn-qingse"}};
+  } else if (model.protocol === "dashscope_tts" && model.type === "tts") {
+    authHeader = "Authorization: Bearer $CLIENT_API_KEY";
+    body = {model: model.public_model, input: {text: "hello", voice: "Cherry"}};
+  } else if (model.protocol === "anthropic" && model.type === "chat") {
     authHeader = "x-api-key: $CLIENT_API_KEY";
     body = {
       model: model.public_model,
