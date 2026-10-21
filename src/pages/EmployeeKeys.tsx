@@ -39,27 +39,17 @@ export function EmployeeKeys() {
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   const refreshing = settings.isFetching || keys.isFetching;
-  usePageActions(settings.data?.enabled === false
-    ? <StatusPill active={false} label="Disabled" />
-    : <RefreshButton disabled={!settings.data} isRefreshing={refreshing} onClick={() => Promise.all([settings.refetch(), keys.refetch()])} />,
-    [settings.data?.enabled, refreshing, settings.refetch, keys.refetch]);
+  usePageActions(<>
+    {policySaved ? <span className="saved-text" role="status">{t("Saved")}</span> : null}
+    <IconButton label={t("Authentication key defaults")} disabled={!settings.data || editingPolicy !== null} onClick={() => { if (settings.data) { setPolicySaved(false); setEditingPolicy(settings.data); } }}><Settings size={16} /></IconButton>
+    {settings.data?.enabled === false
+      ? <StatusPill active={false} label="Disabled" />
+      : <RefreshButton disabled={!settings.data} isRefreshing={refreshing} onClick={() => Promise.all([settings.refetch(), keys.refetch()])} />}
+  </>, [settings.data, editingPolicy, policySaved, refreshing, settings.refetch, keys.refetch, t]);
 
   return <section className="page list-page">
-    <section className="panel employee-auth-policy">
-      <QueryFeedback query={settings} />
-      {settings.data ? <>
-        <div className="panel-heading">
-          <div>
-            <h2>{t("Authentication keys")}</h2>
-          </div>
-          <div className="panel-actions">
-            {policySaved ? <span className="saved-text" role="status">{t("Saved")}</span> : null}
-            <button type="button" aria-label={t("Authentication key defaults")} className="icon-text" disabled={editingPolicy !== null} onClick={() => { setPolicySaved(false); setEditingPolicy(settings.data!); }}><Settings size={16} />{t("Authentication key defaults")}</button>
-          </div>
-        </div>
-      </> : null}
-      {editingPolicy ? <EmployeeDefaultPolicyForm initialPolicy={editingPolicy} onCancel={() => setEditingPolicy(null)} onSaved={() => { setEditingPolicy(null); setPolicySaved(true); void settings.refetch(); }} /> : null}
-    </section>
+    <QueryFeedback query={settings} />
+    {editingPolicy ? <EmployeeDefaultPolicyForm initialPolicy={editingPolicy} onCancel={() => setEditingPolicy(null)} onSaved={() => { setEditingPolicy(null); setPolicySaved(true); void settings.refetch(); }} /> : null}
     <section className="panel credential-panel">
       <div className="toolbar filters">
         <label className="search"><Search size={16} /><input aria-label={t("Search identifiers")} placeholder={t("Search identifiers")} value={search} onChange={event => setFilters({ search: event.target.value, offset: null })} /></label>

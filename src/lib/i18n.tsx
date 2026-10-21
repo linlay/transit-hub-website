@@ -236,6 +236,8 @@ const zhCN: Record<string, string> = {
   Active: "活跃",
   Enabled: "已启用",
   "Model status": "模型状态",
+  "Enable model": "启用",
+  "Disable model": "停用",
   "Edit price": "编辑价格",
   Disabled: "已禁用",
   "All sources": "全部来源",

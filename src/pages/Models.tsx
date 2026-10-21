@@ -1,3 +1,4 @@
+import { StatusPill } from "../components/StatusPill";
 import { ModelStatusControl } from "../components/ModelStatusControl";
 import { useListScroll } from "../lib/useListScroll";
 import { IconButton } from "../components/IconButton";
@@ -125,6 +126,7 @@ export function Models() {
                   <th>{t("Effective pool")}</th>
                   <th>{t("Endpoint")}</th>
                   <th>{t("Status")}</th>
+                  <th>{t("Actions")}</th>
                   <th aria-label={t("View details")} />
                 </tr>
               </thead>
@@ -158,6 +160,7 @@ export function Models() {
                         : model.effective_pool || t("Unavailable")}
                     </td>
                     <td className="mono">{model.gateway_path || t("Unsupported")}</td>
+                    <td><StatusPill active={model.enabled !== false} label={model.enabled === false ? "Disabled" : "Enabled"} /></td>
                     <td><ModelStatusControl model={model} /></td>
                     <td><ArrowRight aria-hidden size={16} /></td>
                   </tr>

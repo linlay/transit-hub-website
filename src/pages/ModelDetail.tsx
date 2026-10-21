@@ -1,3 +1,4 @@
+import { StatusPill } from "../components/StatusPill";
 import { ModelStatusControl } from "../components/ModelStatusControl";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -59,12 +60,13 @@ export function ModelDetail() {
             <code>{data.public_model}</code>
           </div>
           <div className="model-badges">
-            <ModelStatusControl model={data} />
+            <StatusPill active={data.enabled !== false} label={data.enabled === false ? "Disabled" : "Enabled"} />
             <span className="pill muted">{data.protocol}</span>
             <span className="pill muted">{t(modelTypeLabel(data.type))}</span>
             <span className="pill good">{data.provider}</span>
           </div>
         </div>
+        <div className="model-detail-actions"><ModelStatusControl model={data} /></div>
         {data.override_pool && !data.override_valid ? (
           <div className="error-text">{t("The route override references unavailable pool {pool}. Requests will fail until the override is fixed or cleared.", { pool: data.override_pool })}</div>
         ) : null}

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Play, Pause } from "lucide-react";
 import { api } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import type { AdminModel } from "../lib/types";
@@ -14,9 +15,11 @@ export function ModelStatusControl({ model }: { model: AdminModel }) {
       client.invalidateQueries({ queryKey: ["providers"] });
     },
   });
-  return <div onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
-    <button type="button" role="switch" aria-label={`${t("Model status")}: ${model.public_model}`} aria-checked={model.enabled !== false} disabled={update.isPending} onClick={() => update.mutate()}>
-      {t(model.enabled === false ? "Disabled" : "Enabled")}
+  const enabled = model.enabled !== false;
+  return <div className="model-status-control" onClick={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
+    <button type="button" className={`icon-text model-status-action ${enabled ? "stop" : "start"}`} aria-label={`${t(enabled ? "Disable model" : "Enable model")}: ${model.public_model}`} aria-busy={update.isPending} disabled={update.isPending} onClick={() => update.mutate()}>
+      {update.isPending ? <Loader2 size={15} className="spin" aria-hidden /> : enabled ? <Pause size={15} aria-hidden /> : <Play size={15} aria-hidden />}
+      {t(update.isPending ? "Processing..." : enabled ? "Disable model" : "Enable model")}
     </button>
     {update.isError && <small role="alert" className="error-text">{update.error.message}</small>}
   </div>;

@@ -421,7 +421,6 @@ td small,
   border-radius: 3px;
 }
 
-.employee-auth-policy .panel-heading { margin-bottom: 12px; }
 .employee-auth-identity { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 13px; }
 .employee-auth-identity > span { min-width: 0; overflow-wrap: anywhere; }
 .employee-keys-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 12px; }
@@ -2657,8 +2656,15 @@ td.numeric .key-usage-line { justify-content: flex-end; }
   .mobile-filter-footer button { min-height: 44px; padding: 0 16px; }
 }
 
-.employee-auth-policy .panel-actions { flex-wrap: wrap; }
-.employee-auth-policy .panel-actions > button { white-space: nowrap; }
 .employee-default-rate-limits { max-width: 100%; overflow-x: auto; }
 .employee-default-rate-limits .rate-limit-editor { min-width: 520px; }
-.employee-auth-policy > .settings-form { margin-top: 20px; }
+
+.model-status-control { display: grid; gap: 6px; justify-items: start; }
+.icon-text.model-status-action { min-width: 88px; min-height: 36px; white-space: nowrap; cursor: pointer; }
+.icon-text.model-status-action.start { color: var(--color-primary-strong); background: var(--color-primary-soft); border-color: var(--color-primary-border); }
+.icon-text.model-status-action.stop { color: var(--color-danger); background: var(--color-danger-soft); border-color: var(--color-danger-border); }
+.icon-text.model-status-action:hover:not(:disabled) { box-shadow: 0 2px 6px var(--color-border); filter: brightness(0.96); }
+.icon-text.model-status-action:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.icon-text.model-status-action:disabled { cursor: wait; opacity: 0.6; }
+.model-detail-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 640px) { .icon-text.model-status-action { min-height: 44px; } }
