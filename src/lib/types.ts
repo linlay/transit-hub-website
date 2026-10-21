@@ -8,6 +8,21 @@ export type RateLimit = {
   quota_microcredits: number;
 };
 
+export type EmployeePolicy = {
+  allowed_models: string[];
+  request_quota: number;
+  token_quota: number;
+  quota_microcredits: number;
+  rate_limits: RateLimit[];
+};
+
+export type EmployeeAuthSettings = EmployeePolicy & {
+  enabled: boolean;
+  subject_claim: string;
+  issuer?: string;
+  audience?: string;
+};
+
 export type RateLimitUsage = {
   window: RateLimitWindow;
   state?: "idle" | "active" | "expired";

@@ -127,7 +127,7 @@ export function APIKeyDetail() {
     return Promise.all([detail.refetch(), providers.refetch(), usage.refetch(), timeline.refetch(), sessions.refetch(), ...(logsOpen ? [logs.refetch()] : [])]);
   }
 
-  usePageActions(<><IconButton label={t(isEmployee ? "Back to employees" : "Back to API keys")} onClick={() => navigate(backTo)}><ArrowLeft size={16} /></IconButton><RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} /></>, [
+  usePageActions(<><IconButton label={t(isEmployee ? "Back to authentication keys" : "Back to API keys")} onClick={() => navigate(backTo)}><ArrowLeft size={16} /></IconButton><RefreshButton disabled={!id} isRefreshing={isRefreshing} onClick={refreshDetail} /></>, [
     backTo, isEmployee, t,
     id,
     isRefreshing,
@@ -148,9 +148,7 @@ export function APIKeyDetail() {
       <QueryFeedback query={usage} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       {key.employee_identity ? <section className="panel employee-auth-identity">
-        <span>{t("Employee identity")}: <code>{key.employee_identity.subject}</code></span>
-        <span>{t("Identity claim")}: <code>{key.employee_identity.claim}</code></span>
-        <span>{t("Issuer")}: <code>{key.employee_identity.issuer}</code></span>
+        <span>{t("Unique identifier")}: <code>{key.employee_identity.subject}</code></span>
       </section> : null}
       <div className="credits-summary-grid">
         <MetricCard label={t("Total Credits")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits) : "∞"} detail={t("Lifetime")} />

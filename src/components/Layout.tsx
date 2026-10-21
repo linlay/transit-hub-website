@@ -29,7 +29,7 @@ import { useTheme, type ThemePreference } from "../lib/theme";
 const nav = [
   { to: "/", label: "Dashboard", icon: Gauge },
   { to: "/models", label: "Models", icon: Boxes },
-  { to: "/employee-keys", label: "Employee authentication keys", icon: ShieldCheck },
+  { to: "/employee-keys", label: "Authentication keys", icon: ShieldCheck },
   { to: "/grant-keys", label: "Authorization keys", icon: KeyRound },
   { to: "/sessions", label: "Sessions", icon: Cable },
   { to: "/traffic", label: "Traffic", icon: Activity },

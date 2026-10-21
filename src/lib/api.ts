@@ -1,6 +1,8 @@
 import { encodeCreditsJSON, decodeCreditsJSON } from "./credits-wire";
 import type {
   AdminModel,
+  EmployeePolicy,
+  EmployeeAuthSettings,
   AdminUser,
   APIKeyBatchResult,
   APIKey,
@@ -107,7 +109,8 @@ export const api = {
     request<ListResponse<APIKey>>("/admin/api-keys", { query }),
   employeeKeys: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<APIKey>>("/admin/employee-keys", { query }),
-  employeeAuth: () => request<{ enabled: boolean; subject_claim: string; issuer?: string; audience?: string }>("/admin/employee-auth"),
+  updateEmployeeDefaults: (body: EmployeePolicy) => request<EmployeeAuthSettings>("/admin/employee-auth", { method: "PUT", body: encodeCreditsJSON(body) }),
+  employeeAuth: () => request<EmployeeAuthSettings>("/admin/employee-auth"),
   apiKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`),
   createAPIKey: (body: Partial<APIKey>) =>
     request<APIKey & { key: string }>("/admin/api-keys", { method: "POST", body: encodeCreditsJSON(body) }),

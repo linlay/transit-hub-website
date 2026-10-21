@@ -14,6 +14,9 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Authentication key defaults": "全局默认策略",
+  "Defaults apply only when an identity has no record. Existing permissions, limits and usage stay unchanged.": "仅在唯一标识尚无记录时应用默认策略。已有记录的权限、额度、限流和用量保持不变。",
+
   "Speech synthesis": "语音合成",
   "Per character": "按字符",
   "Characters": "计费字符数",
@@ -140,17 +143,15 @@ const zhCN: Record<string, string> = {
   "API Keys": "API 密钥",
   "JWT Grants": "JWT 授权",
   "Authorization keys": "授权型密钥",
-  "Employee authentication keys": "员工认证密钥",
+  "Authentication keys": "认证型密钥",
   "Identity claim": "身份属性",
-  "Employee identity": "员工唯一标识",
-  "Search employees": "搜索员工",
-  "Back to employees": "返回员工认证密钥",
+  "Unique identifier": "唯一标识",
+  "Search identifiers": "搜索唯一标识",
+  "Back to authentication keys": "返回认证型密钥",
   "Audience": "受众",
   "Issuer": "签发方",
-  "{count} employees": "共 {count} 位员工",
-  "Call models with your login access token. Usage is shared across tokens and devices for the same employee.": "使用登录后的 access token 直接调用模型，同一员工跨 Token、跨设备累计用量。",
-  "Enable employee authentication in the server configuration.": "请在服务端配置中启用员工认证密钥。",
-  "Employees appear after their first authenticated request.": "员工首次通过认证访问后，将自动显示在这里。",
+  "{count} records": "共 {count} 条记录",
+  "Records appear after the first authenticated request.": "首次通过认证访问后，将自动建立记录。",
   Sessions: "会话",
   Traffic: "流量",
   Pricing: "价格",
