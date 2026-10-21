@@ -149,6 +149,7 @@ export function APIKeyDetail() {
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       {key.employee_identity ? <section className="panel employee-auth-identity">
         <span>{t("Unique identifier")}: <code>{key.employee_identity.subject}</code></span>
+        <span>{t("Username")}: {key.name !== key.employee_identity.subject ? key.name : "—"}</span>
       </section> : null}
       <div className="credits-summary-grid">
         <MetricCard label={t("Total Credits")} value={key?.quota_microcredits ? creditAmount(key.quota_microcredits) : "∞"} detail={t("Lifetime")} />
@@ -326,7 +327,7 @@ export function APIKeyDetail() {
               {key.status === "active" ? (
                 <IconButton label={t("Inactive")} className="icon-text" disabled={inactive.isPending} onClick={() => confirm({ message: t("Inactive {name}?", { name: key.name }), action: () => inactive.mutateAsync() })} type="button"><Ban size={16} /></IconButton>
               ) : null}
-              <IconButton label={t("Delete")} className="icon-text danger" disabled={remove.isPending} onClick={() => confirm({ message: t("Delete {name}?", { name: key.name }), label: t("Delete"), action: () => remove.mutateAsync() })} type="button"><Trash2 size={16} /></IconButton>
+              <IconButton label={t("Delete")} className="icon-text danger" disabled={remove.isPending} onClick={() => confirm({ message: t(isEmployee ? "Delete employee {name}? Their next authenticated request will register a new user with fresh usage and current defaults. Historical records will be kept." : "Delete {name}?", { name: key.name }), label: t("Delete"), action: () => remove.mutateAsync() })} type="button"><Trash2 size={16} /></IconButton>
               {savedMessage ? <span className="saved-text">{t("Saved")}</span> : null}
               <IconButton label={t("Save")} className="primary" disabled={update.isPending} form="api-key-settings" type="submit"><Save size={16} /></IconButton>
             </div>

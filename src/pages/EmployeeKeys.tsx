@@ -52,7 +52,7 @@ export function EmployeeKeys() {
     {editingPolicy ? <EmployeeDefaultPolicyForm initialPolicy={editingPolicy} onCancel={() => setEditingPolicy(null)} onSaved={() => { setEditingPolicy(null); setPolicySaved(true); void settings.refetch(); }} /> : null}
     <section className="panel credential-panel">
       <div className="toolbar filters">
-        <label className="search"><Search size={16} /><input aria-label={t("Search identifiers")} placeholder={t("Search identifiers")} value={search} onChange={event => setFilters({ search: event.target.value, offset: null })} /></label>
+        <label className="search"><Search size={16} /><input aria-label={t("Search identifiers or usernames")} placeholder={t("Search identifiers or usernames")} value={search} onChange={event => setFilters({ search: event.target.value, offset: null })} /></label>
         <select aria-label={t("Status")} value={status} onChange={event => setFilters({ status: event.target.value, offset: null })}>
           <option value="all">{t("All statuses")}</option><option value="active">{t("Active")}</option><option value="disabled">{t("Disabled")}</option>
         </select>
@@ -67,7 +67,7 @@ export function EmployeeKeys() {
           </tr></thead>
           <tbody>
             {keys.data?.items.map(key => <tr key={key.id}>
-              <td><Link className="table-link cell-ellipsis" title={key.employee_identity?.subject ?? key.name} to={`/employee-keys/${key.id}`} state={{ from: `/employee-keys${params.size ? `?${params}` : ""}` }}>{key.employee_identity?.subject ?? key.name}</Link>{key.name !== key.employee_identity?.subject ? <small>{key.name}</small> : null}</td>
+              <td><Link className="table-link cell-ellipsis" title={key.employee_identity?.subject ?? key.name} to={`/employee-keys/${key.id}`} state={{ from: `/employee-keys${params.size ? `?${params}` : ""}` }}>{key.employee_identity?.subject ?? key.name}</Link>{key.name !== key.employee_identity?.subject ? <small title={key.name}>{key.name}</small> : null}</td>
               <td><StatusPill active={key.status === "active" && !key.forced_expired} label={key.status === "active" && !key.forced_expired ? "Active" : "Disabled"} />{keyHasWindowLimit(key, now) ? <span className="key-window-limited">{t("Window limited")}</span> : null}</td>
               <td><CredentialModels models={key.allowed_models} /></td>
               <KeyUsageCells apiKey={key} now={now} />

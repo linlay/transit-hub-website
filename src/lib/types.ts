@@ -19,6 +19,7 @@ export type EmployeePolicy = {
 export type EmployeeAuthSettings = EmployeePolicy & {
   enabled: boolean;
   subject_claim: string;
+  name_claim?: string;
   issuer?: string;
   audience?: string;
 };

@@ -484,6 +484,8 @@ const zhCN: Record<string, string> = {
   "Sign in to manage Transit Hub": "登录以管理 Transit Hub",
   "Sign in with your internal admin account.": "使用内部管理员账号登录。",
   Username: "用户名",
+  "Delete employee {name}? Their next authenticated request will register a new user with fresh usage and current defaults. Historical records will be kept.": "删除员工 {name}？下次认证请求将按当前默认策略注册新用户，用量重新累计。历史记录会保留。",
+  "Search identifiers or usernames": "搜索员工编号或用户名",
   Password: "密码",
   "Sign in": "登录",
   "Signing in...": "正在登录...",
