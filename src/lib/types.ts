@@ -258,6 +258,7 @@ export type ProviderSnapshot = {
     base_url: string;
     default_pool: string;
     models: Array<{
+      protocol?: string;
       public: string;
       upstream: string;
       type?: "chat" | "embedding" | "image-generation" | "tts";
