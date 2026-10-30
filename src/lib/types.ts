@@ -268,6 +268,7 @@ export type ProviderQuotaAccount = {
 
 export type ProviderSnapshot = {
   providers: Array<{
+    chat_completions_max_tokens_field?: "max_tokens" | "max_completion_tokens";
     request_id_header?: string;
     name: string;
     protocol: string;
@@ -287,6 +288,9 @@ export type ProviderSnapshot = {
       accounts: Array<{
         name: string;
         weight: number;
+        enabled?: boolean;
+        disabled_reason?: "manual" | "billing_error" | "authentication_error";
+        failure_count?: number;
         circuit: Record<string, unknown>;
       }>;
     }>;

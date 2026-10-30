@@ -9,6 +9,7 @@ import { MetricCard } from "../components/MetricCard";
 import { ModalDialog } from "../components/ModalDialog";
 import { RefreshButton } from "../components/RefreshButton";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
+import { ProviderAccountStatusControl } from "../components/ProviderAccountStatusControl";
 import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, dateTime, integer, nullablePercent, formatCredits } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -70,11 +71,11 @@ export function Providers() {
     return items;
   }, [usage.data?.items, sortKey, sortDir]);
 
-  function renderConnectivityAction(target: ConnectivityTarget, title: string) {
+  function renderConnectivityAction(target: ConnectivityTarget, title: string, disabled = false) {
     const pending = connectivity.isPending && connectivity.pendingKey === target.resultKey;
     return (
       <div className="connection-test">
-        <IconButton label={title} className="icon-button" disabled={connectivity.isPending} onClick={() => connectivity.run({ ...target, label: title })} type="button">{pending ? <Loader2 className="spin" size={16} /> : <Activity size={16} />}</IconButton>
+        <IconButton label={title} className="icon-button" disabled={disabled || connectivity.isPending} onClick={() => connectivity.run({ ...target, label: title })} type="button">{pending ? <Loader2 className="spin" size={16} /> : <Activity size={16} />}</IconButton>
       </div>
     );
   }
@@ -178,7 +179,7 @@ export function Providers() {
           {(quotaByProvider.get(provider.name)?.length ?? 0) > 0 ? <ProviderQuotaSummary items={quotaByProvider.get(provider.name) ?? []} /> : null}
           <div className="provider-grid">
             <div>
-              <h3>{t("Models")}</h3>
+              <div className="provider-section-heading"><h3>{t("Models")}</h3></div>
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -213,13 +214,27 @@ export function Providers() {
               </div>
             </div>
             <div>
-              <h3>{t("Pools")}</h3>
+              <div className="provider-section-heading">
+                <h3>{t("Pools")}</h3>
+                <div className="provider-pool-tests">
+                  {provider.pools.map((pool) => (
+                    <div className="provider-pool-test" key={pool.name}>
+                      {provider.pools.length > 1 ? <span>{pool.name}</span> : null}
+                      {renderConnectivityAction(
+                        { provider: provider.name, pool: pool.name, resultKey: `pool:${provider.name}:${pool.name}` },
+                        provider.pools.length > 1 ? `${t("Test pool")}: ${pool.name}` : t("Test pool"),
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
                       <th>{t("Pool")}</th>
                       <th>{t("Account")}</th>
+                      <th>{t("Status")}</th>
                       <th className="numeric">{t("Requests")}</th>
                       <th>{t("Tokens")}</th>
                       <th>{t("Weight")}</th>
@@ -229,24 +244,23 @@ export function Providers() {
                   </thead>
                   <tbody>
                     {provider.pools.flatMap((pool) =>
-                      pool.accounts.map((account, accountIndex) => {
+                      pool.accounts.map((account) => {
                         const accountUsage = usageByAccount.get(`${provider.name}:${pool.name}:${account.name}`) ?? emptyAccountUsage(provider.name, pool.name, account.name);
                         return (
                           <tr key={`${pool.name}:${account.name}`}>
                             <td>{pool.name}</td>
                             <td>{account.name}</td>
+                            <td><ProviderAccountStatusControl provider={provider.name} pool={pool.name} account={account.name} enabled={account.enabled !== false} reason={account.disabled_reason} failureCount={account.failure_count} /></td>
                             <td>{telemetryUnavailable ? t("Unavailable") : integer(accountUsage.requests)}</td>
                             <td>{telemetryUnavailable ? t("Unavailable") : compactTokenCount(accountUsage.total_tokens)}</td>
                             <td>{account.weight}</td>
                             <td>{String(account.circuit.state ?? "closed")}</td>
                             <td>
                               <div className="table-actions">
-                                {accountIndex === 0
-                                  ? renderConnectivityAction({ provider: provider.name, pool: pool.name, resultKey: `pool:${provider.name}:${pool.name}` }, t("Test pool"))
-                                  : null}
                                 {renderConnectivityAction(
                                   { provider: provider.name, pool: pool.name, account: account.name, resultKey: `account:${provider.name}:${pool.name}:${account.name}` },
                                   t("Test account"),
+                                  account.enabled === false,
                                 )}
                               </div>
                             </td>

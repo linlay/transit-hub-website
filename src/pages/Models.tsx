@@ -124,7 +124,7 @@ export function Models() {
                   <th>{t("Provider")}</th>
                   <th>{t("Upstream model")}</th>
                   <th>{t("Effective pool")}</th>
-                  <th>{t("Endpoint")}</th>
+                  <th className="model-endpoint-cell">{t("Endpoint")}</th>
                   <th>{t("Status")}</th>
                   <th>{t("Actions")}</th>
                   <th aria-label={t("View details")} />
@@ -159,9 +159,9 @@ export function Models() {
                         ? <span className="pill danger-pill" title={t("Override pool {pool} is unavailable", { pool: model.override_pool })}>{t("Invalid override")}</span>
                         : model.effective_pool || t("Unavailable")}
                     </td>
-                    <td className="mono">{model.gateway_path || t("Unsupported")}</td>
+                    <td className="mono model-endpoint-cell"><span className="model-endpoint-path" title={model.gateway_path || t("Unsupported")}>{model.gateway_path || t("Unsupported")}</span></td>
                     <td><StatusPill active={model.enabled !== false} label={model.enabled === false ? "Disabled" : "Enabled"} /></td>
-                    <td><ModelStatusControl model={model} /></td>
+                    <td><ModelStatusControl model={model} compact /></td>
                     <td><ArrowRight aria-hidden size={16} /></td>
                   </tr>
                 ))}

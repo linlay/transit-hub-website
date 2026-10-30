@@ -1377,6 +1377,30 @@ td small {
   gap: 18px;
 }
 
+.provider-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; margin-bottom: 6px; }
+.provider-pool-tests { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.provider-pool-test { display: inline-flex; align-items: center; gap: 6px; }
+.provider-pool-test > span { color: var(--color-text-muted); font-size: 12px; }
+.provider-account-status { display: grid; gap: 4px; min-width: 32px; }
+.provider-account-status-main { display: flex; align-items: center; }
+.provider-account-status-detail { color: var(--color-text-muted); max-width: 190px; line-height: 1.4; }
+.provider-account-switch {
+  position: relative; width: 32px; height: 20px; min-height: 20px; padding: 0;
+  flex: 0 0 32px; border: 1px solid var(--color-border-control); border-radius: 999px;
+  background: var(--color-neutral-soft); cursor: pointer;
+}
+.provider-account-switch[aria-checked="true"] { background: var(--color-primary); border-color: var(--color-primary); }
+.provider-account-switch::before { content: ""; position: absolute; inset: -3px; }
+.provider-account-switch > span {
+  position: absolute; inset: 2px auto auto 2px; width: 14px; height: 14px;
+  display: grid; place-items: center; border-radius: 50%; background: #fff; color: var(--color-primary-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18); transition: transform .15s ease;
+}
+.provider-account-switch[aria-checked="true"] > span { transform: translateX(12px); }
+.provider-account-switch:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.provider-account-switch:disabled { opacity: .65; cursor: wait; }
+@media (prefers-reduced-motion: reduce) { .provider-account-switch > span { transition: none; } }
+
 .provider-grid > div {
   min-width: 0;
 }
@@ -2659,6 +2683,8 @@ td.numeric .key-usage-line { justify-content: flex-end; }
 .employee-default-rate-limits { max-width: 100%; overflow-x: auto; }
 .employee-default-rate-limits .rate-limit-editor { min-width: 520px; }
 
+.model-endpoint-cell { width: 200px; max-width: 200px; }
+.model-endpoint-path { display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .model-status-control { display: grid; gap: 6px; justify-items: start; }
 .icon-text.model-status-action { min-width: 88px; min-height: 36px; white-space: nowrap; cursor: pointer; }
 .icon-text.model-status-action.start { color: var(--color-primary-strong); background: var(--color-primary-soft); border-color: var(--color-primary-border); }

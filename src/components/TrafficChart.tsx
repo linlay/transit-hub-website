@@ -53,6 +53,7 @@ export function TrafficChart({ items, animate = true }: TrafficChartProps) {
               name={series.label}
               fill={series.color}
               stackId="models"
+              maxBarSize={40}
             />
           ))}
           <Line isAnimationActive={animate}

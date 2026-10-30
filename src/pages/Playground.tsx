@@ -29,7 +29,7 @@ export function Playground() {
   const [poolName, setPoolName] = useState("");
   const [accountName, setAccountName] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
-  const [temperature, setTemperature] = useState(0.7);
+  const [temperature, setTemperature] = useState(1);
   const [maxTokens, setMaxTokens] = useState(1024);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -74,7 +74,7 @@ export function Playground() {
 
   useEffect(() => {
     if (!accountName) return;
-    if (!selectedPool?.accounts.some((account) => account.name === accountName)) {
+    if (!selectedPool?.accounts.some((account) => account.name === accountName && account.enabled !== false)) {
       setAccountName("");
     }
   }, [accountName, selectedPool]);
@@ -273,8 +273,8 @@ export function Playground() {
               >
                 <option value="">{t("Any account")}</option>
                 {selectedPool?.accounts.map((account) => (
-                  <option key={account.name} value={account.name}>
-                    {account.name}
+                  <option key={account.name} value={account.name} disabled={account.enabled === false}>
+                    {account.name}{account.enabled === false ? ` · ${t("Disabled")}` : ""}
                   </option>
                 ))}
               </select>

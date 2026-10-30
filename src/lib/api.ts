@@ -161,6 +161,11 @@ export const api = {
   setModelEnabled: (protocol: string, publicModel: string, enabled: boolean) =>
     request<AdminModel>("/admin/models/detail", { method: "PATCH", query: { protocol, public_model: publicModel }, body: JSON.stringify({ enabled }) }),
   providers: () => request<ProviderSnapshot>("/admin/providers"),
+  setProviderAccountEnabled: (provider: string, pool: string, account: string, enabled: boolean) =>
+    request<{ provider: string; pool: string; account: string; enabled: boolean }>(
+      `/admin/providers/${encodeURIComponent(provider)}/pools/${encodeURIComponent(pool)}/accounts/${encodeURIComponent(account)}`,
+      { method: "PATCH", body: JSON.stringify({ enabled }) },
+    ),
   testProviderConnectivity: (body: ProviderConnectivityTestRequest) =>
     request<ProviderConnectivityTestResult>("/admin/providers/test", { method: "POST", body: encodeCreditsJSON(body) }),
   playgroundChat: (body: PlaygroundChatRequest, signal?: AbortSignal) =>
