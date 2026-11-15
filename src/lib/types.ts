@@ -41,6 +41,7 @@ export type RateLimitUsage = {
 };
 
 export type APIKey = {
+ policy_mode?:"default"|"custom";
   used_microcredits: number;
   remaining_microcredits?: number;
   credits_unlimited?: boolean;
@@ -93,6 +94,11 @@ export type JWTGrant = {
 };
 
 export type AdminUser = {
+  managed_orgs?: string[];
+  managed_principals?: string[];
+  managed_people?: Array<{ id: string; name: string }>;
+  role?: "super_admin" | "platform_admin" | "user";
+  employee_identity?: { issuer: string; claim: string; subject: string };
   id: string;
   username: string;
   status: "active" | "disabled";
@@ -155,6 +161,13 @@ export type Overview = {
 };
 
 export type RequestLog = {
+ attempt_count?: number;
+ fallback_used?: boolean;
+ ttft_ms?: number;
+ final_region?: string;
+ price_version_id?: string;
+ budget_owner?: {type:string;id:string};
+  gateway_request_id?: string;
   characters?: number;
   upstream_request_id?: string;
   usage_source?: UsageSource | "";
@@ -321,6 +334,17 @@ export type ProviderConnectivityTestResult = {
 };
 
 export type AdminModel = {
+  candidates?: Array<{
+    provider: string;
+    pool: string;
+    upstream_model: string;
+    priority: number;
+    weight: number;
+    data_region: string;
+    enabled_accounts: number;
+    enabled?: boolean;
+  }>;
+  pin?: { provider: string; pool: string; expires_at?: string };
   enabled?: boolean;
   protocol: string;
   type: string;

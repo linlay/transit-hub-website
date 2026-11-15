@@ -13,7 +13,7 @@ export function useListScroll(ready: boolean) {
     restored.current = true;
     const position = positions.get(pathname);
     if (!position) return;
-    window.scrollTo(position.x, position.y);
+    document.querySelector<HTMLElement>(".main-content")?.scrollTo(position.x, position.y);
     document.querySelectorAll<HTMLElement>(".page .table-wrap").forEach((table, index) => {
       const saved = position.tables[index];
       if (saved) table.scrollTo(saved.x, saved.y);
@@ -22,7 +22,8 @@ export function useListScroll(ready: boolean) {
   useEffect(() => {
     function save() {
       if (!restored.current) return;
-      positions.set(pathname, { x: window.scrollX, y: window.scrollY, tables: Array.from(document.querySelectorAll<HTMLElement>(".page .table-wrap"), table => ({ x: table.scrollLeft, y: table.scrollTop })) });
+      const content = document.querySelector<HTMLElement>(".main-content");
+      positions.set(pathname, { x: content?.scrollLeft ?? 0, y: content?.scrollTop ?? 0, tables: Array.from(document.querySelectorAll<HTMLElement>(".page .table-wrap"), table => ({ x: table.scrollLeft, y: table.scrollTop })) });
     }
     window.addEventListener("scroll", save, true);
     return () => window.removeEventListener("scroll", save, true);

@@ -170,6 +170,21 @@ EOF
   done
 }
 
+write_mcp_locations() {
+  prefix="$1"
+  cat <<EOF
+    location = ${prefix}/mcp {
+        proxy_pass ${TRANSIT_HUB_UPSTREAM}/mcp;
+EOF
+  write_proxy_headers
+  cat <<'EOF'
+        proxy_buffering off;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+    }
+EOF
+}
+
 write_app_locations() {
   if [ "$APP_INTERNAL_BASE_PATH" = "/" ]; then
     cat <<'EOF'
@@ -259,6 +274,7 @@ EOF
   write_api_locations "$API_LOCATION_PREFIX"
   write_v1_locations "$API_LOCATION_PREFIX"
   write_provider_locations "$API_LOCATION_PREFIX"
+  write_mcp_locations "$API_LOCATION_PREFIX"
   write_app_locations
   cat <<'EOF'
 }

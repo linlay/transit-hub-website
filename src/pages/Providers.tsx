@@ -1,6 +1,7 @@
 import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Loader2 } from "lucide-react";
 import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
@@ -17,7 +18,7 @@ import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
 import type { ProviderAccountUsage, ProviderQuotaAccount, ProviderUsage } from "../lib/types";
 
-export function Providers() {
+export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onConfigure: () => void }) {
   const { t } = useI18n();
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const usage = useQuery({ queryKey: ["provider-usage"], queryFn: () => api.providerUsage(), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
@@ -80,10 +81,10 @@ export function Providers() {
     );
   }
 
-  usePageActions(<RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([providers.refetch(), usage.refetch(), quota.refetch()])} />, [isRefreshing, providers.refetch, usage.refetch, quota.refetch]);
+  usePageActions(<><RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([providers.refetch(), usage.refetch(), quota.refetch()])} /><button onClick={onConfigure}>{t("Channel configuration")}</button><button className="primary" onClick={onCreate}>{t("New channel")}</button></>, [t, isRefreshing, providers.refetch, usage.refetch, quota.refetch, onCreate, onConfigure]);
 
   return (
-    <section className="page">
+    <>
       <QueryFeedback query={providers} />
       {!telemetryUnavailable ? <QueryFeedback query={usage} /> : null}
       <QueryFeedback query={quota} />
@@ -173,7 +174,10 @@ export function Providers() {
                 {provider.protocol} · {provider.base_url}
               </span>
             </div>
-            {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, t("Test provider"))}
+            <div className="table-actions">
+              <Link className="channel-configure" aria-label={t("Configure {channel}", { channel: provider.name })} to={`/providers?${new URLSearchParams({ tab: "configuration", channel: provider.name })}`}>{t("Configure")}</Link>
+              {renderConnectivityAction({ provider: provider.name, resultKey: `provider:${provider.name}` }, t("Test provider"))}
+            </div>
           </div>
           {!telemetryUnavailable && usage.data ? <ProviderMetrics usage={usageByProvider.get(provider.name) ?? emptyProviderUsage(provider.name)} /> : null}
           {(quotaByProvider.get(provider.name)?.length ?? 0) > 0 ? <ProviderQuotaSummary items={quotaByProvider.get(provider.name) ?? []} /> : null}
@@ -276,7 +280,7 @@ export function Providers() {
         </section>
       ))}
       <ConnectivityResultToast result={connectivity.toast?.result} label={connectivity.toast?.label} onClose={connectivity.dismissToast} />
-    </section>
+    </>
   );
 }
 

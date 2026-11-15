@@ -30,7 +30,9 @@ export default defineConfig(({ mode }) => {
   const baseUrl = normalizeBaseUrl(env.VITE_BASE_URL);
   const apiBaseUrl = normalizeApiBaseUrl(env.VITE_API_BASE_URL, baseUrl);
   const stripApiBaseUrl = apiBaseUrl ? new RegExp(`^${escapeRegExp(apiBaseUrl)}`) : null;
-  const proxyPath = (path: string) => `${apiBaseUrl}${path}`;
+  const devProxyTarget = env.VITE_DEV_PROXY_TARGET?.trim() || "http://localhost:8080";
+  // Match API path segments, so /mcp does not capture the /mcp-access SPA page.
+  const proxyPath = (path: string) => `^${escapeRegExp(`${apiBaseUrl}${path}`)}(?:/|\\?|$)`;
   const rewriteProxyPath = (path: string) => (stripApiBaseUrl ? path.replace(stripApiBaseUrl, "") : path);
 
   return {
@@ -40,20 +42,20 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         [proxyPath("/admin")]: {
-          target: "http://localhost:8080",
+          target: devProxyTarget,
           changeOrigin: true,
           rewrite: rewriteProxyPath,
         },
         [proxyPath("/api")]: {
-          target: "http://localhost:8080",
+          target: devProxyTarget,
           changeOrigin: true,
           rewrite: rewriteProxyPath,
         },
-        ...Object.fromEntries(["/bailian", "/minimax"].map(path => [proxyPath(path), {
-          target: "http://localhost:8080", changeOrigin: true, rewrite: rewriteProxyPath, timeout: 600000, proxyTimeout: 600000,
+        ...Object.fromEntries(["/bailian", "/minimax", "/mcp"].map(path => [proxyPath(path), {
+          target: devProxyTarget, changeOrigin: true, rewrite: rewriteProxyPath, timeout: 600000, proxyTimeout: 600000,
         }])),
         [proxyPath("/v1")]: {
-          target: "http://localhost:8080",
+          target: devProxyTarget,
           changeOrigin: true,
           rewrite: rewriteProxyPath,
         },

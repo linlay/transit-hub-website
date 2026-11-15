@@ -184,9 +184,9 @@ podman compose ps
 
 ## Credits 管理
 
-额度和消费统一显示 Credits（1 元 = 100 Credits），价格页面按人民币配置并显示 Credits 等值。Key/JWT 创建与编辑支持总 Credits 额度及“不限”，窗口额度同样使用 Credits。Key 详情的生命周期累计消费独立于可清理的日志报表，允许显示负余额。价格支持文本缓存读写、图片尺寸/质量规则和显式免费。
+额度、消费和公开模型价格统一使用原生 Credits，不进行人民币换算。Key/JWT 创建与编辑支持总 Credits 额度及“不限”，窗口额度同样使用 Credits。Key 详情的生命周期累计消费独立于可清理的日志报表，允许显示负余额。价格支持文本缓存读写、图片尺寸/质量规则和显式免费。
 
-API 字段继续使用整数微元，不提交浮点 Credits。前后端需配套发布；Desktop 的后续接入契约位于 server 的 `docs/credits-api.md`。
+API 金额字段使用十进制整数 micro-Credits 字符串，不提交浮点 Credits。前后端需配套发布；Desktop 的后续接入契约位于 server 的 `docs/credits-api.md`。
 
 ### Traffic 分析页
 
@@ -203,3 +203,35 @@ API 字段继续使用整数微元，不提交浮点 Credits。前后端需配�
 开发态 Vite 和生产 Nginx 增加 `/bailian/`、`/minimax/` 代理，保留 provider 前缀转发后端，使用与现有 API 相同的运行时 API base path。两个公开 POST 接口为 `/bailian/v1/services/aigc/multimodal-generation/generation`、`/minimax/v1/t2a_v2`；支持 Ingress rewrite，关闭响应缓冲并使用 3600 秒上游读写超时。外层反代也需放行这些路径。
 
 Pricing 支持 DashScope TTS / MiniMax TTS 协议和每万计费字符的 Credits 单价；Models 可筛选 TTS 并查看原生 curl 示例；流量日志和 Key 日志显示计费字符数。后端配置、字符计费与 Platform 接入见 server 的 `docs/tts.md`。
+
+## 企业管理与验证
+
+本地后端端口不为 8080 时，可设置 `VITE_DEV_PROXY_TARGET=http://127.0.0.1:7060 npm run dev -- --port 5180`，仅影响 Vite 开发代理。生产环境仍使用 `TRANSIT_HUB_UPSTREAM`。
+开发代理规则回归：`node scripts/dev-proxy.test.mjs`，覆盖根路径、子路径和 `/mcp-access` 等页面不会被 API 规则截获。
+
+新增模型路由、虚拟组织、目录导入、费用流水、审计、MCP 访问、渠道配置、请求追踪与上游采购价格页面。总管理员通过“管理员”列表的新增和授权对话框设置账号角色、员工登录绑定及可管理的组织或个人。范围管理员仅能管理授权组织的成员上限与告警，以及获授权个人的策略；平台管理员不能管理控制台账号或调配组织成员。
+
+导航按“概览 → 组织与权限 → 模型与渠道 → 用量与账务 → 审计与集成”分组；组织管理员优先显示“我的组织”。左下角账号菜单可切换中文 / English，新页面的菜单、标题、表单、表头和状态随语言切换，业务数据和 API 参数保持原值。“模型与渠道”仅保留模型、渠道、调试台；从模型列表或详情的“路由”进入当前模型的路由页，渠道页面统一提供状态与配置，并支持从状态卡片打开对应渠道配置。旧 `/routing` 跳转模型列表，旧 `/provider-configuration` 跳转渠道配置页。`test:enterprise-ui` 覆盖两种语言、三种角色的页面组合，以及模型路由入口与作用域、渠道状态和配置切换、语言切换保留表单值、菜单顺序与手机展开导航。
+
+渠道配置支持 YAML / 表单、文件导入、脱敏导出、版本查看与回滚。填写真实凭据请使用独立凭据框，文档中只保留 `${secret:名称}`。费用调整只影响报表；组织模式下的余额和消费需使用 Server 新契约。
+
+生产反代和 Vite 均提供 `/mcp`；子路径部署沿用运行时 API base path。MCP Token 在个人访问页创建，只显示一次，账号停用或权限撤销后立即失效。
+
+回归命令：
+
+```sh
+npm run build
+sh scripts/prepare-nginx.test.sh
+node scripts/traffic-filters.test.mjs
+npm run test:enterprise-ui
+```
+
+浏览器测试只使用合成响应，覆盖三种角色、移动布局和写操作预览。先构建 dist；macOS 默认使用本机 Chrome，其余环境可安装 Playwright Chromium，或设置 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`。截图默认写入临时目录，可用 `UI_SCREENSHOT_DIR` 改写。容器构建仍使用现有私有 Harbor 基础镜像，需构建环境能够访问该仓库。
+
+组织与权限页面以列表和树形浏览为主：虚拟组织的创建、成员 CSV 批量调配在对话框中操作；组织架构左侧为可展开的部门树，员工作为部门下的叶子节点，右侧查看所选部门员工。新增／编辑部门、员工详情、所选成员调配及 JSON／CSV 文件导入均通过对话框处理。管理员页不展示常驻创建表单；新增和编辑授权对话框可选择组织与个人范围。`/managed-people` 仅列出当前管理员获授权的个人，策略保存由服务端逐人校验权限。
+
+账务页面以查询和对比为主：`Pricing.tsx` 展示模型 Credits 计费价，支持协议／计价方式筛选，新增、编辑、规则详情与价格历史均使用对话框。`UpstreamPricing.tsx` 按渠道和上游模型展示当前／待生效价格与历史版本，采购成本保留原币种；新增和调价先预览再发布，表单变化后预览失效。`Ledger.tsx` 默认展示近 30 日明细，可按组织、成员和历史部门路径筛选，切换分组汇总；期间指标另取完整期间的流水类型／币种汇总，各币种分别展示。流水详情、对账和报表调整在对话框中操作，报表调整先预览再提交，导出明确限于当前页。图片、字符和长上下文阶梯价格由可视表单编辑，金额通过整数串转换提交。
+
+本地合成预览可在构建后运行 `node scripts/finance-preview.mjs`，通过 `http://127.0.0.1:4178/pricing` 查看；示例数据和预览内的写入只保存在进程内，不连接任何网关。
+
+审计与集成采用列表浏览和任务对话框：`AuditLogs.tsx` 按日期、组织、来源、结果和关键字筛选，使用游标翻页；详情显示操作前后字段变化和脱敏值。`RequestTrace.tsx` 先展示近期请求，也支持 `?request_id=...` 直接定位；详情显示路由候选、固定路由、会话亲和与逐次尝试时间线。`MCPAccess.tsx` 展示个人令牌的可用／过期／撤销状态，创建、连接指南和撤销均在对话框操作，权限选项来自服务端 `available_scopes`。新令牌默认遮挡，仅创建成功时可复制；关闭即清理页面状态，不写入 URL、浏览器存储或查询缓存。`integration-fixtures.mjs` 提供隔离的审计、追踪和令牌示例，沿用本地合成预览服务可查看这三个页面。

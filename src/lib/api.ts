@@ -101,12 +101,14 @@ async function requestStream(path: string, body: unknown, signal?: AbortSignal):
 export const api = {
   login: (body: { username: string; password: string }) =>
     request<{ user: AdminUser }>("/admin/auth/login", { method: "POST", body: encodeCreditsJSON(body) }),
-  me: () => request<{ user: AdminUser }>("/admin/auth/me"),
+  me: () => request<{ user: AdminUser; role?: "super_admin" | "platform_admin" | "user"; managed_orgs?: string[]; managed_principals?: string[] }>("/admin/auth/me"),
   logout: () => request<{ status: string }>("/admin/auth/logout", { method: "POST" }),
   overview: (query?: Record<string, string | number | boolean | undefined>) =>
     request<Overview>("/admin/overview", { query }),
   apiKeys: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<APIKey>>("/admin/api-keys", { query }),
+  managedPeople: () => request<ListResponse<APIKey>>("/admin/managed-people"),
+  updateManagedPerson: (id: string, body: Partial<APIKey>) => request<APIKey>(`/admin/managed-people/${encodeURIComponent(id)}`, { method: "PATCH", body: encodeCreditsJSON(body) }),
   employeeKeys: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<APIKey>>("/admin/employee-keys", { query }),
   updateEmployeeDefaults: (body: EmployeePolicy) => request<EmployeeAuthSettings>("/admin/employee-auth", { method: "PUT", body: encodeCreditsJSON(body) }),
@@ -178,7 +180,7 @@ export const api = {
     request<ListResponse<UsageCalibration>>("/admin/providers/usage-calibration", { query }),
   providerQuota: () => request<ProviderQuotaResponse>("/admin/providers/quota"),
   users: () => request<ListResponse<AdminUser>>("/admin/users"),
-  createUser: (body: { username: string; password: string; status?: string }) =>
+  createUser: (body: Partial<AdminUser> & { username: string; password: string }) =>
     request<AdminUser>("/admin/users", { method: "POST", body: encodeCreditsJSON(body) }),
   updateUser: (id: string, body: Partial<AdminUser> & { password?: string }) =>
     request<AdminUser>(`/admin/users/${id}`, { method: "PATCH", body: encodeCreditsJSON(body) }),

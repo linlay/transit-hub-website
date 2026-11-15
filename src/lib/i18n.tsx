@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { setFormatLocale } from "./format";
+import { enterpriseZhCN } from "./enterprise-i18n";
 
 export type Locale = "zh-CN" | "en-US";
 
@@ -576,7 +577,7 @@ const zhCN: Record<string, string> = {
 
 const dictionaries: Record<Locale, Record<string, string>> = {
   "en-US": {},
-  "zh-CN": zhCN,
+  "zh-CN": { ...zhCN, ...enterpriseZhCN },
 };
 
 export function I18nProvider({ children }: { children: ReactNode }) {

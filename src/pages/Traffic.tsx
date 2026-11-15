@@ -14,7 +14,7 @@ import { TrafficFilterSelect } from "../components/TrafficFilterSelect";
 import { TrafficLogsDialog } from "../components/TrafficLogsDialog";
 import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { api, isTelemetryError } from "../lib/api";
-import { compactTokenCount, integer, MICRO_PER_CREDIT } from "../lib/format";
+import { compactTokenCount, creditAmount, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficAnalytics } from "../lib/types";
@@ -123,7 +123,7 @@ export function Traffic() {
       <div className="metrics-grid">
         <MetricCard label={t("Requests")} value={integer(summary?.requests ?? 0)} />
         <MetricCard label={t("Tokens")} value={compactTokenCount(summary?.total_tokens ?? 0)} />
-        <MetricCard label={t("Spend (Credits)")} value={integer(Math.round((summary?.charged_microcredits ?? 0) / MICRO_PER_CREDIT))} />
+        <MetricCard label={t("Spend (Credits)")} value={creditAmount(summary?.charged_microcredits ?? 0)} />
         <MetricCard label={t("Active API keys")} value={integer(summary?.unique_api_keys ?? 0)} detail={t("Distinct across selected range")} />
         <MetricCard label={t("Failure rate")} value={new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 2 }).format(summary?.requests ? summary.error_requests / summary.requests : 0)} />
         <MetricCard label={t("Average latency (ms)")} value={integer(Math.round(summary?.average_latency_ms ?? 0))} />

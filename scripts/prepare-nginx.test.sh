@@ -70,6 +70,8 @@ grep -F 'apiBaseUrl: "/transit-hub"' "$HTML_ROOT/runtime-config.js" >/dev/null
 grep -F 'location /bailian/' "$NGINX_CONF" >/dev/null
 grep -F 'location /minimax/' "$NGINX_CONF" >/dev/null
 grep -F 'location /admin/' "$NGINX_CONF" >/dev/null
+grep -F 'location = /mcp' "$NGINX_CONF" >/dev/null
+grep -F 'proxy_buffering off;' "$NGINX_CONF" >/dev/null
 grep -F 'proxy_pass http://transit-hub-server:80/admin/;' "$NGINX_CONF" >/dev/null
 grep -F 'try_files $uri $uri/ /index.html;' "$NGINX_CONF" >/dev/null
 
@@ -102,5 +104,7 @@ grep -F 'location / {' "$NGINX_CONF" >/dev/null
 grep -F 'location /bailian/' "$NGINX_CONF" >/dev/null
 grep -F 'location /minimax/' "$NGINX_CONF" >/dev/null
 grep -F 'location /admin/' "$NGINX_CONF" >/dev/null
+grep -F 'location = /mcp' "$NGINX_CONF" >/dev/null
+grep -F 'proxy_buffering off;' "$NGINX_CONF" >/dev/null
 
 printf 'prepare-nginx runtime base path test passed\n'

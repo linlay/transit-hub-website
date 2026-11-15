@@ -1,54 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type DependencyList, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
-  Activity,
-  BadgeDollarSign,
-  Boxes,
-  Cable,
   ChevronDown,
-  Gauge,
-  KeyRound,
+  ArrowLeft,
   LogOut,
   Menu,
   Moon,
   Monitor,
   RadioTower,
-  ServerCog,
-  ShieldCheck,
   Sun,
   Languages,
-  Users,
   X,
 } from "lucide-react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { IconButton } from "./IconButton";
 import { useI18n } from "../lib/i18n";
 import { useTheme, type ThemePreference } from "../lib/theme";
-
-const nav = [
-  { to: "/", label: "Dashboard", icon: Gauge },
-  { to: "/models", label: "Models", icon: Boxes },
-  { to: "/employee-keys", label: "Authentication keys", icon: ShieldCheck },
-  { to: "/grant-keys", label: "Authorization keys", icon: KeyRound },
-  { to: "/sessions", label: "Sessions", icon: Cable },
-  { to: "/traffic", label: "Traffic", icon: Activity },
-  { to: "/usage-audit", label: "Usage audit", icon: ShieldCheck },
-  { to: "/pricing", label: "Pricing", icon: BadgeDollarSign },
-  { to: "/providers", label: "Providers", icon: ServerCog },
-  { to: "/playground", label: "Playground", icon: Activity },
-  { to: "/users", label: "Users", icon: Users },
-];
-
-function currentPageLabel(pathname: string): string {
-  // Exact match first
-  const exact = nav.find((item) => item.to === pathname);
-  if (exact) return exact.label;
-  // Prefix match for detail pages (e.g. /api-keys/xxx → "API Keys")
-  const prefix = nav.find((item) => item.to !== "/" && pathname.startsWith(item.to + "/"));
-  if (prefix) return prefix.label;
-  return "";
-}
+import { navigationGroups, navigationLabel } from "../lib/navigation";
 
 const PageActionsContext = createContext<Dispatch<SetStateAction<ReactNode>> | null>(null);
 
@@ -66,6 +35,9 @@ export function Layout() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
+  const modelDetail = Boolean(matchPath("/models/:protocol/:modelId/*", location.pathname));
+  const modelList = (location.state as { from?: string } | null)?.from ?? "/models";
+  const organizationDetail = Boolean(matchPath("/organizations/:id", location.pathname));
   const isGrantKeys = location.pathname === "/grant-keys" || location.pathname.startsWith("/grant-keys/");
   const isJWTGrants = location.pathname === "/grant-keys" && new URLSearchParams(location.search).get("tab") === "jwt-grants";
   const queryClient = useQueryClient();
@@ -104,11 +76,15 @@ export function Layout() {
             </button>
           </div>
           <nav id="main-navigation" aria-label={t("Main navigation")}>
-            {nav.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === "/"} onClick={() => setMobileNavOpen(false)}>
-                <item.icon size={18} />
-                <span>{t(item.label)}</span>
-              </NavLink>
+            {navigationGroups(me.data?.role ?? "super_admin").map(group => (
+              <section className="nav-group" key={group.label} aria-label={t(group.label)}>
+                <div className="nav-group-label">{t(group.label)}</div>
+                <div className="nav-group-links">{group.items.map(item => (
+                  <NavLink key={item.to} to={item.to} end={item.to === "/"} onClick={() => setMobileNavOpen(false)}>
+                    <item.icon size={18} /><span>{t(item.label)}</span>
+                  </NavLink>
+                ))}</div>
+              </section>
             ))}
           </nav>
           <div className="sidebar-footer">
@@ -117,17 +93,21 @@ export function Layout() {
         </aside>
         <main className="main">
           <header className="topbar">
+            <div className="topbar-heading">
+            {modelDetail && <Link className="topbar-back-link" to={modelList}><ArrowLeft size={16} /><span>{t("Back to models")}</span></Link>}
+            {organizationDetail && <Link className="topbar-back-link" to="/organizations"><ArrowLeft size={16} /><span>{t("Back to virtual organizations")}</span></Link>}
             <span className={`topbar-page${isGrantKeys ? " credential-navigation" : ""}`}>
               {isGrantKeys ? (
                 <span role="navigation" aria-label={t("Authorization keys")} className="credential-navigation-links">
                   <Link to="/grant-keys" aria-current={!isJWTGrants ? "page" : undefined}>{t("API Keys")}</Link>
                   <Link to="/grant-keys?tab=jwt-grants" aria-current={isJWTGrants ? "page" : undefined}>{t("JWT Grants")}</Link>
                 </span>
-              ) : t(currentPageLabel(location.pathname))}
+              ) : t(navigationLabel(location.pathname, me.data?.role ?? "super_admin"))}
             </span>
+            </div>
             <div className="topbar-actions">{pageActions}</div>
           </header>
-          <Outlet />
+          <div className="main-content" key={location.pathname}><Outlet /></div>
         </main>
       </div>
     </PageActionsContext.Provider>

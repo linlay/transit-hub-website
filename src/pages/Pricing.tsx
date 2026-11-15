@@ -1,101 +1,48 @@
-import { ModalDialog } from "../components/ModalDialog";
-import { QueryFeedback } from "../components/QueryFeedback";
-import { useConfirm } from "../components/ConfirmProvider";
-import { IconButton } from "../components/IconButton";
-import { X, Save, Plus, Trash2, Pencil } from "lucide-react";
-import { FormEvent, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { decimalToMicro, creditsInputValue, formatCredits } from "../lib/format";
+import { enterpriseRequest as request, type Row } from "../lib/enterprise";
+import { billingObject, priceDraft, pricePayload, type PriceDraft } from "../lib/finance";
+import { enterpriseValueLabel } from "../lib/enterprise-labels";
+import { dateTime } from "../lib/format";
 import { useI18n } from "../lib/i18n";
-import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
-import type { ModelPrice, PriceBilling } from "../lib/types";
+import { ManagementDialog, ManagementField as Field } from "../components/ManagementDialog";
+import { BillingModeSelect, PriceRuleFields, PriceRuleSummary } from "../components/PriceRules";
+import { QueryFeedback } from "../components/QueryFeedback";
+import { ResponsiveFilters } from "../components/ResponsiveFilters";
+import { useConfirm } from "../components/ConfirmProvider";
 
+type Dialog = {kind:"edit"|"details"|"history";price?:Row};
 export function Pricing() {
- const { t } = useI18n();
- const confirm = useConfirm();
- const client = useQueryClient();
- const prices = useQuery({queryKey:["prices"],queryFn:api.prices,refetchInterval:PAGE_REFETCH_INTERVAL_MS});
- const [open,setOpen] = useState(false);
- const [editing,setEditing] = useState<ModelPrice>();
- const [mode,setMode] = useState<PriceBilling["mode"]>("tokens");
- const [rules,setRules] = useState([{size:"",quality:"",amount:""}]);
- const [error,setError] = useState("");
- const [revision,setRevision] = useState(0);
- const save = useMutation({mutationFn:(body:Partial<ModelPrice>)=>editing ? api.updatePrice(editing.id,body) : api.createPrice(body),onSuccess:()=>{client.invalidateQueries({queryKey:["prices"]});select();setOpen(false);},onError:(err:Error)=>setError(err.message)});
- const remove = useMutation({mutationFn:api.deletePrice,onSuccess:()=>client.invalidateQueries({queryKey:["prices"]}),onError:(err:Error)=>setError(err.message)});
- usePageActions(<><IconButton label={t("Add price")} className="primary" disabled={save.isPending} onClick={()=>{save.reset();select();setOpen(true);}}><Plus size={16}/></IconButton><RefreshButton isRefreshing={prices.isFetching} onClick={()=>prices.refetch()} /></>,[prices.isFetching,prices.refetch,save.isPending]);
- function select(price?:ModelPrice) {
-  setEditing(price); setMode(price?.billing?.mode ?? "tokens");setError("");setRevision(v=>v+1);
-  setRules(price?.billing?.image_prices?.map(r=>({size:r.size,quality:r.quality,amount:creditsInputValue(r.charged_microcredits)})) ?? [{size:"",quality:"",amount:""}]);
- }
- function submit(event:FormEvent<HTMLFormElement>) {
-  event.preventDefault();if(save.isPending)return;setError("");const form=new FormData(event.currentTarget);
-  try {
-   const optionalAmount=(name:string)=>String(form.get(name)??"").trim() ? decimalToMicro(form.get(name)) : null;
-   const billing:PriceBilling={mode};
-   if (mode === "tokens" && editing?.billing?.token_tiers) billing.token_tiers = editing.billing.token_tiers;
-   if(mode==="tokens") {
-    billing.cache_write_microcredits_per_1m_tokens=optionalAmount("cache_write");
-   }
-   if(mode==="characters") billing.microcredits_per_10k_characters=decimalToMicro(form.get("characters"));
-   if(mode==="image") billing.image_prices=rules.map(r=>({size:r.size.trim(),quality:r.quality.trim(),charged_microcredits:decimalToMicro(r.amount)}));
-   save.mutate({protocol:String(form.get("protocol")),public_model:String(form.get("public_model")).trim(),unit:"CREDITS",billing,
-    input_microcredits_per_1m_tokens:mode==="tokens"?decimalToMicro(form.get("input")):0,
-    input_cache_hit_microcredits_per_1m_tokens:mode==="tokens"?optionalAmount("cache_hit"):null,
-    output_microcredits_per_1m_tokens:mode==="tokens"?decimalToMicro(form.get("output")):0});
-  }catch(err){setError(err instanceof Error?err.message:String(err));}
- }
- const amount=(value?:number|null)=>value==null?"":creditsInputValue(value);
- return <section className="page">
-  <section className="panel">
-   <p>{t("Prices are configured and charged directly in Credits.")}</p>
-   {save.isSuccess && !error && <span className="saved-text" role="status">{t("Saved.")}</span>}
-   {error && !open && <p role="alert">{error}</p>}
-  </section>
-  {open && <ModalDialog title={editing ? "Edit price" : "Add price"} busy={save.isPending} onClose={()=>setOpen(false)}>
-   {error && <p role="alert">{error}</p>}
-   <form className="pricing-form" onChange={() => { if(save.isSuccess) save.reset(); }} key={revision} onSubmit={submit}>
-    <div className="pricing-meta">
-     <select name="protocol" defaultValue={editing?.protocol??"openai"} aria-label={t("Protocol")}><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="dashscope_tts">DashScope TTS</option><option value="minimax_tts">MiniMax TTS</option></select>
-     <input name="public_model" defaultValue={editing?.public_model} placeholder={t("Public model")} required readOnly={!!editing}/>
-     <select value={mode} onChange={e=>setMode(e.target.value as PriceBilling["mode"])} aria-label={t("Billing mode")}>
-      <option value="tokens">{t("Per token")}</option><option value="image">{t("Per image")}</option><option value="characters">{t("Per character")}</option><option value="free">{t("Free")}</option>
-     </select>
-    </div>
-    {mode==="tokens" && <div className="pricing-fields">
-     <label>{t("Input Credits / 1M")}<input name="input" defaultValue={amount(editing?.input_microcredits_per_1m_tokens)} type="number" min="0" step="0.000001"/></label>
-     <label>{t("Cache hit Credits / 1M")}<input name="cache_hit" defaultValue={amount(editing?.input_cache_hit_microcredits_per_1m_tokens)} placeholder={t("Use input price")} type="number" min="0" step="0.000001"/></label>
-     <label>{t("Cache write Credits / 1M")}<input name="cache_write" defaultValue={amount(editing?.billing?.cache_write_microcredits_per_1m_tokens)} placeholder={t("Use input price")} type="number" min="0" step="0.000001"/></label>
-     <label>{t("Output Credits / 1M")}<input name="output" defaultValue={amount(editing?.output_microcredits_per_1m_tokens)} type="number" min="0" step="0.000001"/></label>
-    </div>}
-    {mode==="characters" && <div className="pricing-fields"><label>{t("Credits / 10K characters")}<input name="characters" defaultValue={amount(editing?.billing?.microcredits_per_10k_characters)} type="number" min="0.000001" step="0.000001" required/></label></div>}
-    {mode==="image" && <div>
-     <p>{t("Empty size or quality matches any value. Specific rules take priority.")}</p>
-     {rules.map((rule,index)=><div className="pricing-image-rule" key={index}>
-      <input aria-label={t("Size")} placeholder={t("Size")} value={rule.size} onChange={e=>setRules(rows=>rows.map((r,i)=>i===index?{...r,size:e.target.value}:r))}/>
-      <input aria-label={t("Quality")} placeholder={t("Quality")} value={rule.quality} onChange={e=>setRules(rows=>rows.map((r,i)=>i===index?{...r,quality:e.target.value}:r))}/>
-      <input aria-label={t("Credits per image")} placeholder={t("Credits per image")} value={rule.amount} type="number" min="0.000001" step="0.000001" required onChange={e=>setRules(rows=>rows.map((r,i)=>i===index?{...r,amount:e.target.value}:r))}/>
-      <IconButton label={t("Remove")} type="button" disabled={rules.length===1} onClick={()=>setRules(rows=>rows.filter((_,i)=>i!==index))}><Trash2 size={16} /></IconButton>
-     </div>)}
-     <IconButton label={t("Add price rule")} type="button" onClick={()=>setRules(rows=>[...rows,{size:"",quality:"",amount:""}])}><Plus size={16} /></IconButton>
-    </div>}
-    <div className="pricing-meta"><IconButton label={t("Save")} className="primary" type="submit" disabled={save.isPending}><Save size={16}/></IconButton><IconButton label={t("Cancel")} type="button" onClick={()=>setOpen(false)} disabled={save.isPending}><X size={16} /></IconButton></div>
-   </form>
-  </ModalDialog>}
-  <section className="panel"><QueryFeedback query={prices} /><div className="table-wrap data-table-scroll"><table>
-   <thead><tr><th>{t("Protocol")}</th><th>{t("Model")}</th><th>{t("Billing mode")}</th><th>{t("Price")}</th><th/></tr></thead>
-   <tbody>{(prices.data?.items??[]).map(price=><tr key={price.id}>
-    <td>{price.protocol}</td><td>{price.public_model}</td><td>{t(price.billing?.mode==="free"?"Free":price.billing?.mode==="image"?"Per image":price.billing?.mode==="characters"?"Per character":"Per token")}</td>
-    <td>{price.billing?.mode==="image" ? price.billing.image_prices?.map((r,i)=><div key={i}>{r.size||"*"} / {r.quality||"*"}: {formatCredits(r.charged_microcredits)}</div>) : price.billing?.mode==="characters" ? <>{formatCredits(price.billing.microcredits_per_10k_characters ?? 0)} / {t("10K characters")}</> : price.billing?.mode==="free" ? formatCredits(0) : <>
-     <div>{t("Input / output per 1M")}: {formatCredits(price.input_microcredits_per_1m_tokens)} / {formatCredits(price.output_microcredits_per_1m_tokens)}</div>
-     {price.billing?.token_tiers?.map(tier => <div key={tier.above_input_tokens}>输入 &gt; {tier.above_input_tokens.toLocaleString()} tokens：{formatCredits(tier.input_microcredits_per_1m_tokens)} / {formatCredits(tier.output_microcredits_per_1m_tokens)}（输入 / 输出，每百万 tokens）</div>)}
-     <div>{t("Cache hit / write per 1M")}: {formatCredits(price.input_cache_hit_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)} / {formatCredits(price.billing?.cache_write_microcredits_per_1m_tokens??price.input_microcredits_per_1m_tokens)}</div>
-    </>}</td>
-    <td><IconButton label={t("Edit")} className="icon-button" onClick={()=>{save.reset();select(price);setOpen(true);}}><Pencil size={16}/></IconButton><IconButton label={t("Delete")} className="icon-button danger" disabled={remove.isPending} onClick={()=>confirm({ message:t("Delete {name}?", { name:price.public_model }), label:t("Delete"), action:()=>remove.mutateAsync(price.id) })}><Trash2 size={16}/></IconButton></td>
-   </tr>)}{!prices.data?.items?.length && <tr><td colSpan={5}>{prices.isPending ? t("Loading...") : prices.isError ? t("Unable to load data.") : t("No prices configured.")}</td></tr>}</tbody>
-  </table></div></section>
+ const {t}=useI18n();const confirm=useConfirm();const client=useQueryClient();
+ const prices=useQuery({queryKey:["prices"],queryFn:api.prices});
+ const [query,setQuery]=useState("");const [protocol,setProtocol]=useState("");const [mode,setMode]=useState("");const [dialog,setDialog]=useState<Dialog|null>(null);
+ const remove=useMutation({mutationFn:api.deletePrice,onSuccess:()=>client.invalidateQueries({queryKey:["prices"]})});
+ const all=(prices.data?.items??[]) as unknown as Row[];
+ const rows=all.filter(row=>(!protocol||row.protocol===protocol)&&(!mode||(billingObject(row.billing)?.mode??"tokens")===mode)&&`${row.public_model} ${row.protocol}`.toLowerCase().includes(query.toLowerCase()));
+ const reset=()=>{setProtocol("");setMode("");setQuery("");};
+ usePageActions(<><RefreshButton isRefreshing={prices.isFetching} onClick={()=>prices.refetch()} /><button className="primary" onClick={()=>setDialog({kind:"edit"})}>{t("Add price")}</button></>, [t, prices.isFetching, prices.refetch]);
+ return <section className="page list-page enterprise-page finance-page"><section className="panel">
+  <p className="page-description">{t("Model usage is charged in Credits. Changes apply to new requests.")}</p>
+  <div className="finance-toolbar"><Field label={t("Search models")}><input placeholder={t("Search models")} value={query} onChange={e=>setQuery(e.target.value)}/></Field><ResponsiveFilters count={Number(!!protocol)+Number(!!mode)} onReset={reset}><Field label={t("Protocol")}><select value={protocol} onChange={e=>setProtocol(e.target.value)}><option value="">{t("All protocols")}</option>{[...new Set(all.map(row=>String(row.protocol)))].sort().map(value=><option key={value}>{value}</option>)}</select></Field><Field label={t("Billing mode")}><select value={mode} onChange={e=>setMode(e.target.value)}><option value="">{t("All billing modes")}</option>{["tokens","image","characters","free"].map(value=><option key={value} value={value}>{t(enterpriseValueLabel(value))}</option>)}</select></Field></ResponsiveFilters><span className="results-count">{t("{count} prices",{count:rows.length})}</span></div>
+  <QueryFeedback query={prices}/>{remove.error&&<p className="error-text" role="alert">{remove.error.message}</p>}
+  <div className="table-wrap"><table><thead><tr><th>{t("Model")}</th><th>{t("Billing mode")}</th><th>{t("Current price")}</th><th>{t("Updated")}</th><th>{t("Actions")}</th></tr></thead><tbody>{rows.map(price=><tr key={String(price.id)}><td><button className="table-link" onClick={()=>setDialog({kind:"details",price})}>{String(price.public_model)}</button><small>{String(price.protocol)}</small></td><td>{t(enterpriseValueLabel(billingObject(price.billing)?.mode??"tokens"))}</td><td><PriceRuleSummary price={price} compact/></td><td>{dateTime(String(price.updated_at))}</td><td><div className="table-actions"><button onClick={()=>setDialog({kind:"edit",price})}>{t("Edit price")}</button><button onClick={()=>setDialog({kind:"history",price})}>{t("Version history")}</button><button className="danger" disabled={remove.isPending} onClick={()=>confirm({message:t("Remove the price for {model}? New requests will have no configured price.",{model:String(price.public_model)}),label:t("Delete"),action:()=>remove.mutateAsync(String(price.id))})}>{t("Delete")}</button></div></td></tr>)}{!rows.length&&!prices.isFetching&&<tr><td colSpan={5} className="muted-cell">{t(all.length?"No prices match the current filters.":"No prices configured.")}</td></tr>}</tbody></table></div>
+ </section>
+ {dialog?.kind==="edit"&&<ModelPriceEditor key={String(dialog.price?.id??"new")} price={dialog.price} existing={all} onClose={()=>setDialog(null)}/>}
+ {dialog?.kind==="history"&&dialog.price&&<PriceHistory price={dialog.price} onClose={()=>setDialog(null)}/>}
+ {dialog?.kind==="details"&&dialog.price&&<ManagementDialog title={`${t("Price details")} · ${dialog.price.public_model}`} onClose={()=>setDialog(null)} showCloseAction={false}><p className="finance-note">{String(dialog.price.protocol)} · Credits</p><PriceRuleSummary price={dialog.price}/><div className="dialog-actions"><button onClick={()=>setDialog({kind:"history",price:dialog.price})}>{t("Version history")}</button><button className="primary" onClick={()=>setDialog({kind:"edit",price:dialog.price})}>{t("Edit price")}</button></div></ManagementDialog>}
  </section>;
+}
+function ModelPriceEditor({price,existing,onClose}:{price?:Row;existing:Row[];onClose:()=>void}) {
+ const {t}=useI18n();const client=useQueryClient();const models=useQuery({queryKey:["models"],queryFn:api.models});
+ const [protocol,setProtocol]=useState(String(price?.protocol??"openai"));const [model,setModel]=useState(String(price?.public_model??""));const [draft,setDraft]=useState<PriceDraft>(()=>priceDraft(price));const [error,setError]=useState("");
+ const save=useMutation({mutationFn:(body:Row)=>request(price?`/admin/model-prices/${encodeURIComponent(String(price.id))}`:"/admin/model-prices",price?"PATCH":"POST",body),onSuccess:()=>{void client.invalidateQueries({queryKey:["prices"]});void client.invalidateQueries({queryKey:["price-versions"]});onClose();}});
+ function submit(event:FormEvent){event.preventDefault();if(save.isPending)return;try{if(!price&&existing.some(row=>row.protocol===protocol&&row.public_model===model.trim()))throw new Error(t("This model already has a price. Edit the existing price instead."));save.mutate({protocol,public_model:model.trim(),unit:"CREDITS",...pricePayload(draft)});setError("");}catch(e){setError(t(e instanceof Error?e.message:String(e)));}}
+ return <ManagementDialog title={t(price?"Edit price":"Add price")} onClose={onClose} busy={save.isPending} showCloseAction={false}><form onSubmit={submit}><p className="finance-note">{t("Saving creates a price version and takes effect immediately. Historical charges remain unchanged.")}</p><div className="enterprise-grid"><Field label={t("Protocol")}><select disabled={!!price} value={protocol} onChange={e=>setProtocol(e.target.value)}>{["openai","anthropic","dashscope_tts","minimax_tts"].map(value=><option key={value}>{value}</option>)}</select></Field><Field label={t("Public model")}><input required readOnly={!!price} value={model} onChange={e=>setModel(e.target.value)} list="price-model-options"/></Field><datalist id="price-model-options">{models.data?.items.filter(row=>row.protocol===protocol).map(row=><option key={row.public_model} value={row.public_model}>{row.display_name}</option>)}</datalist><BillingModeSelect value={draft.mode} onChange={mode=>setDraft({...draft,mode,images:mode==="image"&&!draft.images.length?[{size:"",quality:"",amount:""}]:draft.images})}/></div><PriceRuleFields value={draft} onChange={setDraft} unit="Credits"/>{(error||save.error)&&<p className="error-text" role="alert">{error||save.error?.message}</p>}<div className="dialog-actions"><button type="button" disabled={save.isPending} onClick={onClose}>{t("Cancel")}</button><button className="primary" type="submit" disabled={save.isPending||!model.trim()||!!price&&!billingObject(price.billing)}>{t(save.isPending?"Processing...":"Save price")}</button></div></form></ManagementDialog>;
+}
+function PriceHistory({price,onClose}:{price:Row;onClose:()=>void}) {
+ const {t}=useI18n();const history=useQuery({queryKey:["price-versions",price.id],queryFn:()=>request<{items:Row[]}>(`/admin/model-prices/${encodeURIComponent(String(price.id))}/versions`)});
+ return <ManagementDialog title={`${t("Price version history")} · ${price.public_model}`} onClose={onClose}><QueryFeedback query={history}/><div className="table-wrap"><table><thead><tr><th>{t("Time")}</th><th>{t("Price")}</th><th>{t("Actor")}</th><th>{t("Version")}</th></tr></thead><tbody>{history.data?.items.map(version=><tr key={String(version.id)}><td>{dateTime(String(version.created_at))}</td><td><PriceRuleSummary price={version}/></td><td>{String(version.created_by??"—")}</td><td><code className="finance-version" title={String(version.id)}>{String(version.id)}</code></td></tr>)}{!history.isFetching&&!history.data?.items.length&&<tr><td colSpan={4}>{t("No price history yet.")}</td></tr>}</tbody></table></div></ManagementDialog>;
 }

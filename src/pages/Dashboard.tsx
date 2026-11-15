@@ -1,3 +1,4 @@
+import { ChannelHealth, BudgetVacancies } from "../components/ChannelHealth";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
 import { UsageChart } from "../components/UsageChart";
 import { api, isTelemetryError } from "../lib/api";
-import { compactNumber, compactTokenCount, integer, percent, MICRO_PER_CREDIT, percentValue } from "../lib/format";
+import { compactNumber, compactTokenCount, creditAmount, integer, percent, percentValue } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { TrafficBucketName } from "../lib/types";
@@ -58,7 +59,7 @@ export function Dashboard() {
           <>
             <MetricCard label={t("Requests")} value={compactNumber(data?.total_requests ?? 0)} detail={t(dashboardRangeLabel(range))} />
             <MetricCard label={t("Tokens")} value={<span title={integer(data?.total_tokens ?? 0)}>{compactTokenCount(data?.total_tokens ?? 0)}</span>} detail={t("Prompt + completion")} />
-            <MetricCard label={t("Cost (Credits)")} value={integer(Math.round((data?.total_microcredits ?? 0) / MICRO_PER_CREDIT))} detail={t("Recorded consumption")} />
+            <MetricCard label={t("Spend (Credits)")} value={creditAmount(data?.total_microcredits ?? 0)} detail={t("Recorded consumption")} />
             <MetricCard label={t("Active devices")} value={integer(data?.active_devices ?? 0)} detail={t("Last 5 minutes")} />
             <MetricCard
               label={t("Error rate (%)")}
@@ -102,6 +103,8 @@ export function Dashboard() {
         {traffic.data ? <UsageChart items={trafficItems} metric="credits" /> : null}
       </section> : null}
 
+      <ChannelHealth />
+      <BudgetVacancies />
       <section className="panel">
         <div className="panel-heading">
           <h2>{t("Quota watch")}</h2>

@@ -2,7 +2,6 @@ import { StatusPill } from "../components/StatusPill";
 import { ModelStatusControl } from "../components/ModelStatusControl";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { CopyableCodeBlock } from "../components/CopyableCodeBlock";
 import { usePageActions } from "../components/Layout";
@@ -36,7 +35,6 @@ export function ModelDetail() {
   if (model.isError || !model.data) {
     return (
       <section className="page">
-        <Link className="back-link" to={from}><ArrowLeft size={16} />{t("Back to models")}</Link>
         <section className="panel"><div className="error-text">{t("Model details failed to load.")}</div></section>
       </section>
     );
@@ -50,8 +48,6 @@ export function ModelDetail() {
 
   return (
     <section className="page model-detail-page">
-      <Link className="back-link" to={from}><ArrowLeft size={16} />{t("Back to models")}</Link>
-
       <section className="panel model-detail-hero">
         <div className="model-detail-heading">
           <div>
@@ -66,7 +62,7 @@ export function ModelDetail() {
             <span className="pill good">{data.provider}</span>
           </div>
         </div>
-        <div className="model-detail-actions"><ModelStatusControl model={data} /></div>
+        <div className="model-detail-actions"><Link className="model-route-link" to={`/models/${encodeURIComponent(protocol)}/${encodeURIComponent(modelId)}/routing`} state={{ from }}>{t("Routing")}</Link><ModelStatusControl model={data} /></div>
         {data.override_pool && !data.override_valid ? (
           <div className="error-text">{t("The route override references unavailable pool {pool}. Requests will fail until the override is fixed or cleared.", { pool: data.override_pool })}</div>
         ) : null}

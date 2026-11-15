@@ -1,3 +1,4 @@
+import { enterpriseRequest as request } from "../lib/enterprise";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { useConfirm } from "../components/ConfirmProvider";
 import { IconButton } from "../components/IconButton";
@@ -33,6 +34,7 @@ export function APIKeyDetail() {
   const confirm = useConfirm();
   const backTo = typeof state?.from === "string" && /^\/(?:grant-keys|api-keys|employee-keys)(?:\?|$)/.test(state.from) ? state.from : isEmployee ? "/employee-keys" : "/grant-keys";
   const queryClient = useQueryClient();
+ const restoreDefaults=useMutation({mutationFn:()=>request(`/admin/api-keys/${id}/policy-mode`,"PATCH",{policy_mode:"default",dry_run:false,reason:t("Restore the current employee default policy")}),onSuccess:()=>queryClient.invalidateQueries()});
   const [logsOpen, setLogsOpen] = useState(false);
   const [bucket, setBucket] = useState("day");
   const [range, setRange] = useState("14d");
@@ -148,6 +150,7 @@ export function APIKeyDetail() {
       <QueryFeedback query={usage} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       {key.employee_identity ? <section className="panel employee-auth-identity">
+        <span>{t("Policy:")} {key.policy_mode==="default"?t("Follow current employee defaults"):t("Custom")}</span><button disabled={restoreDefaults.isPending||key.policy_mode==="default"} onClick={()=>restoreDefaults.mutate()}>{t("Restore defaults")}</button>{restoreDefaults.error&&<span role="alert">{restoreDefaults.error.message}</span>}
         <span>{t("Unique identifier")}: <code>{key.employee_identity.subject}</code></span>
         <span>{t("Username")}: {key.name !== key.employee_identity.subject ? key.name : "—"}</span>
       </section> : null}

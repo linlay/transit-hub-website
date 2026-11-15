@@ -2,10 +2,11 @@ import { StatusPill } from "../components/StatusPill";
 import { ModelStatusControl } from "../components/ModelStatusControl";
 import { useListScroll } from "../lib/useListScroll";
 import { IconButton } from "../components/IconButton";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ModelCreateDialog } from "../components/ModelCreateDialog";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Search, X } from "lucide-react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { usePageActions } from "../components/Layout";
 import { RefreshButton } from "../components/RefreshButton";
@@ -21,6 +22,7 @@ export function Models() {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const models = useQuery({ queryKey: ["models"], queryFn: api.models, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const [creating, setCreating] = useState(false);
   useListScroll(Boolean(models.data));
   const query = params.get("q") ?? "";
   const protocol = params.get("protocol") ?? "";
@@ -28,7 +30,7 @@ export function Models() {
   const provider = params.get("provider") ?? "";
   const allModels = models.data?.items ?? [];
 
-  usePageActions(<RefreshButton isRefreshing={models.isFetching} onClick={() => models.refetch()} />, [models.isFetching, models.refetch]);
+  usePageActions(<><RefreshButton isRefreshing={models.isFetching} onClick={() => models.refetch()} /><button className="primary" onClick={() => setCreating(true)}>{t("Add model")}</button></>, [t, models.isFetching, models.refetch]);
 
   const providers = useMemo(
     () => Array.from(new Set(allModels.map((model) => model.provider))).sort((a, b) => a.localeCompare(b)),
@@ -67,6 +69,7 @@ export function Models() {
 
   return (
     <section className="page list-page">
+      {creating && <ModelCreateDialog onClose={() => setCreating(false)} />}
       <section className="panel models-catalog-panel">
         <div className="toolbar models-toolbar">
           <div className="models-filters">
@@ -138,7 +141,7 @@ export function Models() {
                     key={`${model.protocol}:${model.public_model}`}
                     onClick={() => openModel(model)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
+                      if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
                         event.preventDefault();
                         openModel(model);
                       }
@@ -161,7 +164,10 @@ export function Models() {
                     </td>
                     <td className="mono model-endpoint-cell"><span className="model-endpoint-path" title={model.gateway_path || t("Unsupported")}>{model.gateway_path || t("Unsupported")}</span></td>
                     <td><StatusPill active={model.enabled !== false} label={model.enabled === false ? "Disabled" : "Enabled"} /></td>
-                    <td><ModelStatusControl model={model} compact /></td>
+                    <td><div className="table-actions" onClick={event => event.stopPropagation()}>
+                      <Link className="model-route-link" to={`/models/${encodeURIComponent(model.protocol)}/${encodeURIComponent(model.public_model)}/routing`} state={{ from: `${location.pathname}${location.search}` }} aria-label={t("View routes for {model}", { model: model.display_name })}>{t("Routing")}</Link>
+                      <ModelStatusControl model={model} compact />
+                    </div></td>
                     <td><ArrowRight aria-hidden size={16} /></td>
                   </tr>
                 ))}

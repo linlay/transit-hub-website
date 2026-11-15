@@ -1,3 +1,4 @@
+import { enterpriseRequest as request, type Row } from "../lib/enterprise";
 import { IconButton } from "./IconButton";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +11,7 @@ import { RefreshButton } from "./RefreshButton";
 export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<string, string | number | boolean | undefined>; timezone: string; onClose: () => void }) {
   const { t, locale } = useI18n();
   const [page, setPage] = useState(0);
+ const [selected,setSelected]=useState("");const trace=useQuery({queryKey:["request-trace",selected],queryFn:()=>request<Row>(`/admin/requests/${encodeURIComponent(selected)}`),enabled:Boolean(selected)});
   const dialogRef = useRef<HTMLDialogElement>(null);
   const logs = useQuery({ queryKey: ["traffic-logs", query, page], queryFn: () => api.logs({ ...query, limit: 50, offset: page * 50 }) });
   useEffect(() => {
@@ -22,14 +24,15 @@ export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<
   return <dialog ref={dialogRef} className="api-key-logs-dialog" aria-labelledby="traffic-logs-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
     <div className="dialog-header"><h2 id="traffic-logs-title">{t("Matching requests")}</h2><IconButton label={t("Close dialog")} autoFocus type="button" className="icon-button" onClick={onClose}><X size={16} /></IconButton></div>
     <div className="panel-actions"><span>{t("Total")}: {integer(total)} · {timezone}</span><RefreshButton isRefreshing={logs.isFetching} onClick={() => logs.refetch()} /></div>
-    <div className="table-wrap"><table><thead><tr>{["Time", "Key", "Model", "Provider", "Upstream request ID", "Status", "Latency", "Tokens", "Characters", "Spend (Credits)"].map((label) => <th key={label}>{t(label)}</th>)}</tr></thead>
+    <div className="table-wrap"><table><thead><tr>{["Time", "Key", "Model", "Provider", t("Attempts / fallback"), t("Gateway request ID"), "Upstream request ID", "Status", "Latency", "Tokens", "Characters", "Spend (Credits)"].map((label) => <th key={label}>{t(label)}</th>)}</tr></thead>
       <tbody>
-        {logs.isPending || logs.error || !logs.data?.items.length ? <tr><td colSpan={10}>{t(logs.isPending ? "Loading logs..." : logs.error ? "Unable to load logs" : "No requests yet.")}</td></tr> : null}
+        {logs.isPending || logs.error || !logs.data?.items.length ? <tr><td colSpan={12}>{t(logs.isPending ? "Loading logs..." : logs.error ? "Unable to load logs" : "No requests yet.")}</td></tr> : null}
         {(logs.data?.items ?? []).map((log) => <tr key={log.id}>
           <td>{new Intl.DateTimeFormat(locale, { timeZone: timezone, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(log.created_at))}</td>
-          <td title={log.api_key_id}>{log.api_key_name || log.api_key_id}</td><td>{log.public_model}</td><td>{log.provider}</td><td><code>{log.upstream_request_id || "—"}</code></td><td>{log.status_code}{log.error_type ? <small>{log.error_type}</small> : null}</td><td>{integer(log.latency_ms)} ms</td><td>{integer(log.total_tokens)}</td><td>{log.protocol.endsWith("_tts") ? integer(log.characters ?? 0) : "—"}</td><td>{creditAmount(log.charged_microcredits)}</td>
+          <td title={log.api_key_id}>{log.api_key_name || log.api_key_id}</td><td>{log.public_model}</td><td>{log.provider}</td><td>{log.attempt_count??1}{log.fallback_used?t("· Fallback used"):""}</td><td>{log.gateway_request_id?<button className="inline-link" onClick={()=>setSelected(log.gateway_request_id??"")}>{log.gateway_request_id}</button>:"—"}</td><td><code>{log.upstream_request_id || "—"}</code></td><td>{log.status_code}{log.error_type ? <small>{log.error_type}</small> : null}</td><td>{integer(log.latency_ms)} ms</td><td>{integer(log.total_tokens)}</td><td>{log.protocol.endsWith("_tts") ? integer(log.characters ?? 0) : "—"}</td><td>{creditAmount(log.charged_microcredits)}</td>
         </tr>)}
       </tbody></table></div>
+    {selected && <section className="panel"><h3>{t("Request details")}</h3><button onClick={()=>setSelected("")}>{t("Collapse")}</button>{trace.isPending ? <p>{t("Loading...")}</p>:trace.error?<p role="alert">{trace.error.message}</p>:<pre style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{JSON.stringify(trace.data,null,2)}</pre>}</section>}
     <div className="dialog-actions"><IconButton label={t("Previous page")} type="button" className="icon-text" disabled={page === 0 || logs.isFetching} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></IconButton><span>{page + 1} / {Math.max(1, Math.ceil(total / 50))}</span><IconButton label={t("Next page")} type="button" className="icon-text" disabled={!logs.data || (page + 1) * 50 >= total || logs.isFetching} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></IconButton></div>
   </dialog>;
 }
