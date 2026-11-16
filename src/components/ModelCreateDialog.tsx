@@ -1,3 +1,4 @@
+import { Select } from "./ThemedControls";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parse, stringify } from "yaml";
@@ -61,13 +62,13 @@ export function ModelCreateDialog({ onClose }: { onClose: () => void }) {
     {docs.data && !docs.data.items.length && <p role="status">{t("Create a channel before adding a model.")}</p>}
     <fieldset className="management-fields" disabled={save.isPending || docs.data?.read_only}>
       <div className="enterprise-grid">
-        <Field label={t("Select channel")}><select value={channel} onChange={e => chooseChannel(e.target.value)}><option value="">{t("Select channel")}</option>{docs.data?.items.map(item => <option key={item.name}>{item.name}</option>)}</select></Field>
-        <Field label={t("Protocol")}><select value={protocol} onChange={e => { setProtocol(e.target.value); setType(e.target.value.endsWith("_tts") ? "tts" : "chat"); }}>{["openai", "anthropic", "dashscope_tts", "minimax_tts"].map(value => <option key={value}>{value}</option>)}</select></Field>
+        <Field label={t("Select channel")}><Select value={channel} onChange={e => chooseChannel(e.target.value)}><option value="">{t("Select channel")}</option>{docs.data?.items.map(item => <option key={item.name}>{item.name}</option>)}</Select></Field>
+        <Field label={t("Protocol")}><Select value={protocol} onChange={e => { setProtocol(e.target.value); setType(e.target.value.endsWith("_tts") ? "tts" : "chat"); }}>{["openai", "anthropic", "dashscope_tts", "minimax_tts"].map(value => <option key={value}>{value}</option>)}</Select></Field>
         <Field label={t("Public model")}><input value={publicModel} onChange={e => setPublicModel(e.target.value)} /></Field>
         <Field label={t("Display name")}><input value={displayName} onChange={e => setDisplayName(e.target.value)} /></Field>
         <Field label={t("Upstream model")}><input value={upstream} onChange={e => setUpstream(e.target.value)} /></Field>
-        <Field label={t("Model type")}><select value={type} onChange={e => setType(e.target.value)}>{(protocol.endsWith("_tts") ? ["tts"] : protocol === "anthropic" ? ["chat"] : ["chat", "embedding", "image-generation"]).map(value => <option key={value} value={value}>{t(enterpriseValueLabel(value))}</option>)}</select></Field>
-        <Field label={t("Account pools")}><select value={pool} onChange={e => setPool(e.target.value)}><option value="">{t("Default account pool")}</option>{config?.pools?.map(item => <option key={item.name}>{item.name}</option>)}</select></Field>
+        <Field label={t("Model type")}><Select value={type} onChange={e => setType(e.target.value)}>{(protocol.endsWith("_tts") ? ["tts"] : protocol === "anthropic" ? ["chat"] : ["chat", "embedding", "image-generation"]).map(value => <option key={value} value={value}>{t(enterpriseValueLabel(value))}</option>)}</Select></Field>
+        <Field label={t("Account pools")}><Select value={pool} onChange={e => setPool(e.target.value)}><option value="">{t("Default account pool")}</option>{config?.pools?.map(item => <option key={item.name}>{item.name}</option>)}</Select></Field>
         <Field label={t("Change reason")}><input value={reason} maxLength={500} onChange={e => setReason(e.target.value)} /></Field>
       </div>
     </fieldset>

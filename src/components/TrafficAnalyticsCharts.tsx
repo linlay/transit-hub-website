@@ -1,3 +1,4 @@
+import { Select } from "./ThemedControls";
 import { useState } from "react";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { compactNumber, compactTokenCount, integer, MICRO_PER_CREDIT, percent } from "../lib/format";
@@ -13,9 +14,9 @@ export function TrafficRankingChart({ title, rows, onSelect }: { title: string; 
   return <section className="panel">
     <div className="panel-heading">
       <div><h2>{t(title)}</h2><span>{t("Click a row to filter")}</span></div>
-      <select aria-label={t(title)} value={metric} onChange={(e) => setMetric(e.target.value as RankingMetric)}>
+      <Select aria-label={t(title)} value={metric} onChange={(e) => setMetric(e.target.value as RankingMetric)}>
         <option value="requests">{t("Requests")}</option><option value="total_tokens">{t("Tokens")}</option><option value="charged_microcredits">{t("Spend (Credits)")}</option>
-      </select>
+      </Select>
     </div>
     <div className="traffic-ranking">
       {sorted.map((row) => <button type="button" className="traffic-ranking-row" key={row.id} onClick={() => onSelect(row.id)}>

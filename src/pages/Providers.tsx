@@ -238,7 +238,7 @@ export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onC
                     <tr>
                       <th>{t("Pool")}</th>
                       <th>{t("Account")}</th>
-                      <th>{t("Status")}</th>
+                      <th className="status-cell">{t("Status")}</th>
                       <th className="numeric">{t("Requests")}</th>
                       <th>{t("Tokens")}</th>
                       <th>{t("Weight")}</th>

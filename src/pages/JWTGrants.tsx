@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { useListFilters, useDebouncedValue } from "../lib/useListFilters";
 import { useListScroll } from "../lib/useListScroll";
 import { QueryFeedback } from "../components/QueryFeedback";
@@ -189,14 +190,14 @@ export function JWTGrants() {
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search grants")} />
+            <input type="search" value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search grants")} />
           </label>
           <ResponsiveFilters count={Number(status !== "all")} summary={status !== "all" ? t(status === "active" ? "Active" : "Disabled") : ""} onReset={() => setFilters({ status: null })}>
-          <select aria-label={t("Status")} value={status} onChange={(event) => setFilters({ status: event.target.value })}>
+          <Select aria-label={t("Status")} value={status} onChange={(event) => setFilters({ status: event.target.value })}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
-          </select>
+          </Select>
           </ResponsiveFilters>
         </div>
         <QueryFeedback query={grants} />
@@ -289,10 +290,10 @@ export function JWTGrants() {
       {editing ? (
         <ModalDialog title="Edit JWT grant" busy={updateGrant.isPending} onClose={() => setEditing(null)}>
           <form key={editing.jti} className="dialog-form" onSubmit={submitGrantPatch}>
-            <select name="status" defaultValue={editing.status}>
+            <Select name="status" defaultValue={editing.status}>
               <option value="active">{t("Active")}</option>
               <option value="disabled">{t("Disabled")}</option>
-            </select>
+            </Select>
             <QuotaInput label="Issue quota" name="issue_quota" initialValue={editing.issue_quota} />
             <QuotaInput label="Total Credits" name="credits_quota" step="0.000001" initialValue={creditsInputValue(editing.quota_microcredits ?? 0)} />
             <QuotaInput label="Request quota" name="request_quota" initialValue={editing.request_quota} />

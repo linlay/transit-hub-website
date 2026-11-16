@@ -1,18 +1,22 @@
+import { useControlPopover } from "./ThemedControls";
 import { IconButton } from "./IconButton";
 import { ListX } from "lucide-react";
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useI18n } from "../lib/i18n";
 import type { TrafficOption } from "../lib/types";
 
 export function TrafficFilterSelect({ label, options, values, onChange }: { label: string; options: TrafficOption[]; values: string[]; onChange: (values: string[]) => void }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const { anchor, popup } = useControlPopover(open, () => setOpen(false));
   const [search, setSearch] = useState("");
   const known = new Set(options.map((option) => option.id));
   const all: TrafficOption[] = [...options, ...values.filter((id) => !known.has(id)).map((id) => ({ id, name: id }))];
   const matches = all.filter((option) => `${option.name} ${option.key_prefix ?? ""} ${option.id}`.toLowerCase().includes(search.toLowerCase()));
-  return <details className="traffic-filter-select">
-    <summary>{t(label)} · {values.length ? `${values.length} ${t("selected")}` : t("All")}</summary>
-    <div className="traffic-filter-popover">
+  return <div className="traffic-filter-select">
+    <button ref={node => { anchor.current = node; }} type="button" className="traffic-filter-trigger" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(!open)}>{t(label)} · {values.length ? `${values.length} ${t("selected")}` : t("All")}</button>
+    {open && <div ref={popup} id={id} {...{popover:"auto"}} role="dialog" aria-label={t(label)} className="control-popover traffic-multiselect-popover" onKeyDown={event => { if(event.key === "Escape") {event.preventDefault();event.stopPropagation();setOpen(false);anchor.current?.focus({preventScroll:true});} }}>
       <div className="traffic-filter-search"><input aria-label={`${t("Search")} ${t(label)}`} placeholder={t("Search")} value={search} onChange={(event) => setSearch(event.target.value)} />
       <IconButton label={t("Clear selection")} className="icon-text" type="button" onClick={() => onChange([])}><ListX size={16} /></IconButton></div>
       <div className="traffic-filter-options">
@@ -22,6 +26,6 @@ export function TrafficFilterSelect({ label, options, values, onChange }: { labe
         </label>)}
         {!matches.length ? <span>{t("No matching options")}</span> : null}
       </div>
-    </div>
-  </details>;
+    </div>}
+  </div>;
 }

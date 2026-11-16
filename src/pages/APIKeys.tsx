@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { useListFilters, useDebouncedValue } from "../lib/useListFilters";
 import { useListScroll } from "../lib/useListScroll";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -205,7 +206,7 @@ export function APIKeys() {
         <div className="toolbar filters api-key-filters">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search keys")} />
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search keys")} />
           </label>
           <ResponsiveFilters
             count={Number(status !== "all") + Number(source !== "all") + Number(Boolean(issuerJTI))}
@@ -216,17 +217,17 @@ export function APIKeys() {
             ].filter(Boolean).join(" · ")}
             onReset={() => setFilters({ status: null, source: null, issuer_jti: null })}
           >
-          <select aria-label={t("Status")} value={status} onChange={(event) => setStatus(event.target.value)}>
+          <Select aria-label={t("Status")} value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
-          </select>
-          <select aria-label={t("Source")} value={source} onChange={(event) => setSource(event.target.value)}>
+          </Select>
+          <Select aria-label={t("Source")} value={source} onChange={(event) => setSource(event.target.value)}>
             <option value="all">{t("All sources")}</option>
             <option value="admin">{t("Admin")}</option>
             <option value="jwt">JWT</option>
             <option value="access_token">{t("User-device binding")}</option>
-          </select>
+          </Select>
           <input aria-label={t("Issuer Name")} value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
           </ResponsiveFilters>
           <IconButton label={selecting ? t("Cancel selection") : t("Select keys")} aria-pressed={selecting} className="icon-text" onClick={() => {

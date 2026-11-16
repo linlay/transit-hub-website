@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { ChannelHealth, BudgetVacancies } from "../components/ChannelHealth";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { useState } from "react";
@@ -37,12 +38,12 @@ export function Dashboard() {
 
   usePageActions(
     <>
-      <select aria-label={t("Time range")} value={range} onChange={(event) => setRange(event.target.value as DashboardRange)}>
+      <Select aria-label={t("Time range")} value={range} onChange={(event) => setRange(event.target.value as DashboardRange)}>
         <option value="all">{t("All time")}</option>
         <option value="today">{t("Today")}</option>
         <option value="7d">{t("Last 7 days")}</option>
         <option value="30d">{t("Last 30 days")}</option>
-      </select>
+      </Select>
       <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([overview.refetch(), traffic.refetch()])} />
     </>,
     [range, isRefreshing, overview.refetch, traffic.refetch, t],
@@ -82,11 +83,11 @@ export function Dashboard() {
             <span>{t("Requests by model and tokens by {bucket}", { bucket: t(bucket) })}</span>
           </div>
           <div className="panel-actions">
-            <select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
+            <Select value={bucket} onChange={(event) => setBucket(event.target.value as TrafficBucketName)}>
               <option value="hour">{t("Hourly")}</option>
               <option value="day">{t("Daily")}</option>
               <option value="month">{t("Monthly")}</option>
-            </select>
+            </Select>
           </div>
         </div>
         <QueryFeedback query={traffic} />

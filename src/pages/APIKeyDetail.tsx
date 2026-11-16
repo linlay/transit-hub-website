@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { enterpriseRequest as request } from "../lib/enterprise";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -178,17 +179,17 @@ export function APIKeyDetail() {
             <ResponsiveFilters count={Number(range !== "14d") + Number(bucket !== "day")}
               summary={`${t(range === "all" ? "All time" : range === "7d" ? "7 days" : range === "30d" ? "30 days" : "14 days")} · ${t(bucket === "hour" ? "Hourly" : bucket === "month" ? "Monthly" : "Daily")}`}
               onReset={() => { setRange("14d"); setBucket("day"); }}>
-            <select aria-label={t("Time range")} value={range} onChange={(event) => setRange(event.target.value)}>
+            <Select aria-label={t("Time range")} value={range} onChange={(event) => setRange(event.target.value)}>
               <option value="7d">{t("7 days")}</option>
               <option value="14d">{t("14 days")}</option>
               <option value="30d">{t("30 days")}</option>
               <option value="all">{t("All time")}</option>
-            </select>
-            <select aria-label={t("Granularity")} value={bucket} onChange={(event) => setBucket(event.target.value)}>
+            </Select>
+            <Select aria-label={t("Granularity")} value={bucket} onChange={(event) => setBucket(event.target.value)}>
               <option value="day">{t("Daily")}</option>
               <option value="hour">{t("Hourly")}</option>
               <option value="month">{t("Monthly")}</option>
-            </select>
+            </Select>
             </ResponsiveFilters>
           </div>
         </div>
@@ -247,7 +248,7 @@ export function APIKeyDetail() {
               <tr>
                 <th>{t("Device")}</th>
                 <th>{t("Source")}</th>
-                <th>{t("Status")}</th>
+                <th className="status-cell">{t("Status")}</th>
                 <th>{t("Requests")}</th>
                 <th>{t("Tokens")}</th>
                 <th>{t("Last seen")}</th>
@@ -283,7 +284,7 @@ export function APIKeyDetail() {
                 <tr>
                   <th>{t("Time")}</th>
                   <th>{t("Model")}</th>
-                  <th>{t("Status")}</th>
+                  <th className="status-cell">{t("Status")}</th>
                   <th>{t("Device")}</th>
                   <th>{t("Provider")}</th>
                   <th>{t("Tokens")}</th>
@@ -354,10 +355,10 @@ export function APIKeyDetail() {
               <div className="settings-grid three">
                 <label>
                   {t("Status")}
-                  <select name="status" defaultValue={key.status}>
+                  <Select name="status" defaultValue={key.status}>
                     <option value="active">{t("Active")}</option>
                     <option value="disabled">{t("Disabled")}</option>
-                  </select>
+                  </Select>
                 </label>
                 <QuotaInput key={`credits-${key.id}-${key.quota_microcredits}`} label="Total Credits" name="credits_quota" step="0.000001" initialValue={creditsInputValue(key.quota_microcredits ?? 0)} />
                 <QuotaInput key={`request-${key.id}-${key.request_quota}`} label="Request quota" name="request_quota" initialValue={key.request_quota} />

@@ -126,3 +126,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
+
+// Pointer focus stays subtle; keyboard navigation always retains a visible ring.
+document.addEventListener("keydown", event => { if (event.key === "Tab") document.documentElement.dataset.inputMode = "keyboard"; }, true);
+document.addEventListener("pointerdown", () => { document.documentElement.dataset.inputMode = "pointer"; }, true);

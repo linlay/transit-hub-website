@@ -8,6 +8,7 @@ import { chromium } from 'playwright';
 import { transformWithEsbuild } from 'vite';
 import ts from 'typescript';
 import { parse as parseYAML } from 'yaml';
+import { checkCompactUI } from './compact-ui-check.mjs';
 import { financeFixture } from './finance-fixtures.mjs';
 import { integrationFixture, syntheticToken } from './integration-fixtures.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -268,6 +269,7 @@ await page.getByRole('link',{name:msg('Routing'),exact:true}).click();await page
    await page.locator('.topbar').getByRole('button',{name:nextText,exact:true}).waitFor();
    await page.locator('.sidebar-menu-select select').selectOption(locale);await page.locator('.sidebar-user-trigger').click();
   }
+  if(role==='super_admin')await checkCompactUI(page,address,output,locale,msg);
   await page.setViewportSize({width:390,height:844});await page.goto(address+'/organizations/vo_demo');await page.locator('main section.page').waitFor();assert.equal(await page.locator('body').evaluate(e=>e.scrollWidth>innerWidth+2),false,`${role} mobile overflows`);await page.getByRole('button',{name:msg('Open navigation'),exact:true}).click();await page.getByRole('navigation',{name:msg('Main navigation'),exact:true}).waitFor({state:'visible'});assert.equal(await page.locator('body').evaluate(e=>e.scrollWidth>innerWidth+2),false,`${locale}${role} mobile menu overflows`);assert.ok(await page.evaluate(()=>document.scrollingElement.scrollHeight<=innerHeight+1),'mobile document must not scroll');await page.screenshot({path:path.join(output,`${locale}-${role}-mobile.png`),fullPage:true});
   if(role==='user'){
    for(const target of ['/models',modelRoute,'/providers','/provider-configuration','/request-trace']){await page.goto(address+target);await page.waitForURL('**/organizations');}

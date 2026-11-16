@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { IconButton } from "../components/IconButton";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -203,7 +204,7 @@ export function Playground() {
           <div className="settings-grid four">
             <label>
               {t("Provider")}
-              <select
+              <Select
                 disabled={providers.isLoading || providerList.length === 0}
                 onChange={(event) => {
                   const nextProvider = providerList.find((provider) => provider.name === event.target.value);
@@ -221,11 +222,11 @@ export function Playground() {
                     {provider.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               {t("Model")}
-              <select
+              <Select
                 disabled={!selectedProvider}
                 onChange={(event) => {
                   setPublicModel(event.target.value);
@@ -240,11 +241,11 @@ export function Playground() {
                     {model.public}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               {t("Pool")}
-              <select
+              <Select
                 disabled={!selectedProvider}
                 onChange={(event) => {
                   setPoolName(event.target.value);
@@ -259,11 +260,11 @@ export function Playground() {
                     {pool.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               {t("Account")}
-              <select
+              <Select
                 disabled={!selectedPool}
                 onChange={(event) => {
                   setAccountName(event.target.value);
@@ -277,7 +278,7 @@ export function Playground() {
                     {account.name}{account.enabled === false ? ` · ${t("Disabled")}` : ""}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           </div>
           <div className="settings-grid three">

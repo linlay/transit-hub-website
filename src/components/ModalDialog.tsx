@@ -36,7 +36,7 @@ export function ModalDialog({ title, children, onClose, busy = false }: ModalDia
         <h2 id={titleId}>{t(title)}</h2>
         <IconButton label={t("Close dialog")} disabled={busy} onClick={onClose}><X size={16} /></IconButton>
       </div>
-      {children}
+      <div className="dialog-body">{children}</div>
     </dialog>, document.body,
   );
 }

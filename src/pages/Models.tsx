@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { StatusPill } from "../components/StatusPill";
 import { ModelStatusControl } from "../components/ModelStatusControl";
 import { useListScroll } from "../lib/useListScroll";
@@ -86,24 +87,24 @@ export function Models() {
                 setParams(next, { replace: true });
               }}
             >
-            <select aria-label={t("Filter by protocol")} value={protocol} onChange={(event) => setFilter("protocol", event.target.value)}>
+            <Select aria-label={t("Filter by protocol")} value={protocol} onChange={(event) => setFilter("protocol", event.target.value)}>
               <option value="">{t("All protocols")}</option>
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
               <option value="dashscope_tts">DashScope TTS</option>
               <option value="minimax_tts">MiniMax TTS</option>
-            </select>
-            <select aria-label={t("Filter by model type")} value={type} onChange={(event) => setFilter("type", event.target.value)}>
+            </Select>
+            <Select aria-label={t("Filter by model type")} value={type} onChange={(event) => setFilter("type", event.target.value)}>
               <option value="">{t("All model types")}</option>
               <option value="chat">{t("Chat")}</option>
               <option value="embedding">{t("Embedding")}</option>
               <option value="image-generation">{t("Image generation")}</option>
               <option value="tts">{t("Speech synthesis")}</option>
-            </select>
-            <select aria-label={t("Filter by provider")} value={provider} onChange={(event) => setFilter("provider", event.target.value)}>
+            </Select>
+            <Select aria-label={t("Filter by provider")} value={provider} onChange={(event) => setFilter("provider", event.target.value)}>
               <option value="">{t("All providers")}</option>
               {providers.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
+            </Select>
             </ResponsiveFilters>
             {hasFilters ? (
               <IconButton label={t("Clear filters")} className="icon-text" onClick={clearFilters} type="button"><X size={15} /></IconButton>
@@ -128,8 +129,8 @@ export function Models() {
                   <th>{t("Upstream model")}</th>
                   <th>{t("Effective pool")}</th>
                   <th className="model-endpoint-cell">{t("Endpoint")}</th>
-                  <th>{t("Status")}</th>
-                  <th>{t("Actions")}</th>
+                  <th className="status-cell">{t("Status")}</th>
+                  <th className="actions-cell">{t("Actions")}</th>
                   <th aria-label={t("View details")} />
                 </tr>
               </thead>

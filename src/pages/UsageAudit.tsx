@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -59,11 +60,11 @@ export function UsageAudit() {
   const isRefreshing = summary.isFetching || calibration.isFetching;
   usePageActions(
     <>
-      <select aria-label={t("Time range")} value={range} onChange={(event) => setParams({ range: event.target.value }, { replace: true })}>
+      <Select aria-label={t("Time range")} value={range} onChange={(event) => setParams({ range: event.target.value }, { replace: true })}>
         <option value="24h">{t("Last 24 hours")}</option>
         <option value="7d">{t("Last 7 days")}</option>
         <option value="30d">{t("Last 30 days")}</option>
-      </select>
+      </Select>
       <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([summary.refetch(), calibration.refetch()])} />
     </>,
     [range, isRefreshing, summary.refetch, calibration.refetch, t],

@@ -1,3 +1,4 @@
+import { Select } from "./ThemedControls";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type DependencyList, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   ChevronDown,
@@ -147,10 +148,10 @@ function UserMenu({ username, onLogout }: { username: string; onLogout: () => vo
               <Languages size={16} />
               {t("Language")}
             </span>
-            <select aria-label={t("Language")} value={locale} onChange={(event) => setLocale(event.target.value === "zh-CN" ? "zh-CN" : "en-US")}>
+            <Select aria-label={t("Language")} value={locale} onChange={(event) => setLocale(event.target.value === "zh-CN" ? "zh-CN" : "en-US")}>
               <option value="zh-CN">中文</option>
               <option value="en-US">English</option>
-            </select>
+            </Select>
           </label>
           <div className="sidebar-menu-select sidebar-menu-theme">
             <span>

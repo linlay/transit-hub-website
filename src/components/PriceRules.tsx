@@ -1,9 +1,10 @@
+import { Select } from "./ThemedControls";
 import { ManagementField as Field } from "./ManagementDialog";
 import { useI18n } from "../lib/i18n";
 import { billingObject, priceDraft, type PriceDraft } from "../lib/finance";
 import { type Row } from "../lib/enterprise";
 export function BillingModeSelect({value,onChange}:{value:string;onChange:(value:PriceDraft["mode"])=>void}) {
- const {t}=useI18n();return <Field label={t("Billing mode")}><select value={value} onChange={e=>onChange(e.target.value as PriceDraft["mode"])}>{[["tokens","Per token"],["image","Per image"],["characters","Per character"],["free","Free"]].map(([value,label])=><option key={value} value={value}>{t(label)}</option>)}</select></Field>;
+ const {t}=useI18n();return <Field label={t("Billing mode")}><Select value={value} onChange={e=>onChange(e.target.value as PriceDraft["mode"])}>{[["tokens","Per token"],["image","Per image"],["characters","Per character"],["free","Free"]].map(([value,label])=><option key={value} value={value}>{t(label)}</option>)}</Select></Field>;
 }
 export function PriceRuleFields({value,onChange,unit}:{value:PriceDraft;onChange:(value:PriceDraft)=>void;unit:string}) {
  const {t}=useI18n();

@@ -36,7 +36,7 @@ export function Sessions() {
         <div className="toolbar session-filters">
           <label className="search">
             <Search size={16} />
-            <input value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search device, source, key")} />
+            <input type="search" value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search device, source, key")} />
           </label>
           <ResponsiveFilters count={Number(includeStale)} summary={includeStale ? t("Include stale") : ""} onReset={() => setFilters({ include_stale: null })}>
           <label className="check-row">
@@ -53,7 +53,7 @@ export function Sessions() {
                 <th>{t("API key")}</th>
                 <th>{t("Device")}</th>
                 <th>{t("Source")}</th>
-                <th>{t("Status")}</th>
+                <th className="status-cell">{t("Status")}</th>
                 <th className="numeric">{t("Requests")}</th>
                 <th className="numeric">{t("Tokens")}</th>
                 <th>{t("Last seen")}</th>

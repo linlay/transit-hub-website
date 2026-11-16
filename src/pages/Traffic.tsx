@@ -1,3 +1,4 @@
+import { Select, DateInput } from "../components/ThemedControls";
 import { IconButton } from "../components/IconButton";
 import { RotateCcw, List, X, SlidersHorizontal, Info } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -80,17 +81,17 @@ export function Traffic() {
         onReset={() => { setParams({}); setAdvancedOpen(false); }}
       >
       <div className="traffic-filter-grid">
-        <select aria-label={t("Time range")} title={t("Time range")} value={range} onChange={(e) => change({ range: e.target.value })}>
+        <Select aria-label={t("Time range")} title={t("Time range")} value={range} onChange={(e) => change({ range: e.target.value })}>
           <option value="today">{t("Today")}</option><option value="yesterday">{t("Yesterday")}</option><option value="7d">{t("Last 7 days")}</option><option value="30d">{t("Last 30 days")}</option><option value="custom">{t("Custom dates")}</option>
-        </select>
+        </Select>
         <TrafficFilterSelect label="API keys" options={options.keys} values={keys} onChange={(values) => select("keys", values)} />
         <TrafficFilterSelect label="Models" options={options.models} values={models} onChange={(values) => select("models", values)} />
-        <select className="traffic-granularity" aria-label={t("Granularity")} title={t("Granularity")} value={bucket} onChange={(e) => change({ bucket: e.target.value })}>
+        <Select className="traffic-granularity" aria-label={t("Granularity")} title={t("Granularity")} value={bucket} onChange={(e) => change({ bucket: e.target.value })}>
           <option value="hour">{t("Hourly")}</option><option value="day">{t("Daily")}</option><option value="month">{t("Monthly")}</option>
-        </select>
-        <select aria-label={t("Time zone")} title={t("Time zone")} value={timezone} onChange={(e) => change({ timezone: e.target.value })}>
+        </Select>
+        <Select aria-label={t("Time zone")} title={t("Time zone")} value={timezone} onChange={(e) => change({ timezone: e.target.value })}>
           <option value="Asia/Shanghai">UTC+8 · {t("Beijing time")}</option><option value="UTC">UTC</option>
-        </select>
+        </Select>
         <div className="traffic-filter-actions">
           <IconButton label={t("Advanced filters")} aria-expanded={advancedOpen} aria-controls="traffic-advanced-filters" className={`icon-button${provider || status ? " has-filters" : ""}`} onClick={() => setAdvancedOpen((open) => !open)}>
             <SlidersHorizontal size={16} />
@@ -101,10 +102,10 @@ export function Traffic() {
           </span>
         </div>
       </div>
-      {range === "custom" ? <div className="traffic-custom-dates"><label>{t("Start date")}<input type="date" value={from} onChange={(e) => change({ from: e.target.value })} /></label><label>{t("End date (inclusive)")}<input type="date" value={to} min={from} onChange={(e) => change({ to: e.target.value })} /></label></div> : null}
+      {range === "custom" ? <div className="traffic-custom-dates"><label>{t("Start date")}<DateInput type="date" value={from} onChange={(e) => change({ from: e.target.value })} /></label><label>{t("End date (inclusive)")}<DateInput type="date" value={to} min={from} onChange={(e) => change({ to: e.target.value })} /></label></div> : null}
       <div id="traffic-advanced-filters" className="traffic-advanced" hidden={!advancedOpen}>
-        <label>{t("Provider")}<select aria-label={t("Provider")} value={provider} onChange={(e) => change({ provider: e.target.value })}><option value="">{t("All")}</option>{options.providers.filter((item) => item.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}{provider && !options.providers.some((item) => item.id === provider) ? <option value={provider}>{provider}</option> : null}</select></label>
-        <label>{t("Request result")}<select aria-label={t("Request result")} value={status} onChange={(e) => change({ status: e.target.value })}><option value="">{t("All")}</option><option value="success">{t("Successful")}</option><option value="failed">{t("Failed")}</option></select></label>
+        <label>{t("Provider")}<Select aria-label={t("Provider")} value={provider} onChange={(e) => change({ provider: e.target.value })}><option value="">{t("All")}</option>{options.providers.filter((item) => item.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}{provider && !options.providers.some((item) => item.id === provider) ? <option value={provider}>{provider}</option> : null}</Select></label>
+        <label>{t("Request result")}<Select aria-label={t("Request result")} value={status} onChange={(e) => change({ status: e.target.value })}><option value="">{t("All")}</option><option value="success">{t("Successful")}</option><option value="failed">{t("Failed")}</option></Select></label>
       </div>
       </ResponsiveFilters>
       {keys.length || models.length ? <div className="traffic-selected">

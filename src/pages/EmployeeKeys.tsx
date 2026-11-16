@@ -1,3 +1,4 @@
+import { Select } from "../components/ThemedControls";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -53,9 +54,9 @@ export function EmployeeKeys() {
     <section className="panel credential-panel">
       <div className="toolbar filters">
         <label className="search"><Search size={16} /><input aria-label={t("Search identifiers or usernames")} placeholder={t("Search identifiers or usernames")} value={search} onChange={event => setFilters({ search: event.target.value, offset: null })} /></label>
-        <select aria-label={t("Status")} value={status} onChange={event => setFilters({ status: event.target.value, offset: null })}>
+        <Select aria-label={t("Status")} value={status} onChange={event => setFilters({ status: event.target.value, offset: null })}>
           <option value="all">{t("All statuses")}</option><option value="active">{t("Active")}</option><option value="disabled">{t("Disabled")}</option>
-        </select>
+        </Select>
       </div>
       <QueryFeedback query={keys} />
       <div className="table-wrap credential-table-wrap data-table-scroll">

@@ -15,6 +15,9 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 const zhCN: Record<string, string> = {
+  "Calendar": "日历",
+  "Previous month": "上个月",
+  "Next month": "下个月",
   "Authentication key defaults": "全局默认策略",
   "Defaults apply only when an identity has no record. Existing permissions, limits and usage stay unchanged.": "仅在唯一标识尚无记录时应用默认策略。已有记录的权限、额度、限流和用量保持不变。",
 
