@@ -57,8 +57,8 @@ export function BatchKeyPolicyAction({ initialSource, initialTargets = [] }: Act
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   return <>
-    <IconButton label={t("Batch settings")} className="icon-text" onClick={() => setOpen(true)}>
-      <SlidersHorizontal size={16} /><span>{t("Batch settings")}</span>
+    <IconButton label={t("Batch settings")} onClick={() => setOpen(true)}>
+      <SlidersHorizontal size={16} />
     </IconButton>
     {open ? <BatchKeyPolicyDialog initialSource={initialSource} initialTargets={initialTargets} onClose={() => setOpen(false)} /> : null}
   </>;
