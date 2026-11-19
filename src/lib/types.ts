@@ -42,6 +42,7 @@ export type RateLimitUsage = {
 
 export type APIKey = {
  policy_mode?:"default"|"custom";
+  policy_overrides?: boolean;
   used_microcredits: number;
   remaining_microcredits?: number;
   credits_unlimited?: boolean;
@@ -70,6 +71,28 @@ export type APIKey = {
   deleted_at?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type BatchRateLimit = { window: RateLimitWindow } & Partial<Omit<RateLimit, "window">>;
+
+export type BatchKeyPolicyInput = { ids: string[]; expected_preview?: string } & (
+  { models: { mode: "append" | "replace"; models: string[] } } |
+  { rate_limits: BatchRateLimit[] }
+);
+
+export type BatchKeyPolicyResult = {
+  preview: string;
+  applied: boolean;
+  updated: number;
+  potentially_limited?: string[];
+  window_usage_unavailable?: boolean;
+  items: Array<{
+    id: string;
+    name: string;
+    source: APIKey["source"];
+    models?: { before: string[]; after: string[] };
+    rate_limits?: Array<{ before: RateLimit; after: RateLimit }>;
+  }>;
 };
 
 export type JWTGrant = {

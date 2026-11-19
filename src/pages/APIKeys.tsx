@@ -14,6 +14,7 @@ import { CredentialTime } from "../components/CredentialTime";
 import { RowActions } from "../components/RowActions";
 import { CredentialModels } from "../components/CredentialModels";
 import { ModalDialog } from "../components/ModalDialog";
+import { BatchKeyPolicyAction } from "../components/BatchKeyPolicy";
 import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { ModelWhitelistInput, publicModelsFromProviders } from "../components/ModelWhitelistInput";
 import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaInput";
@@ -54,7 +55,7 @@ export function APIKeys() {
   const [createModelError, setCreateModelError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [selecting, setSelecting] = useState(false);
-  const [selectedIDs, setSelectedIDs] = useState<Set<string>>(() => new Set());
+  const [selectedKeys, setSelectedKeys] = useState<Map<string, APIKey>>(() => new Map());
   const sortKey: SortKey = ["used_requests", "used_tokens", "last_used_at"].includes(params.get("sort") ?? "") ? params.get("sort") as SortKey : null;
   const sortDir: SortDir = params.get("dir") === "desc" ? "desc" : "asc";
   const debouncedSearch = useDebouncedValue(search);
@@ -84,14 +85,14 @@ export function APIKeys() {
   const remove = useMutation({
     mutationFn: (id: string) => api.batchAPIKeys({ action: "delete", ids: [id] }),
     onSuccess: () => {
-      setSelectedIDs(new Set());
+      setSelectedKeys(new Map());
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
   const batch = useMutation({
     mutationFn: api.batchAPIKeys,
     onSuccess: () => {
-      setSelectedIDs(new Set());
+      setSelectedKeys(new Map());
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
@@ -102,8 +103,8 @@ export function APIKeys() {
     items.sort((a, b) => compareAPIKeys(a, b, sortKey, sortDir));
     return items;
   }, [keys.data?.items, sortKey, sortDir]);
-  const selectedCount = selectedIDs.size;
-  const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selectedIDs.has(key.id));
+  const selectedCount = selectedKeys.size;
+  const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selectedKeys.has(key.id));
   const isRefreshing = keys.isFetching || providers.isFetching;
 
   function toggleSort(key: Exclude<SortKey, null>) {
@@ -152,32 +153,32 @@ export function APIKeys() {
     } catch (error) { setCreateModelError(error instanceof Error ? error.message : String(error)); }
   }
 
-  function toggleSelection(id: string) {
-    setSelectedIDs((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
+  function toggleSelection(key: APIKey) {
+    setSelectedKeys((current) => {
+      const next = new Map(current);
+      if (next.has(key.id)) {
+        next.delete(key.id);
       } else {
-        next.add(id);
+        next.set(key.id, key);
       }
       return next;
     });
   }
 
   function toggleAllVisible() {
-    setSelectedIDs((current) => {
-      const next = new Set(current);
+    setSelectedKeys((current) => {
+      const next = new Map(current);
       if (allVisibleSelected) {
         visibleKeys.forEach((key) => next.delete(key.id));
       } else {
-        visibleKeys.forEach((key) => next.add(key.id));
+        visibleKeys.forEach((key) => next.set(key.id, key));
       }
       return next;
     });
   }
 
   function batchSelected(action: "delete" | "inactive") {
-    const ids = Array.from(selectedIDs);
+    const ids = Array.from(selectedKeys.keys());
     if (ids.length === 0) return;
     confirm({ message: t(action === "delete" ? "Delete {count} selected API keys?" : "Inactive {count} selected API keys?", { count: ids.length }), action: () => batch.mutateAsync({ action, ids }) });
   }
@@ -194,10 +195,11 @@ export function APIKeys() {
 
   usePageActions(
     <>
+      <BatchKeyPolicyAction key="batch-policy" initialSource="authorization" initialTargets={[...selectedKeys.values()]} />
       <RefreshButton isRefreshing={isRefreshing} onClick={() => Promise.all([keys.refetch(), providers.refetch()])} />
       <IconButton label={t("Create key")} className="primary" onClick={() => openCreateDialog()} type="button"><Plus size={16} /></IconButton>
     </>,
-    [isRefreshing, keys.refetch, providers.refetch, t],
+    [isRefreshing, keys.refetch, providers.refetch, selectedKeys, t],
   );
 
   return (
@@ -232,7 +234,7 @@ export function APIKeys() {
           </ResponsiveFilters>
           <IconButton label={selecting ? t("Cancel selection") : t("Select keys")} aria-pressed={selecting} className="icon-text" onClick={() => {
               setSelecting((value) => !value);
-              setSelectedIDs(new Set());
+              setSelectedKeys(new Map());
             }} type="button"><ListChecks size={16} /></IconButton>
           <IconButton label={t("Delete by Issuer JTI")} className="icon-text danger" disabled={!issuerJTI.trim() || batch.isPending} onClick={deleteByIssuerJTI} type="button"><Trash2 size={16} /></IconButton>
         </div>
@@ -290,7 +292,7 @@ export function APIKeys() {
                 <tr key={key.id}>
                   {selecting ? (
                     <td className="select-cell">
-                      <input aria-label={t("Select {name}", { name: key.name })} checked={selectedIDs.has(key.id)} onChange={() => toggleSelection(key.id)} type="checkbox" />
+                      <input aria-label={t("Select {name}", { name: key.name })} checked={selectedKeys.has(key.id)} onChange={() => toggleSelection(key)} type="checkbox" />
                     </td>
                   ) : null}
                   <td>

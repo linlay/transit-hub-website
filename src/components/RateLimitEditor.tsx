@@ -3,7 +3,7 @@ import { creditsInputValue, decimalToMicro } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import type { RateLimit, RateLimitWindow } from "../lib/types";
 
-const WINDOWS: Array<{ value: RateLimitWindow; label: string }> = [
+export const RATE_LIMIT_WINDOWS: Array<{ value: RateLimitWindow; label: string }> = [
   { value: "1h", label: "1 hour" },
   { value: "5h", label: "5 hours" },
   { value: "1d", label: "1 day" },
@@ -41,7 +41,7 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
         <span>{t("Requests")}</span>
         <span>{t("Tokens")}</span>
       </div>
-      {WINDOWS.map((window) => {
+      {RATE_LIMIT_WINDOWS.map((window) => {
         const limit = initialByWindow.get(window.value);
         const checked = enabled.has(window.value);
         return (
@@ -61,7 +61,7 @@ export function RateLimitEditor({ name, initialValue = [] }: RateLimitEditorProp
 }
 
 export function rateLimitValue(form: FormData, name: string): RateLimit[] {
-  return WINDOWS.flatMap((window) => {
+  return RATE_LIMIT_WINDOWS.flatMap((window) => {
     if (form.get(`${name}_${window.value}_enabled`) !== "on") {
       return [];
     }

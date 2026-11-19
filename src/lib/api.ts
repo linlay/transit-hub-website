@@ -5,6 +5,8 @@ import type {
   EmployeeAuthSettings,
   AdminUser,
   APIKeyBatchResult,
+  BatchKeyPolicyInput,
+  BatchKeyPolicyResult,
   APIKey,
   APISession,
   JWTGrant,
@@ -121,6 +123,8 @@ export const api = {
   deleteAPIKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`, { method: "DELETE" }),
   batchAPIKeys: (body: { action: "delete" | "inactive"; ids?: string[]; issuer_jti?: string }) =>
     request<APIKeyBatchResult>("/admin/api-keys/batch", { method: "POST", body: encodeCreditsJSON(body) }),
+  batchKeyPolicy: (body: BatchKeyPolicyInput) =>
+    request<BatchKeyPolicyResult>("/admin/api-keys/batch-policy", { method: "POST", body: encodeCreditsJSON(body) }),
   jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>
     request<ListResponse<JWTGrant>>("/admin/jwt-grants", { query }),
   jwtGrant: (jti: string) => request<JWTGrant>(`/admin/jwt-grants/${jti}`),

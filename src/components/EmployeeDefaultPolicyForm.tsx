@@ -38,7 +38,7 @@ export function EmployeeDefaultPolicyForm({ initialPolicy, onSaved, onCancel }: 
   return <ModalDialog title="Authentication key defaults" busy={update.isPending} onClose={onCancel}>
     <form className="settings-form" onSubmit={submit}>
     <div className="settings-group">
-      <p className="muted-cell">{t("Defaults apply only when an identity has no record. Existing permissions, limits and usage stay unchanged.")}</p>
+      <p className="muted-cell">{t("Defaults apply to new employees and fields that follow employee defaults.")}</p>
       <div className="settings-grid three">
         <QuotaInput label="Total Credits" name="credits_quota" step="0.000001" initialValue={creditsInputValue(initialPolicy.quota_microcredits ?? 0)} />
         <QuotaInput label="Request quota" name="request_quota" initialValue={initialPolicy.request_quota} />

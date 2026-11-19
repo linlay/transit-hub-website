@@ -12,6 +12,7 @@ import { CredentialModels } from "../components/CredentialModels";
 import { CredentialTime } from "../components/CredentialTime";
 import { KeyUsageCells, keyHasWindowLimit } from "../components/KeyUsageCells";
 import { EmployeeDefaultPolicyForm } from "../components/EmployeeDefaultPolicyForm";
+import { BatchKeyPolicyAction } from "../components/BatchKeyPolicy";
 import type { EmployeePolicy } from "../lib/types";
 import { api } from "../lib/api";
 import { useI18n } from "../lib/i18n";
@@ -42,6 +43,7 @@ export function EmployeeKeys() {
   const refreshing = settings.isFetching || keys.isFetching;
   usePageActions(<>
     {policySaved ? <span className="saved-text" role="status">{t("Saved")}</span> : null}
+    <BatchKeyPolicyAction key="batch-policy" initialSource="employee" />
     <IconButton label={t("Authentication key defaults")} disabled={!settings.data || editingPolicy !== null} onClick={() => { if (settings.data) { setPolicySaved(false); setEditingPolicy(settings.data); } }}><Settings size={16} /></IconButton>
     {settings.data?.enabled === false
       ? <StatusPill active={false} label="Disabled" />

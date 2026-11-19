@@ -151,7 +151,9 @@ export function APIKeyDetail() {
       <QueryFeedback query={usage} />
       {telemetryUnavailable ? <TelemetryUnavailable /> : null}
       {key.employee_identity ? <section className="panel employee-auth-identity">
-        <span>{t("Policy:")} {key.policy_mode==="default"?t("Follow current employee defaults"):t("Custom")}</span><button disabled={restoreDefaults.isPending||key.policy_mode==="default"} onClick={()=>restoreDefaults.mutate()}>{t("Restore defaults")}</button>{restoreDefaults.error&&<span role="alert">{restoreDefaults.error.message}</span>}
+        <span>{t("Policy:")} {t(key.policy_mode === "default" ? key.policy_overrides ? "Employee defaults with overrides" : "Follow current employee defaults" : "Custom")}</span>
+        <button disabled={restoreDefaults.isPending || (key.policy_mode === "default" && !key.policy_overrides)} onClick={() => restoreDefaults.mutate()}>{t("Restore defaults")}</button>
+        {restoreDefaults.error && <span role="alert">{restoreDefaults.error.message}</span>}
         <span>{t("Unique identifier")}: <code>{key.employee_identity.subject}</code></span>
         <span>{t("Username")}: {key.name !== key.employee_identity.subject ? key.name : "—"}</span>
       </section> : null}
