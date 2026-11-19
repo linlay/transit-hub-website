@@ -73,6 +73,11 @@ export type APIKey = {
   updated_at: string;
 };
 
+export type BatchKeyTarget = Pick<APIKey, "id" | "name" | "source" | "issuer_name"> & {
+  key_prefix?: string;
+  employee_subject?: string;
+};
+
 export type BatchRateLimit = { window: RateLimitWindow } & Partial<Omit<RateLimit, "window">>;
 
 export type BatchKeyPolicyInput = { ids: string[]; expected_preview?: string } & (

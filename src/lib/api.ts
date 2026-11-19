@@ -7,6 +7,7 @@ import type {
   APIKeyBatchResult,
   BatchKeyPolicyInput,
   BatchKeyPolicyResult,
+  BatchKeyTarget,
   APIKey,
   APISession,
   JWTGrant,
@@ -123,6 +124,8 @@ export const api = {
   deleteAPIKey: (id: string) => request<APIKey>(`/admin/api-keys/${id}`, { method: "DELETE" }),
   batchAPIKeys: (body: { action: "delete" | "inactive"; ids?: string[]; issuer_jti?: string }) =>
     request<APIKeyBatchResult>("/admin/api-keys/batch", { method: "POST", body: encodeCreditsJSON(body) }),
+  batchKeyTargets: (query: { type: "employee" | "authorization"; status: string; search: string }) =>
+    request<{ items: BatchKeyTarget[] }>("/admin/api-keys/batch-targets", { query }),
   batchKeyPolicy: (body: BatchKeyPolicyInput) =>
     request<BatchKeyPolicyResult>("/admin/api-keys/batch-policy", { method: "POST", body: encodeCreditsJSON(body) }),
   jwtGrants: (query?: Record<string, string | number | boolean | undefined>) =>

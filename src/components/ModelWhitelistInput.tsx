@@ -7,6 +7,7 @@ import type { ProviderSnapshot } from "../lib/types";
 type ModelWhitelistInputProps = {
   models: string[];
   selected?: string[];
+  onSelectionCountChange?: (count: number) => void;
 };
 
 export function publicModelsFromProviders(snapshot?: ProviderSnapshot) {
@@ -22,7 +23,7 @@ export function publicModelsFromProviders(snapshot?: ProviderSnapshot) {
   return Array.from(seen).sort();
 }
 
-export function ModelWhitelistInput({ models, selected = [] }: ModelWhitelistInputProps) {
+export function ModelWhitelistInput({ models, selected = [], onSelectionCountChange }: ModelWhitelistInputProps) {
   const { t } = useI18n();
   const [selectedModels, setSelectedModels] = useState(() => new Set(selected));
   const allSelected = models.length > 0 && models.every((model) => selectedModels.has(model));
@@ -32,6 +33,10 @@ export function ModelWhitelistInput({ models, selected = [] }: ModelWhitelistInp
   useEffect(() => {
     setSelectedModels(new Set(selected));
   }, [modelKey, selectedKey]);
+
+  useEffect(() => {
+    onSelectionCountChange?.(selectedModels.size);
+  }, [onSelectionCountChange, selectedModels]);
 
   function toggleModel(model: string, checked: boolean) {
     setSelectedModels((current) => {

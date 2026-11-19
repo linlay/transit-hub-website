@@ -5,7 +5,7 @@ import { api, APIError } from "../lib/api";
 import { creditAmount, decimalToMicro, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { useDebouncedValue } from "../lib/useListFilters";
-import type { APIKey, BatchKeyPolicyInput, BatchKeyPolicyResult, BatchRateLimit } from "../lib/types";
+import type { BatchKeyPolicyInput, BatchKeyPolicyResult, BatchKeyTarget, BatchRateLimit } from "../lib/types";
 import { IconButton } from "./IconButton";
 import { ModalDialog } from "./ModalDialog";
 import { ModelWhitelistInput, publicModelsFromProviders } from "./ModelWhitelistInput";
@@ -13,8 +13,6 @@ import { QueryFeedback } from "./QueryFeedback";
 import { RATE_LIMIT_WINDOWS } from "./RateLimitEditor";
 import { Select } from "./ThemedControls";
 
-const PAGE_SIZE = 25;
-const MAX_TARGETS = 200;
 const METRICS = [
   { key: "quota_microcredits", label: "Credits" },
   { key: "request_quota", label: "Requests" },
@@ -22,12 +20,37 @@ const METRICS = [
 ] as const;
 
 type TargetType = "employee" | "authorization";
-type Target = Pick<APIKey, "id" | "name" | "source" | "employee_identity" | "key_prefix">;
-type ActionProps = { initialSource: TargetType; initialTargets?: Target[] };
+type ActionProps = { initialSource: TargetType; initialTargets?: BatchKeyTarget[] };
 
-function targetLabel(key: Target) {
-  const subject = key.employee_identity?.subject;
-  return subject && subject !== key.name ? subject + " · " + key.name : key.name;
+const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const shortIdentifier = (value: string) => value.length > 20 ? value.slice(0, 10) + "…" + value.slice(-5) : value;
+
+function targetLabel(key: BatchKeyTarget, t: ReturnType<typeof useI18n>["t"]) {
+  const name = key.name.trim();
+  const issuer = key.issuer_name?.trim();
+  const named = name && name !== key.id && name !== key.key_prefix && name !== key.employee_subject && !uuid.test(name);
+  const fallback = { employee: "Employee key", access_token: "User-device binding", jwt: "JWT-issued key", admin: "API key" };
+  const label = named ? name : issuer && !uuid.test(issuer) ? issuer : t(fallback[key.source]);
+  const identifier = key.employee_subject || key.key_prefix || (!named && name) || key.id;
+  const detail = [issuer && !uuid.test(issuer) && issuer !== label ? issuer : "", shortIdentifier(identifier)].filter(Boolean).join(" · ");
+  return { label, detail, identifier };
+}
+
+function TargetCheckbox({ target, checked, disabled, onChange }: {
+  target: BatchKeyTarget;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const { label, detail, identifier } = targetLabel(target, t);
+  return <label className="batch-policy-target">
+    <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
+    <span className="batch-policy-target-text">
+      <strong>{label}</strong>
+      <small title={identifier}>{detail}</small>
+    </span>
+  </label>;
 }
 
 export function BatchKeyPolicyAction({ initialSource, initialTargets = [] }: ActionProps) {
@@ -47,30 +70,29 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
   const [targets, setTargets] = useState(() => new Map(initialTargets.map((key) => [key.id, key])));
   const [source, setSource] = useState(initialSource);
   const [search, setSearch] = useState("");
-  const [offset, setOffset] = useState(0);
-  const [showTargets, setShowTargets] = useState(initialTargets.length === 0);
+  const [status, setStatus] = useState("all");
   const [operation, setOperation] = useState<"models" | "rate_limits">("models");
-  const [modelEnabled, setModelEnabled] = useState(false);
+  const [selectedModelCount, setSelectedModelCount] = useState(0);
   const [enabledLimits, setEnabledLimits] = useState<Set<string>>(() => new Set());
   const [preview, setPreview] = useState<{ input: BatchKeyPolicyInput; result: BatchKeyPolicyResult }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
+  const debouncedSearch = useDebouncedValue(search.trim());
   const keys = useQuery({
-    queryKey: ["batch-policy-targets", source, debouncedSearch, offset],
-    queryFn: () => (source === "employee" ? api.employeeKeys : api.apiKeys)({ search: debouncedSearch, offset, limit: PAGE_SIZE }),
-    enabled: showTargets && !preview,
+    queryKey: ["batch-policy-targets", source, status, debouncedSearch],
+    queryFn: () => api.batchKeyTargets({ type: source, status, search: debouncedSearch }),
+    enabled: !preview,
   });
-  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, enabled: operation === "models" && modelEnabled && !preview });
+  const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, enabled: operation === "models" && !preview });
   const employeeCount = [...targets.values()].filter((key) => key.source === "employee").length;
-  const pendingSearch = search !== debouncedSearch || keys.isFetching;
+  const pendingSearch = search.trim() !== debouncedSearch || keys.isFetching || !!keys.error;
 
-  function toggleTargets(list: Target[], select: boolean) {
+  function changeSelection(list: BatchKeyTarget[], mode: "select" | "remove" | "invert") {
     setTargets((current) => {
       const next = new Map(current);
       for (const key of list) {
-        if (!select) next.delete(key.id);
-        else if (next.size < MAX_TARGETS) next.set(key.id, key);
+        if (mode === "remove" || (mode === "invert" && next.has(key.id))) next.delete(key.id);
+        else next.set(key.id, key);
       }
       return next;
     });
@@ -80,7 +102,7 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
   function changeOperation(value: typeof operation) {
     if (value === operation) return;
     setOperation(value);
-    setModelEnabled(false);
+    setSelectedModelCount(0);
     setEnabledLimits(new Set());
     setError("");
   }
@@ -112,8 +134,8 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const ids = [...targets.keys()];
-    if (!ids.length || ids.length > MAX_TARGETS || busy) return;
-    if (operation === "models" && modelEnabled) {
+    if (!ids.length || busy) return;
+    if (operation === "models") {
       const models = form.getAll("allowed_models").map(String);
       if (!models.length) {
         setError(t("Select at least one model."));
@@ -150,47 +172,39 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
   }
 
   const records = keys.data?.items ?? [];
-  const missingCount = records.filter((key) => !targets.has(key.id)).length;
+  const matchingSelectedCount = records.filter((key) => targets.has(key.id)).length;
   return <ModalDialog title="Batch settings" onClose={onClose} busy={busy}>
     <form className="dialog-form batch-key-policy" onSubmit={requestPreview} hidden={!!preview}>
       <fieldset disabled={busy} className="batch-policy-section">
         <legend>{t("Select records")}</legend>
         <div className="batch-policy-toolbar">
-          <span aria-live="polite">{t("Authentication keys")} {employeeCount} · {t("Authorization keys")} {targets.size - employeeCount}</span>
-          <button type="button" aria-expanded={showTargets} onClick={() => setShowTargets(!showTargets)}>{t(showTargets ? "Hide records" : "Select records")}</button>
+          <Select aria-label={t("Key type")} value={source} onChange={(event) => setSource(event.target.value === "employee" ? "employee" : "authorization")}>
+            <option value="employee">{t("Authentication keys")}</option>
+            <option value="authorization">{t("Authorization keys")}</option>
+          </Select>
+          <Select aria-label={t("Status")} value={status} onChange={(event) => setStatus(event.target.value)}>
+            <option value="all">{t("All statuses")}</option>
+            <option value="active">{t("Active")}</option>
+            <option value="disabled">{t("Disabled")}</option>
+          </Select>
+          <input type="search" aria-label={t("Search names or identifiers")} placeholder={t("Search names or identifiers")} value={search} onChange={(event) => setSearch(event.target.value)} />
         </div>
-        {targets.size >= MAX_TARGETS ? <span className="muted-cell">{t("Up to {count} records per batch", { count: MAX_TARGETS })}</span> : null}
-        {showTargets ? <>
-          <div className="batch-policy-toolbar">
-            <Select aria-label={t("Key type")} value={source} onChange={(event) => { setSource(event.target.value === "employee" ? "employee" : "authorization"); setOffset(0); }}>
-              <option value="employee">{t("Authentication keys")}</option>
-              <option value="authorization">{t("Authorization keys")}</option>
-            </Select>
-            <input type="search" aria-label={t("Search keys")} placeholder={t("Search keys")} value={search} onChange={(event) => { setSearch(event.target.value); setOffset(0); }} />
+        <QueryFeedback query={keys} />
+        <div className="batch-policy-toolbar">
+          <button type="button" disabled={pendingSearch || matchingSelectedCount === records.length} onClick={() => changeSelection(records, "select")}>{t("Select all")}</button>
+          <button type="button" disabled={pendingSearch || !records.length} onClick={() => changeSelection(records, "invert")}>{t("Invert selection")}</button>
+          {keys.data ? <span aria-live="polite" className="muted-cell">{t("{count} selected in {total} matches", { count: matchingSelectedCount, total: records.length })}</span> : null}
+        </div>
+        {records.length ? <div className="batch-policy-targets" role="group" aria-label={t("Matching records")}>
+          {records.map((key) => <TargetCheckbox key={key.id} target={key} checked={targets.has(key.id)} disabled={pendingSearch} onChange={(checked) => changeSelection([key], checked ? "select" : "remove")} />)}
+        </div> : null}
+        {!pendingSearch && keys.isSuccess && !records.length ? <span className="muted-cell">{t("No matching options")}</span> : null}
+        {targets.size > 0 ? <details>
+          <summary>{t("Selected {count}", { count: targets.size })} · {t("Authentication keys")} {employeeCount} · {t("Authorization keys")} {targets.size - employeeCount}</summary>
+          <div className="batch-policy-targets">
+            {[...targets.values()].map((key) => <TargetCheckbox key={key.id} target={key} checked onChange={() => changeSelection([key], "remove")} />)}
           </div>
-          <QueryFeedback query={keys} />
-          <div className="batch-policy-targets" aria-label={t("Matching records")}>
-            {records.map((key) => <label key={key.id} className="mini-check">
-              <input type="checkbox" checked={targets.has(key.id)} disabled={pendingSearch || !targets.has(key.id) && targets.size >= MAX_TARGETS} onChange={(event) => toggleTargets([key], event.target.checked)} />
-              <span>{targetLabel(key)}{key.key_prefix ? <small>{key.key_prefix}</small> : null}</span>
-            </label>)}
-          </div>
-          {keys.isSuccess && !records.length ? <span className="muted-cell">{t("No matching options")}</span> : null}
-          <div className="batch-policy-toolbar">
-            <button type="button" disabled={pendingSearch || !records.length || targets.size + missingCount > MAX_TARGETS} onClick={() => toggleTargets(records, missingCount > 0)}>{t(missingCount ? "Select this page" : "Clear this page")}</button>
-            <button type="button" disabled={pendingSearch || offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>{t("Previous page")}</button>
-            <button type="button" disabled={pendingSearch || !keys.data || offset + PAGE_SIZE >= (keys.data.total ?? records.length)} onClick={() => setOffset(offset + PAGE_SIZE)}>{t("Next page")}</button>
-          </div>
-          {targets.size > 0 ? <details>
-            <summary>{t("Selected {count}", { count: targets.size })}</summary>
-            <div className="batch-policy-targets">
-              {[...targets.values()].map((key) => <label key={key.id} className="mini-check">
-                <input type="checkbox" checked onChange={() => toggleTargets([key], false)} />
-                <span>{targetLabel(key)}<small>{key.source === "employee" ? t("Authentication keys") : key.key_prefix || t("Authorization keys")}</small></span>
-              </label>)}
-            </div>
-          </details> : null}
-        </> : null}
+        </details> : null}
       </fieldset>
       <fieldset disabled={busy} className="batch-policy-section">
         <legend>{t("Setting to update")}</legend>
@@ -199,15 +213,12 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
           <label className="mini-check"><input type="radio" name="batch_operation" checked={operation === "rate_limits"} onChange={() => changeOperation("rate_limits")} />{t("Periodic limits")}</label>
         </div>
         {operation === "models" ? <>
-          <label className="mini-check"><input type="checkbox" checked={modelEnabled} onChange={(event) => setModelEnabled(event.target.checked)} />{t("Apply model changes")}</label>
-          {modelEnabled ? <>
-            <Select aria-label={t("Model operation")} name="model_mode">
-              <option value="append">{t("Append to existing models")}</option>
-              <option value="replace">{t("Replace the model list")}</option>
-            </Select>
-            <QueryFeedback query={providers} />
-            <ModelWhitelistInput models={publicModelsFromProviders(providers.data)} />
-          </> : null}
+          <Select aria-label={t("Model operation")} name="model_mode">
+            <option value="append">{t("Append to existing models")}</option>
+            <option value="replace">{t("Replace the model list")}</option>
+          </Select>
+          <QueryFeedback query={providers} />
+          <ModelWhitelistInput models={publicModelsFromProviders(providers.data)} onSelectionCountChange={setSelectedModelCount} />
         </> : <>
           <p className="muted-cell">{t("Enable only the limits to change. Use 0 for unlimited.")}</p>
           {RATE_LIMIT_WINDOWS.map(({ value, label }) => <fieldset key={value} className="batch-policy-window">
@@ -233,7 +244,7 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
       </fieldset>
       {error && !preview ? <p role="alert" className="error">{error}</p> : null}
       <div className="dialog-actions">
-        <button type="submit" className="primary" disabled={busy || !targets.size || targets.size > MAX_TARGETS || (operation === "models" ? !modelEnabled : !enabledLimits.size)}>{t("Preview changes")}</button>
+        <button type="submit" className="primary" disabled={busy || !targets.size || (operation === "models" ? !selectedModelCount : !enabledLimits.size)}>{t("Preview changes")}</button>
       </div>
     </form>
     {preview ? <div className="dialog-form batch-key-policy">
@@ -249,7 +260,7 @@ function BatchKeyPolicyDialog({ initialSource, initialTargets = [], onClose }: A
   </ModalDialog>;
 }
 
-function BatchPolicyReview({ result, targets }: { result: BatchKeyPolicyResult; targets: Map<string, Target> }) {
+function BatchPolicyReview({ result, targets }: { result: BatchKeyPolicyResult; targets: Map<string, BatchKeyTarget> }) {
   const { t } = useI18n();
   const summary = useRef<HTMLHeadingElement>(null);
   useEffect(() => { summary.current?.focus(); }, [result]);
@@ -257,17 +268,21 @@ function BatchPolicyReview({ result, targets }: { result: BatchKeyPolicyResult; 
     <h3 ref={summary} tabIndex={-1}>{t(result.applied ? "Updated {count} records" : "{count} records will change", { count: result.updated })} · {t("{count} already match", { count: result.items.length - result.updated })}</h3>
     {result.potentially_limited?.length ? <p role="status" className="batch-policy-warning">{t("{count} records are already at or above a new limit.", { count: result.potentially_limited.length })}</p> : null}
     {result.window_usage_unavailable ? <p className="batch-policy-warning">{t("Current window usage is unavailable for some records.")}</p> : null}
-    {result.items.map((item) => <section key={item.id} className="batch-policy-diff">
-      <strong>{item.name}</strong> <small>{item.source === "employee" ? targets.get(item.id)?.employee_identity?.subject || t("Authentication keys") : targets.get(item.id)?.key_prefix || t("Authorization keys")}</small>
-      {result.potentially_limited?.includes(item.id) ? <small className="batch-policy-warning">{t("New limit reached")}</small> : null}
-      {item.models ? <p>{item.models.before?.join(", ") || t("No models allowed")} → {item.models.after.join(", ")}</p> : null}
-      {item.rate_limits?.flatMap(({ before, after }) => METRICS.flatMap(({ key, label }) => {
-        if (before[key] === after[key]) return [];
-        const window = RATE_LIMIT_WINDOWS.find(({ value }) => value === after.window);
-        const format = (value: number) => value ? (key === "quota_microcredits" ? creditAmount(value) : integer(value)) : t("Unlimited");
-        return <p key={after.window + key}>{t(window?.label ?? after.window)} · {t(label)} · {format(before[key])} → {format(after[key])}</p>;
-      }))}
-      {!item.models && !item.rate_limits?.length ? <p className="muted-cell">{t("Already matches")}</p> : null}
-    </section>)}
+    {result.items.map((item) => {
+      const target = targets.get(item.id);
+      const { label, detail } = targetLabel({ ...target, id: item.id, name: item.name, source: item.source }, t);
+      return <section key={item.id} className="batch-policy-diff">
+        <strong>{label}</strong> <small>{detail}</small>
+        {result.potentially_limited?.includes(item.id) ? <small className="batch-policy-warning">{t("New limit reached")}</small> : null}
+        {item.models ? <p>{item.models.before?.join(", ") || t("No models allowed")} → {item.models.after.join(", ")}</p> : null}
+        {item.rate_limits?.flatMap(({ before, after }) => METRICS.flatMap(({ key, label }) => {
+          if (before[key] === after[key]) return [];
+          const window = RATE_LIMIT_WINDOWS.find(({ value }) => value === after.window);
+          const format = (value: number) => value ? (key === "quota_microcredits" ? creditAmount(value) : integer(value)) : t("Unlimited");
+          return <p key={after.window + key}>{t(window?.label ?? after.window)} · {t(label)} · {format(before[key])} → {format(after[key])}</p>;
+        }))}
+        {!item.models && !item.rate_limits?.length ? <p className="muted-cell">{t("Already matches")}</p> : null}
+      </section>;
+    })}
   </>;
 }
