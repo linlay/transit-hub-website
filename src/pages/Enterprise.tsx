@@ -1,3 +1,4 @@
+import { SortHeader, useTableSort } from "../components/TableSort";
 import { Select, DateInput } from "../components/ThemedControls";
 import { useI18n } from "../lib/i18n";
 import { enterpriseColumnLabels, enterpriseValueLabel, enterpriseCellValue } from "../lib/enterprise-labels";
@@ -19,10 +20,10 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   const id=useId();
   return <label className="enterprise-field"><span id={id}>{label}</span>{isValidElement(children) ? cloneElement(children as ReactElement<Record<string, unknown>>, { "aria-labelledby": id }) : children}</label>;
 }
-function DataTable({ items, columns }: { items: Row[]; columns: string[] }) {
+function DataTable({ items, columns, renderHeader }: { items: Row[]; columns: string[]; renderHeader?: (column: string) => ReactNode }) {
   const { t } = useI18n();
 
-  return <div className="table-wrap"><table><thead><tr>{columns.map(k => <th key={k}>{t(enterpriseColumnLabels[k] ?? k)}</th>)}</tr></thead><tbody>{items.map((row, i) => <tr key={String(row.id ?? i)}>{columns.map(k => <td key={k}>{k.endsWith("_microcredits") ? credits(row[k]) : enterpriseCellValue(k, row[k], t)}</td>)}</tr>)}{!items.length && <tr><td colSpan={columns.length} className="muted-cell">{t("No records yet")}</td></tr>}</tbody></table></div>;
+  return <div className="table-wrap"><table><thead><tr>{columns.map(k => renderHeader?.(k) ?? <th key={k}>{t(enterpriseColumnLabels[k] ?? k)}</th>)}</tr></thead><tbody>{items.map((row, i) => <tr key={String(row.id ?? i)}>{columns.map(k => <td key={k}>{k.endsWith("_microcredits") ? credits(row[k]) : enterpriseCellValue(k, row[k], t)}</td>)}</tr>)}{!items.length && <tr><td colSpan={columns.length} className="muted-cell">{t("No records yet")}</td></tr>}</tbody></table></div>;
 }
 function useRole() { const me = useQuery({ queryKey: ["me"], queryFn: api.me }); return me.data?.role ?? "super_admin"; }
 function useWrite() {
@@ -176,15 +177,41 @@ function ModelRouting({ protocol, model }: { protocol: string; model: string }) 
     </section>;
 }
 
+const alertPageSize = 100;
+
 export function BudgetAlerts() {
   const { t } = useI18n();
-
-  const me = useQuery({ queryKey: ["me"], queryFn: api.me }); const [org, setOrg] = useState(""); const role = me.data?.role ?? "super_admin";
+  const [sort, toggleSort] = useTableSort<"fired_at">();
+  const [offset, setOffset] = useState(0);
+  const me = useQuery({ queryKey: ["me"], queryFn: api.me });
+  const [org, setOrg] = useState("");
+  const role = me.data?.role ?? "super_admin";
   const organizations = useQuery({ queryKey: ["organizations"], queryFn: () => request<{ items: Organization[] }>("/admin/virtual-orgs") });
   useEffect(() => { if (role === "user" && !org && organizations.data?.items.length) setOrg(organizations.data.items[0].id); }, [role, org, organizations.data]);
-  const alerts = useQuery({ queryKey: ["budget-alerts", org], queryFn: () => request<{ items: Row[] }>(`/admin/budget-alerts?${new URLSearchParams({ org_id: org })}`), enabled: role !== "user" || Boolean(org) });
+  const params = new URLSearchParams({ org_id: org, limit: String(alertPageSize), offset: String(offset) });
+  if (sort) params.set("dir", sort.dir);
+  const alerts = useQuery({
+    queryKey: ["budget-alerts", org, sort, offset],
+    queryFn: () => request<{ items: Row[]; has_more?: boolean }>(`/admin/budget-alerts?${params}`),
+    enabled: role !== "user" || Boolean(org),
+  });
   usePageActions(<RefreshButton disabled={role === "user" && !org} isRefreshing={alerts.isFetching} onClick={() => alerts.refetch()} />, [role, org, alerts.isFetching, alerts.refetch]);
-  return <section className="page list-page enterprise-page"><section className="panel"><Field label={t("Organization")}><Select value={org} onChange={e => setOrg(e.target.value)}>{role !== "user" && <option value="">{t("All visible organizations")}</option>}{organizations.data?.items.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field><QueryFeedback query={organizations} /><QueryFeedback query={alerts} /><DataTable items={alerts.data?.items ?? []} columns={["fired_at", "scope_type", "scope_id", "threshold", "notified_at", "notify_error"]} /></section></section>;
+  return <section className="page list-page enterprise-page"><section className="panel">
+    <Field label={t("Organization")}><Select value={org} onChange={e => { setOrg(e.target.value); setOffset(0); }}>{role !== "user" && <option value="">{t("All visible organizations")}</option>}{organizations.data?.items.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field>
+    <QueryFeedback query={organizations} /><QueryFeedback query={alerts} />
+    <DataTable
+      items={alerts.data?.items ?? []}
+      columns={["fired_at", "scope_type", "scope_id", "threshold", "notified_at", "notify_error"]}
+      renderHeader={column => column === "fired_at" ? <SortHeader key={column} sort={sort} sortKey="fired_at" onSort={key => { toggleSort(key); setOffset(0); }}>{t(enterpriseColumnLabels[column])}</SortHeader> : undefined}
+    />
+    {(offset > 0 || alerts.data?.has_more) && <div className="finance-pagination">
+      <span>{t("Page {page}", { page: offset / alertPageSize + 1 })}</span>
+      <div className="table-actions">
+        <button disabled={!offset || alerts.isFetching} onClick={() => setOffset(Math.max(0, offset - alertPageSize))}>{t("Previous")}</button>
+        <button disabled={!alerts.data?.has_more || alerts.isFetching} onClick={() => setOffset(offset + alertPageSize)}>{t("Next")}</button>
+      </div>
+    </div>}
+  </section></section>;
 }
 
 function MemberCSVImport({ onComplete }: { onComplete: () => void }) {

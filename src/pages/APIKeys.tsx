@@ -4,7 +4,7 @@ import { useListScroll } from "../lib/useListScroll";
 import { useConfirm } from "../components/ConfirmProvider";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
-import { ListChecks, X, ArrowDown, ArrowUp, ArrowUpDown, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ListChecks, X, Ban, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { creditsInputValue } from "../lib/format";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,12 +21,17 @@ import { QuotaInput, quotaValue, creditsQuotaValue } from "../components/QuotaIn
 import { RateLimitEditor, rateLimitValue } from "../components/RateLimitEditor";
 import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
+import { nextTableSort, readTableSort, SortHeader } from "../components/TableSort";
+import { TablePagination } from "../components/TablePagination";
 import { api } from "../lib/api";
 import { copyText } from "../lib/clipboard";
 import { KeyUsageCells, keyHasWindowLimit } from "../components/KeyUsageCells";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { APIKey } from "../lib/types";
+
+const keySorts = ["used_requests", "used_tokens", "used_microcredits", "last_used_at"] as const;
+const pageSize = 50;
 
 export function APIKeys() {
   const { t } = useI18n();
@@ -39,16 +44,11 @@ export function APIKeys() {
   }, []);
   const { params, setFilters } = useListFilters();
   const confirm = useConfirm();
-  type SortKey = "used_requests" | "used_tokens" | "last_used_at" | null;
-  type SortDir = "asc" | "desc";
   const search = params.get("search") ?? "";
-  const setSearch = (value: string) => setFilters({ search: value });
   const status = params.get("status") ?? "all";
-  const setStatus = (value: string) => setFilters({ status: value });
   const source = params.get("source") ?? "all";
-  const setSource = (value: string) => setFilters({ source: value });
   const issuerJTI = params.get("issuer_jti") ?? "";
-  const setIssuerJTI = (value: string) => setFilters({ issuer_jti: value });
+  const offset = Math.max(0, Number.parseInt(params.get("offset") ?? "", 10) || 0);
   const [createOpen, setCreateOpen] = useState(false);
   const [copySource, setCopySource] = useState<APIKey | null>(null);
   const [createdKey, setCreatedKey] = useState("");
@@ -56,14 +56,14 @@ export function APIKeys() {
   const [copyMessage, setCopyMessage] = useState("");
   const [selecting, setSelecting] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Map<string, APIKey>>(() => new Map());
-  const sortKey: SortKey = ["used_requests", "used_tokens", "last_used_at"].includes(params.get("sort") ?? "") ? params.get("sort") as SortKey : null;
-  const sortDir: SortDir = params.get("dir") === "desc" ? "desc" : "asc";
+  const sort = readTableSort(params, keySorts, "asc");
   const debouncedSearch = useDebouncedValue(search);
   const debouncedIssuer = useDebouncedValue(issuerJTI);
+  const query = { search: debouncedSearch, status, source, issuer_jti: debouncedIssuer, offset, limit: pageSize, sort: sort?.key, dir: sort?.dir };
   const keys = useQuery({
-    queryKey: ["api-keys", debouncedSearch, status, source, debouncedIssuer],
+    queryKey: ["api-keys", query],
     placeholderData: keepPreviousData,
-    queryFn: () => api.apiKeys({ search: debouncedSearch, status, source, issuer_jti: debouncedIssuer }),
+    queryFn: () => api.apiKeys(query),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   useListScroll(Boolean(keys.data));
@@ -96,24 +96,14 @@ export function APIKeys() {
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
     },
   });
-  const visibleKeys = useMemo(() => {
-    const items = [...(keys.data?.items ?? [])];
-    if (!sortKey) return items;
-
-    items.sort((a, b) => compareAPIKeys(a, b, sortKey, sortDir));
-    return items;
-  }, [keys.data?.items, sortKey, sortDir]);
+  const visibleKeys = keys.data?.items ?? [];
   const selectedCount = selectedKeys.size;
   const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selectedKeys.has(key.id));
   const isRefreshing = keys.isFetching || providers.isFetching;
 
-  function toggleSort(key: Exclude<SortKey, null>) {
-    setFilters(sortKey !== key ? { sort: key, dir: "asc" } : sortDir === "asc" ? { sort: key, dir: "desc" } : { sort: null, dir: null });
-  }
-
-  function sortIcon(key: Exclude<SortKey, null>) {
-    if (sortKey !== key) return <ArrowUpDown size={14} />;
-    return sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
+  function toggleSort(key: typeof keySorts[number], firstDirection: "asc" | "desc") {
+    const next = nextTableSort(sort, key, firstDirection);
+    setFilters({ sort: next?.key ?? null, dir: next?.dir ?? null, offset: null });
   }
 
   function openCreateDialog(source: APIKey | null = null) {
@@ -208,7 +198,7 @@ export function APIKeys() {
         <div className="toolbar filters api-key-filters">
           <label className="search">
             <Search size={16} />
-            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search keys")} />
+            <input type="search" value={search} onChange={(event) => setFilters({ search: event.target.value, offset: null })} placeholder={t("Search keys")} />
           </label>
           <ResponsiveFilters
             count={Number(status !== "all") + Number(source !== "all") + Number(Boolean(issuerJTI))}
@@ -217,20 +207,20 @@ export function APIKeys() {
               source !== "all" ? t(source === "admin" ? "Admin" : source === "jwt" ? "JWT" : "User-device binding") : "",
               issuerJTI ? `${t("Issuer Name")}: ${issuerJTI}` : "",
             ].filter(Boolean).join(" · ")}
-            onReset={() => setFilters({ status: null, source: null, issuer_jti: null })}
+            onReset={() => setFilters({ status: null, source: null, issuer_jti: null, offset: null })}
           >
-          <Select aria-label={t("Status")} value={status} onChange={(event) => setStatus(event.target.value)}>
+          <Select aria-label={t("Status")} value={status} onChange={(event) => setFilters({ status: event.target.value, offset: null })}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
           </Select>
-          <Select aria-label={t("Source")} value={source} onChange={(event) => setSource(event.target.value)}>
+          <Select aria-label={t("Source")} value={source} onChange={(event) => setFilters({ source: event.target.value, offset: null })}>
             <option value="all">{t("All sources")}</option>
             <option value="admin">{t("Admin")}</option>
             <option value="jwt">JWT</option>
             <option value="access_token">{t("User-device binding")}</option>
           </Select>
-          <input aria-label={t("Issuer Name")} value={issuerJTI} onChange={(event) => setIssuerJTI(event.target.value)} placeholder={t("Issuer Name")} />
+          <input aria-label={t("Issuer Name")} value={issuerJTI} onChange={(event) => setFilters({ issuer_jti: event.target.value, offset: null })} placeholder={t("Issuer Name")} />
           </ResponsiveFilters>
           <IconButton label={selecting ? t("Cancel selection") : t("Select keys")} aria-pressed={selecting} className="icon-text" onClick={() => {
               setSelecting((value) => !value);
@@ -253,7 +243,7 @@ export function APIKeys() {
               <tr>
                 {selecting ? (
                   <th className="select-cell">
-                    <input aria-label={t("Select all")} checked={allVisibleSelected} onChange={toggleAllVisible} type="checkbox" />
+                    <input aria-label={t("Select all")} checked={allVisibleSelected} disabled={keys.isPlaceholderData} onChange={toggleAllVisible} type="checkbox" />
                   </th>
                 ) : null}
                 <th className="credential-name-col">{t("Name")}</th>
@@ -261,29 +251,12 @@ export function APIKeys() {
                 <th className="credential-source-col">{t("Source")} / {t("Issuer Name")}</th>
                 <th className="key-models-col">{t("Models")}</th>
                 <th className="key-period-col">{t("Period")}</th>
-                <th className="key-spend-col numeric">{t("Spent")}<span className="key-column-hint">Credits</span></th>
+                <SortHeader className="key-spend-col numeric" sort={sort} sortKey="used_microcredits" onSort={toggleSort} title={t("Sort by cumulative usage")} hint={<span className="key-column-hint">Credits</span>}>{t("Spent")}</SortHeader>
                 <th className="key-limit-col numeric">{t("Limit")}<span className="key-column-hint">Credits</span></th>
-                <th className="sortable credential-usage-col numeric" aria-sort={sortKey === "used_requests" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-                  <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_requests")}>
-                    {t("Requests")}
-                    {sortIcon("used_requests")}
-                  </button>
-                  <span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>
-                </th>
-                <th className="sortable credential-usage-col numeric" aria-sort={sortKey === "used_tokens" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-                  <button className="sort-header" type="button" title={t("Sort by cumulative usage")} onClick={() => toggleSort("used_tokens")}>
-                    {t("Tokens")}
-                    {sortIcon("used_tokens")}
-                  </button>
-                  <span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>
-                </th>
+                <SortHeader className="credential-usage-col numeric" sort={sort} sortKey="used_requests" onSort={toggleSort} firstDirection="asc" title={t("Sort by cumulative usage")} hint={<span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>}>{t("Requests")}</SortHeader>
+                <SortHeader className="credential-usage-col numeric" sort={sort} sortKey="used_tokens" onSort={toggleSort} firstDirection="asc" title={t("Sort by cumulative usage")} hint={<span className="key-column-hint" title={t("Hover for usage and limit")}>{t("Used")}</span>}>{t("Tokens")}</SortHeader>
                 <th className="key-reset-col">{t("Reset")}</th>
-                <th className="sortable credential-date-col" aria-sort={sortKey === "last_used_at" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-                  <button className="sort-header" type="button" onClick={() => toggleSort("last_used_at")}>
-                    {t("Last used")}
-                    {sortIcon("last_used_at")}
-                  </button>
-                </th>
+                <SortHeader className="credential-date-col" sort={sort} sortKey="last_used_at" onSort={toggleSort} firstDirection="asc">{t("Last used")}</SortHeader>
                 <th className="row-actions-cell" aria-label={t("Actions")} />
               </tr>
             </thead>
@@ -334,6 +307,7 @@ export function APIKeys() {
             </tbody>
           </table>
         </div>
+        {keys.data || offset ? <TablePagination offset={offset} limit={pageSize} count={visibleKeys.length} total={keys.data?.total} pending={keys.isFetching} onPageChange={next => setFilters({ offset: next ? String(next) : null })} /> : null}
       </section>
 
       {createOpen ? (
@@ -364,25 +338,4 @@ export function APIKeys() {
       ) : null}
     </section>
   );
-}
-
-function compareAPIKeys(a: APIKey, b: APIKey, key: "used_requests" | "used_tokens" | "last_used_at", dir: "asc" | "desc") {
-  let cmp = 0;
-  if (key === "last_used_at") {
-    cmp = compareOptionalTime(a.last_used_at, b.last_used_at);
-  } else {
-    cmp = a[key] - b[key];
-  }
-
-  if (cmp === 0) {
-    cmp = a.name.localeCompare(b.name);
-  }
-  return dir === "asc" ? cmp : -cmp;
-}
-
-function compareOptionalTime(a?: string, b?: string) {
-  if (!a && !b) return 0;
-  if (!a) return 1;
-  if (!b) return -1;
-  return new Date(a).getTime() - new Date(b).getTime();
 }

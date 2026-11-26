@@ -1,9 +1,10 @@
+import { SortHeader, nextTableSort, sortRows, useTableSort, type TableSort } from "../components/TableSort";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Loader2 } from "lucide-react";
+import { Activity, ChevronRight, Loader2 } from "lucide-react";
 import { ConnectivityResultToast } from "../components/ConnectivityResultToast";
 import { usePageActions } from "../components/Layout";
 import { MetricCard } from "../components/MetricCard";
@@ -17,6 +18,9 @@ import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import { useProviderConnectivityTest, type ConnectivityTarget } from "../lib/useProviderConnectivityTest";
 import type { ProviderAccountUsage, ProviderQuotaAccount, ProviderUsage } from "../lib/types";
+
+type ProviderSortKey = "requests" | "total_tokens" | "cache_hit_tokens" | "cache_miss_tokens" | "error_requests" | "average_latency_ms" | "charged_microcredits";
+type AccountSortKey = "requests" | "total_tokens";
 
 export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onConfigure: () => void }) {
   const { t } = useI18n();
@@ -41,36 +45,13 @@ export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onC
     return items;
   }, [quota.data?.items]);
 
-  type SortKey = "total_tokens" | "cache_hit_tokens" | "cache_miss_tokens" | null;
-  type SortDir = "asc" | "desc";
-  const [sortKey, setSortKey] = useState<SortKey>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [sort, toggleSort] = useTableSort<ProviderSortKey>();
+  const [accountSorts, setAccountSorts] = useState(() => new Map<string, TableSort<AccountSortKey> | null>());
+  const sortedItems = sortRows(usage.data?.items ?? [], sort, (row, key) => row[key]);
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      if (sortDir === "asc") {
-        setSortDir("desc");
-      } else {
-        setSortKey(null);
-        setSortDir("asc");
-      }
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+  function toggleAccountSort(provider: string, key: AccountSortKey) {
+    setAccountSorts(previous => new Map(previous).set(provider, nextTableSort(previous.get(provider) ?? null, key)));
   }
-
-  const sortedItems = useMemo(() => {
-    if (!sortKey) return usage.data?.items ?? [];
-    const items = [...(usage.data?.items ?? [])];
-    items.sort((a, b) => {
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
-      const cmp = aVal - bVal;
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return items;
-  }, [usage.data?.items, sortKey, sortDir]);
 
   function renderConnectivityAction(target: ConnectivityTarget, title: string, disabled = false) {
     const pending = connectivity.isPending && connectivity.pendingKey === target.resultKey;
@@ -99,43 +80,16 @@ export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onC
             <thead>
               <tr>
                 <th>{t("Provider")}</th>
-                <th className="numeric">{t("Requests")}</th>
+                <SortHeader sort={sort} sortKey="requests" onSort={toggleSort} className="numeric">{t("Requests")}</SortHeader>
                 <th className="numeric">{t("Input")}</th>
                 <th className="numeric">{t("Output")}</th>
-                <th className="sortable numeric">
-                  <button className="sort-header" type="button" onClick={() => toggleSort("total_tokens")}>
-                    {t("Total")}
-                    {sortKey === "total_tokens" ? (
-                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                    ) : (
-                      <ArrowUpDown size={14} />
-                    )}
-                  </button>
-                </th>
-                <th className="sortable numeric">
-                  <button className="sort-header" type="button" onClick={() => toggleSort("cache_hit_tokens")}>
-                    {t("Cache hit")}
-                    {sortKey === "cache_hit_tokens" ? (
-                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                    ) : (
-                      <ArrowUpDown size={14} />
-                    )}
-                  </button>
-                </th>
-                <th className="sortable numeric">
-                  <button className="sort-header" type="button" onClick={() => toggleSort("cache_miss_tokens")}>
-                    {t("Cache miss")}
-                    {sortKey === "cache_miss_tokens" ? (
-                      sortDir === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                    ) : (
-                      <ArrowUpDown size={14} />
-                    )}
-                  </button>
-                </th>
+                <SortHeader sort={sort} sortKey="total_tokens" onSort={toggleSort} firstDirection="asc" className="numeric">{t("Total")}</SortHeader>
+                <SortHeader sort={sort} sortKey="cache_hit_tokens" onSort={toggleSort} firstDirection="asc" className="numeric">{t("Cache hit")}</SortHeader>
+                <SortHeader sort={sort} sortKey="cache_miss_tokens" onSort={toggleSort} firstDirection="asc" className="numeric">{t("Cache miss")}</SortHeader>
                 <th className="numeric">{t("Hit rate")}</th>
-                <th className="numeric">{t("Errors")}</th>
-                <th className="numeric">{t("Avg latency")}</th>
-                <th className="numeric">{t("Cost")}</th>
+                <SortHeader sort={sort} sortKey="error_requests" onSort={toggleSort} className="numeric">{t("Errors")}</SortHeader>
+                <SortHeader sort={sort} sortKey="average_latency_ms" onSort={toggleSort} className="numeric">{t("Avg latency")}</SortHeader>
+                <SortHeader sort={sort} sortKey="charged_microcredits" onSort={toggleSort} className="numeric">{t("Cost")}</SortHeader>
               </tr>
             </thead>
             <tbody>
@@ -165,8 +119,15 @@ export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onC
           </table>
         </div>
       </section> : null}
-      {(providers.data?.providers ?? []).map((provider) => (
-        <section className="panel" key={provider.name}>
+      {(providers.data?.providers ?? []).map((provider) => {
+        const accountSort = accountSorts.get(provider.name) ?? null;
+        const accounts = provider.pools.flatMap(pool => pool.accounts.map(account => ({
+          pool: pool.name,
+          account,
+          usage: usageByAccount.get(`${provider.name}:${pool.name}:${account.name}`) ?? emptyAccountUsage(provider.name, pool.name, account.name),
+        })));
+        const sortedAccounts = sortRows(accounts, telemetryUnavailable ? null : accountSort, (row, key) => row.usage[key]);
+        return <section className="panel" key={provider.name}>
           <div className="panel-heading">
             <div>
               <h2>{provider.name}</h2>
@@ -239,46 +200,46 @@ export function Providers({ onCreate, onConfigure }: { onCreate: () => void; onC
                       <th>{t("Pool")}</th>
                       <th>{t("Account")}</th>
                       <th className="status-cell">{t("Status")}</th>
-                      <th className="numeric">{t("Requests")}</th>
-                      <th>{t("Tokens")}</th>
+                      {telemetryUnavailable ? <>
+                        <th className="numeric">{t("Requests")}</th>
+                        <th>{t("Tokens")}</th>
+                      </> : <>
+                        <SortHeader sort={accountSort} sortKey="requests" onSort={key => toggleAccountSort(provider.name, key)} className="numeric">{t("Requests")}</SortHeader>
+                        <SortHeader sort={accountSort} sortKey="total_tokens" onSort={key => toggleAccountSort(provider.name, key)}>{t("Tokens")}</SortHeader>
+                      </>}
                       <th>{t("Weight")}</th>
                       <th>{t("Circuit")}</th>
                       <th>{t("Test")}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {provider.pools.flatMap((pool) =>
-                      pool.accounts.map((account) => {
-                        const accountUsage = usageByAccount.get(`${provider.name}:${pool.name}:${account.name}`) ?? emptyAccountUsage(provider.name, pool.name, account.name);
-                        return (
-                          <tr key={`${pool.name}:${account.name}`}>
-                            <td>{pool.name}</td>
-                            <td>{account.name}</td>
-                            <td><ProviderAccountStatusControl provider={provider.name} pool={pool.name} account={account.name} enabled={account.enabled !== false} reason={account.disabled_reason} failureCount={account.failure_count} /></td>
-                            <td>{telemetryUnavailable ? t("Unavailable") : integer(accountUsage.requests)}</td>
-                            <td>{telemetryUnavailable ? t("Unavailable") : compactTokenCount(accountUsage.total_tokens)}</td>
-                            <td>{account.weight}</td>
-                            <td>{String(account.circuit.state ?? "closed")}</td>
-                            <td>
-                              <div className="table-actions">
-                                {renderConnectivityAction(
-                                  { provider: provider.name, pool: pool.name, account: account.name, resultKey: `account:${provider.name}:${pool.name}:${account.name}` },
-                                  t("Test account"),
-                                  account.enabled === false,
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      }),
-                    )}
+                    {sortedAccounts.map(({ pool, account, usage: accountUsage }) => (
+                      <tr key={`${pool}:${account.name}`}>
+                        <td>{pool}</td>
+                        <td>{account.name}</td>
+                        <td><ProviderAccountStatusControl provider={provider.name} pool={pool} account={account.name} enabled={account.enabled !== false} reason={account.disabled_reason} failureCount={account.failure_count} /></td>
+                        <td>{telemetryUnavailable ? t("Unavailable") : integer(accountUsage.requests)}</td>
+                        <td>{telemetryUnavailable ? t("Unavailable") : compactTokenCount(accountUsage.total_tokens)}</td>
+                        <td>{account.weight}</td>
+                        <td>{String(account.circuit.state ?? "closed")}</td>
+                        <td>
+                          <div className="table-actions">
+                            {renderConnectivityAction(
+                              { provider: provider.name, pool, account: account.name, resultKey: `account:${provider.name}:${pool}:${account.name}` },
+                              t("Test account"),
+                              account.enabled === false,
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-        </section>
-      ))}
+        </section>;
+      })}
       <ConnectivityResultToast result={connectivity.toast?.result} label={connectivity.toast?.label} onClose={connectivity.dismissToast} />
     </>
   );

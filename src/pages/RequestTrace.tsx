@@ -17,24 +17,50 @@ import { QueryFeedback } from "../components/QueryFeedback";
 import { ResponsiveFilters } from "../components/ResponsiveFilters";
 import { CopyValueButton } from "../components/CopyValueButton";
 import { RecordValue } from "../components/RecordValues";
+import { nextTableSort, readTableSort, SortHeader } from "../components/TableSort";
+
+const requestSorts = ["started_at", "latency_ms", "attempt_count"] as const;
+
 function firstDay(){const day=new Date();day.setDate(day.getDate()-6);return localDay(day);}
 export function RequestTrace(){
  const {t}=useI18n();const [params,setParams]=useSearchParams();const [id,setID]=useState(params.get('request_id')??'');
- const selected=params.get('request_id')??'',from=params.get('from')??firstDay(),through=params.get('through')??localDay(),channel=params.get('channel')??'',status=params.get('status')??'',offset=Math.max(0,Number(params.get('offset'))||0),limit=50;
+ const selected=params.get('request_id')??'',from=params.get('from')??firstDay(),through=params.get('through')??localDay(),channel=params.get('channel')??'',status=params.get('status')??'',offset=Math.max(0,Number.parseInt(params.get('offset')??'',10)||0),limit=50;
  const valid=validDay(from)&&validDay(through)&&from<=through;
+ const sort=readTableSort(params,requestSorts);
  const providers=useQuery({queryKey:['providers'],queryFn:api.providers});
- const query={from:new Date(`${valid?from:localDay()}T00:00:00`).toISOString(),to:new Date(`${nextDay(valid?through:localDay())}T00:00:00`).toISOString(),provider:channel,status,limit,offset,exclusive_end:true};
+ const query={from:new Date(`${valid?from:localDay()}T00:00:00`).toISOString(),to:new Date(`${nextDay(valid?through:localDay())}T00:00:00`).toISOString(),provider:channel,status,limit,offset,exclusive_end:true,sort:sort?.key,dir:sort?.dir};
  const logs=useQuery({queryKey:['trace-requests',query],queryFn:()=>api.logs(query),enabled:valid});
  const rows=valid?(logs.data?.items??[]):[];
  const filter=(key:string,value:string)=>{setParams(old=>{const next=new URLSearchParams(old);if(value)next.set(key,value);else next.delete(key);if(key!=='offset')next.delete('offset');return next;},{replace:true});};
  const open=(requestID:string)=>{setID(requestID);setParams(old=>{const next=new URLSearchParams(old);next.set('request_id',requestID);return next;});};
+ function toggleSort(key: typeof requestSorts[number], firstDirection: "asc" | "desc") {
+  const sortNext = nextTableSort(sort, key, firstDirection);
+  setParams(old => {
+   const next = new URLSearchParams(old);
+   next.delete('offset');
+   if (sortNext) {
+    next.set('sort', sortNext.key);
+    next.set('dir', sortNext.dir);
+   } else {
+    next.delete('sort');
+    next.delete('dir');
+   }
+   return next;
+  }, { replace: true });
+ }
  function submit(event:FormEvent){event.preventDefault();if(id.trim())open(id.trim());}
  usePageActions(<><RefreshButton disabled={!valid} isRefreshing={logs.isFetching} onClick={()=>logs.refetch()} /></>, [valid, logs.isFetching, logs.refetch]);
  return <section className="page list-page enterprise-page finance-page integration-page"><section className="panel"><p className="page-description">{t('Find a request, then inspect its route and upstream attempts.')}</p>
  <form className="trace-lookup" onSubmit={submit}><Field label={t('Request ID')}><input value={id} onChange={e=>setID(e.target.value)} placeholder={t('Gateway or upstream request ID')} required/></Field><button className="primary" type="submit" disabled={!id.trim()}>{t('Trace request')}</button></form>
  <div className="finance-toolbar"><ResponsiveFilters count={Number(!!channel)+Number(!!status)} summary={[channel,status?t(status==='failed'?'Failed':'Succeeded'):''].filter(Boolean).join(' · ')} onReset={()=>setParams({})}><Field label={t('Start date')}><DateInput type="date" value={from} onChange={e=>filter('from',e.target.value)}/></Field><Field label={t('End date')}><DateInput type="date" value={through} onChange={e=>filter('through',e.target.value)}/></Field><Field label={t('Channel')}><Select value={channel} onChange={e=>filter('channel',e.target.value)}><option value="">{t('All channels')}</option>{providers.data?.providers.map(row=><option key={row.name}>{row.name}</option>)}</Select></Field><Field label={t('Result')}><Select value={status} onChange={e=>filter('status',e.target.value)}><option value="">{t('All results')}</option><option value="success">{t('Succeeded')}</option><option value="failed">{t('Failed')}</option></Select></Field></ResponsiveFilters></div>
  {!valid&&<p role="alert" className="error-text">{t('Choose a valid date range.')}</p>}<QueryFeedback query={logs}/>{providers.isError&&<QueryFeedback query={providers}/>}
- <div className="table-wrap"><table><thead><tr><th>{t('Time / request')}</th><th>{t('Member / model')}</th><th>{t('Channel')}</th><th className="status-cell">{t('Result')}</th><th>{t('Latency')}</th><th>{t('Attempts')}</th><th className="actions-cell">{t('Actions')}</th></tr></thead><tbody>{rows.map(row=><tr key={row.id}><td>{dateTime(row.started_at||row.created_at)}<small className="request-reference" title={row.gateway_request_id||row.upstream_request_id}>{row.gateway_request_id||row.upstream_request_id||'—'}</small></td><td><strong>{row.public_model||'—'}</strong><small>{row.api_key_name||'—'}</small></td><td>{row.provider||'—'}</td><td><span className={`pill ${row.status_code>=400||row.error_type?'danger':'good'}`}>{row.status_code||t('Unavailable')}</span></td><td>{row.latency_ms} ms</td><td>{row.attempt_count??'—'}{row.fallback_used&&<small>{t('Retried')}</small>}</td><td><CompactAction disabled={!row.gateway_request_id&&!row.upstream_request_id} onClick={()=>open(row.gateway_request_id||row.upstream_request_id!)} label={t('View trace')} kind="view" /></td></tr>)}{!rows.length&&!logs.isFetching&&<tr><td colSpan={7} className="muted-cell">{t('No requests match these filters.')}</td></tr>}</tbody></table></div><div className="finance-pagination"><span>{t('Page {page}',{page:offset/limit+1})} · {t('{count} records',{count:rows.length})}</span><div className="table-actions"><button disabled={!offset||logs.isFetching} onClick={()=>filter('offset',String(Math.max(0,offset-limit)))}>{t('Previous')}</button><button disabled={logs.isFetching||(logs.data?.total!=null?offset+rows.length>=logs.data.total:rows.length<limit)} onClick={()=>filter('offset',String(offset+limit))}>{t('Next')}</button></div></div>
+ <div className="table-wrap"><table><thead><tr>
+  <SortHeader sort={sort} sortKey="started_at" onSort={toggleSort}>{t('Time / request')}</SortHeader>
+  <th>{t('Member / model')}</th><th>{t('Channel')}</th><th className="status-cell">{t('Result')}</th>
+  <SortHeader sort={sort} sortKey="latency_ms" onSort={toggleSort}>{t('Latency')}</SortHeader>
+  <SortHeader sort={sort} sortKey="attempt_count" onSort={toggleSort}>{t('Attempts')}</SortHeader>
+  <th className="actions-cell">{t('Actions')}</th>
+ </tr></thead><tbody>{rows.map(row=><tr key={row.id}><td>{dateTime(row.started_at||row.created_at)}<small className="request-reference" title={row.gateway_request_id||row.upstream_request_id}>{row.gateway_request_id||row.upstream_request_id||'—'}</small></td><td><strong>{row.public_model||'—'}</strong><small>{row.api_key_name||'—'}</small></td><td>{row.provider||'—'}</td><td><span className={`pill ${row.status_code>=400||row.error_type?'danger':'good'}`}>{row.status_code||t('Unavailable')}</span></td><td>{row.latency_ms} ms</td><td>{row.attempt_count??'—'}{row.fallback_used&&<small>{t('Retried')}</small>}</td><td><CompactAction disabled={!row.gateway_request_id&&!row.upstream_request_id} onClick={()=>open(row.gateway_request_id||row.upstream_request_id!)} label={t('View trace')} kind="view" /></td></tr>)}{!rows.length&&!logs.isFetching&&<tr><td colSpan={7} className="muted-cell">{t('No requests match these filters.')}</td></tr>}</tbody></table></div><div className="finance-pagination"><span>{t('Page {page}',{page:offset/limit+1})} · {t('{count} records',{count:rows.length})}</span><div className="table-actions"><button disabled={!offset||logs.isFetching} onClick={()=>filter('offset',String(Math.max(0,offset-limit)))}>{t('Previous')}</button><button disabled={logs.isFetching||(logs.data?.total!=null?offset+rows.length>=logs.data.total:rows.length<limit)} onClick={()=>filter('offset',String(offset+limit))}>{t('Next')}</button></div></div>
  </section>{selected&&<RequestTraceDialog key={selected} requestID={selected} onClose={()=>setParams(old=>{const next=new URLSearchParams(old);next.delete('request_id');return next;},{replace:true})}/>}</section>;
 }
 export function RequestTraceDialog({requestID,onClose}:{requestID:string;onClose:()=>void}){

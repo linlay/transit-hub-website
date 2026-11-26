@@ -18,6 +18,8 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { TelemetryUnavailable } from "../components/TelemetryUnavailable";
 import { TrafficChart } from "../components/TrafficChart";
+import { SortHeader, sortRows, useTableSort } from "../components/TableSort";
+import { TablePagination } from "../components/TablePagination";
 import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, dateTime, integer, nullablePercent, quotaRatio } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -25,6 +27,9 @@ import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 import type { RateLimitUsage } from "../lib/types";
 
 const creditAmount = (value: number) => exactCreditAmount(value, 2);
+type SessionSort = "request_count" | "token_count" | "last_seen_at";
+type LogSort = "created_at" | "total_tokens" | "charged_microcredits";
+type TrafficSort = "bucket" | "requests" | "total_tokens" | "charged_microcredits";
 
 export function APIKeyDetail() {
   const { t } = useI18n();
@@ -41,6 +46,11 @@ export function APIKeyDetail() {
   const [range, setRange] = useState("14d");
   const [modelError, setModelError] = useState("");
   const [savedMessage, setSavedMessage] = useState(false);
+  const [trafficSort, sortTraffic] = useTableSort<TrafficSort>();
+  const [sessionSort, toggleSessionSort] = useTableSort<SessionSort>();
+  const [logSort, toggleLogSort] = useTableSort<LogSort>();
+  const [sessionOffset, setSessionOffset] = useState(0);
+  const [logOffset, setLogOffset] = useState(0);
   const detail = useQuery({ queryKey: ["api-key", id], queryFn: () => api.apiKey(id), enabled: Boolean(id), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
   const usage = useQuery({ queryKey: ["api-key-usage", id], queryFn: () => api.apiKeyUsage(id), enabled: Boolean(id), refetchInterval: PAGE_REFETCH_INTERVAL_MS });
@@ -50,15 +60,17 @@ export function APIKeyDetail() {
     enabled: Boolean(id),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
+  const sessionQuery = { include_stale: true, limit: 100, offset: sessionOffset, sort: sessionSort?.key, dir: sessionSort?.dir };
   const sessions = useQuery({
-    queryKey: ["api-key-sessions", id],
-    queryFn: () => api.apiKeySessions(id, { include_stale: true }),
+    queryKey: ["api-key-sessions", id, sessionQuery],
+    queryFn: () => api.apiKeySessions(id, sessionQuery),
     enabled: Boolean(id),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
+  const logQuery = { limit: 50, offset: logOffset, sort: logSort?.key, dir: logSort?.dir };
   const logs = useQuery({
-    queryKey: ["api-key-logs", id],
-    queryFn: () => api.apiKeyLogs(id, { limit: 50 }),
+    queryKey: ["api-key-logs", id, logQuery],
+    queryFn: () => api.apiKeyLogs(id, logQuery),
     enabled: Boolean(id) && logsOpen,
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
@@ -101,6 +113,17 @@ export function APIKeyDetail() {
     isTelemetryError(sessions.error);
   const providerModels = useMemo(() => publicModelsFromProviders(providers.data), [providers.data]);
   const isRefreshing = detail.isFetching || providers.isFetching || usage.isFetching || timeline.isFetching || sessions.isFetching || logs.isFetching;
+  const trafficRows = sortRows(timeline.data?.items ?? [], trafficSort, (item, column) => item[column]);
+
+  function sortSessions(column: SessionSort, firstDirection: "asc" | "desc") {
+    toggleSessionSort(column, firstDirection);
+    setSessionOffset(0);
+  }
+
+  function sortLogs(column: LogSort, firstDirection: "asc" | "desc") {
+    toggleLogSort(column, firstDirection);
+    setLogOffset(0);
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -201,19 +224,19 @@ export function APIKeyDetail() {
           <table>
             <thead>
               <tr>
-                <th>{t("Bucket")}</th>
-                <th>{t("Requests")}</th>
+                <SortHeader sort={trafficSort} sortKey="bucket" onSort={sortTraffic}>{t("Bucket")}</SortHeader>
+                <SortHeader sort={trafficSort} sortKey="requests" onSort={sortTraffic}>{t("Requests")}</SortHeader>
                 <th>{t("Input")}</th>
                 <th>{t("Output")}</th>
-                <th>{t("Total")}</th>
+                <SortHeader sort={trafficSort} sortKey="total_tokens" onSort={sortTraffic}>{t("Total")}</SortHeader>
                 <th>{t("Cache hit")}</th>
                 <th>{t("Cache miss")}</th>
                 <th>{t("Hit rate")}</th>
-                <th>{t("Cost")}</th>
+                <SortHeader sort={trafficSort} sortKey="charged_microcredits" onSort={sortTraffic}>{t("Cost")}</SortHeader>
               </tr>
             </thead>
             <tbody>
-              {(timeline.data?.items ?? []).map((item) => (
+              {trafficRows.map((item) => (
                 <tr key={item.bucket}>
                   <td>{item.bucket}</td>
                   <td>{integer(item.requests)}</td>
@@ -251,9 +274,9 @@ export function APIKeyDetail() {
                 <th>{t("Device")}</th>
                 <th>{t("Source")}</th>
                 <th className="status-cell">{t("Status")}</th>
-                <th>{t("Requests")}</th>
-                <th>{t("Tokens")}</th>
-                <th>{t("Last seen")}</th>
+                <SortHeader sort={sessionSort} sortKey="request_count" onSort={sortSessions}>{t("Requests")}</SortHeader>
+                <SortHeader sort={sessionSort} sortKey="token_count" onSort={sortSessions}>{t("Tokens")}</SortHeader>
+                <SortHeader sort={sessionSort} sortKey="last_seen_at" onSort={sortSessions}>{t("Last seen")}</SortHeader>
               </tr>
             </thead>
             <tbody>
@@ -272,27 +295,28 @@ export function APIKeyDetail() {
             </tbody>
           </table>
         </div>
+        <TablePagination offset={sessionOffset} limit={sessionQuery.limit} count={sessions.data?.items.length ?? 0} total={sessions.data?.total} pending={sessions.isFetching} onPageChange={setSessionOffset} />
       </section> : null}
 
       {logsOpen ? (
         <APIKeyLogsDialog onClose={() => setLogsOpen(false)}>
           <div className="panel-actions">
-            <span>{t("Most recent requests")}</span>
+            {!logSort && !logOffset ? <span>{t("Most recent requests")}</span> : null}
             <RefreshButton isRefreshing={logs.isFetching} onClick={() => logs.refetch()} />
           </div>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>{t("Time")}</th>
+                  <SortHeader sort={logSort} sortKey="created_at" onSort={sortLogs}>{t("Time")}</SortHeader>
                   <th>{t("Model")}</th>
                   <th className="status-cell">{t("Status")}</th>
                   <th>{t("Device")}</th>
                   <th>{t("Provider")}</th>
-                  <th>{t("Tokens")}</th>
+                  <SortHeader sort={logSort} sortKey="total_tokens" onSort={sortLogs}>{t("Tokens")}</SortHeader>
                   <th>{t("Characters")}</th>
                   <th>{t("Cache")}</th>
-                  <th>{t("Cost")}</th>
+                  <SortHeader sort={logSort} sortKey="charged_microcredits" onSort={sortLogs}>{t("Cost")}</SortHeader>
                 </tr>
               </thead>
               <tbody>
@@ -317,6 +341,7 @@ export function APIKeyDetail() {
               </tbody>
             </table>
           </div>
+          <TablePagination offset={logOffset} limit={logQuery.limit} count={logs.data?.items.length ?? 0} total={logs.data?.total} pending={logs.isFetching} onPageChange={setLogOffset} />
         </APIKeyLogsDialog>
       ) : null}
 

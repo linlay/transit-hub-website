@@ -2,7 +2,7 @@ import { Select } from "../components/ThemedControls";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Search, Settings } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 import { usePageActions } from "../components/Layout";
 import { QueryFeedback } from "../components/QueryFeedback";
 import { IconButton } from "../components/IconButton";
@@ -10,6 +10,8 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StatusPill } from "../components/StatusPill";
 import { CredentialModels } from "../components/CredentialModels";
 import { CredentialTime } from "../components/CredentialTime";
+import { nextTableSort, readTableSort, SortHeader } from "../components/TableSort";
+import { TablePagination } from "../components/TablePagination";
 import { KeyUsageCells, keyHasWindowLimit } from "../components/KeyUsageCells";
 import { EmployeeDefaultPolicyForm } from "../components/EmployeeDefaultPolicyForm";
 import { BatchKeyPolicyAction } from "../components/BatchKeyPolicy";
@@ -19,6 +21,8 @@ import { useI18n } from "../lib/i18n";
 import { useDebouncedValue, useListFilters } from "../lib/useListFilters";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
+const keySorts = ["used_requests", "used_tokens", "used_microcredits", "last_used_at"] as const;
+
 export function EmployeeKeys() {
   const { t } = useI18n();
   const [editingPolicy, setEditingPolicy] = useState<EmployeePolicy | null>(null);
@@ -26,7 +30,8 @@ export function EmployeeKeys() {
   const { params, setFilters } = useListFilters();
   const search = params.get("search") ?? "";
   const status = params.get("status") ?? "all";
-  const offset = Math.max(0, Number(params.get("offset")) || 0);
+  const offset = Math.max(0, Number.parseInt(params.get("offset") ?? "", 10) || 0);
+  const sort = readTableSort(params, keySorts);
   const debouncedSearch = useDebouncedValue(search);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -34,9 +39,10 @@ export function EmployeeKeys() {
     return () => window.clearInterval(timer);
   }, []);
   const settings = useQuery({ queryKey: ["employee-auth"], queryFn: api.employeeAuth, refetchInterval: PAGE_REFETCH_INTERVAL_MS });
+  const query = { search: debouncedSearch, status, offset, limit: 50, sort: sort?.key, dir: sort?.dir };
   const keys = useQuery({
-    queryKey: ["employee-keys", debouncedSearch, status, offset],
-    queryFn: () => api.employeeKeys({ search: debouncedSearch, status, offset, limit: 50 }),
+    queryKey: ["employee-keys", query],
+    queryFn: () => api.employeeKeys(query),
     placeholderData: keepPreviousData,
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
@@ -49,6 +55,11 @@ export function EmployeeKeys() {
       ? <StatusPill active={false} label="Disabled" />
       : <RefreshButton disabled={!settings.data} isRefreshing={refreshing} onClick={() => Promise.all([settings.refetch(), keys.refetch()])} />}
   </>, [settings.data, editingPolicy, policySaved, refreshing, settings.refetch, keys.refetch, t]);
+
+  function toggleSort(key: typeof keySorts[number], firstDirection: "asc" | "desc") {
+    const next = nextTableSort(sort, key, firstDirection);
+    setFilters({ sort: next?.key ?? null, dir: next?.dir ?? null, offset: null });
+  }
 
   return <section className="page list-page">
     <QueryFeedback query={settings} />
@@ -65,8 +76,13 @@ export function EmployeeKeys() {
         <table className="credential-table key-table employee-keys-table pinned-table">
           <thead><tr>
             <th className="credential-name-col">{t("Unique identifier")}</th><th className="credential-status-col">{t("Status")}</th><th className="key-models-col">{t("Models")}</th>
-            <th>{t("Period")}</th><th className="numeric">{t("Spent")}<span className="key-column-hint">Credits</span></th><th className="numeric">{t("Limit")}<span className="key-column-hint">Credits</span></th>
-            <th className="numeric">{t("Requests")}</th><th className="numeric">{t("Tokens")}</th><th>{t("Reset")}</th><th>{t("Last used")}</th>
+            <th>{t("Period")}</th>
+            <SortHeader className="numeric" sort={sort} sortKey="used_microcredits" onSort={toggleSort} title={t("Sort by cumulative usage")} hint={<span className="key-column-hint">Credits</span>}>{t("Spent")}</SortHeader>
+            <th className="numeric">{t("Limit")}<span className="key-column-hint">Credits</span></th>
+            <SortHeader className="numeric" sort={sort} sortKey="used_requests" onSort={toggleSort} title={t("Sort by cumulative usage")}>{t("Requests")}</SortHeader>
+            <SortHeader className="numeric" sort={sort} sortKey="used_tokens" onSort={toggleSort} title={t("Sort by cumulative usage")}>{t("Tokens")}</SortHeader>
+            <th>{t("Reset")}</th>
+            <SortHeader sort={sort} sortKey="last_used_at" onSort={toggleSort}>{t("Last used")}</SortHeader>
           </tr></thead>
           <tbody>
             {keys.data?.items.map(key => <tr key={key.id}>
@@ -80,11 +96,7 @@ export function EmployeeKeys() {
           </tbody>
         </table>
       </div>
-      {keys.data ? <div className="employee-keys-pagination">
-        <span className="muted-cell">{t("{count} records", { count: keys.data.total ?? keys.data.items.length })}</span>
-        <IconButton label={t("Previous page")} disabled={offset === 0 || keys.isFetching} onClick={() => setFilters({ offset: String(Math.max(0, offset - 50)) })}><ChevronLeft size={16} /></IconButton>
-        <IconButton label={t("Next page")} disabled={offset + 50 >= (keys.data.total ?? keys.data.items.length) || keys.isFetching} onClick={() => setFilters({ offset: String(offset + 50) })}><ChevronRight size={16} /></IconButton>
-      </div> : null}
+      {keys.data || offset ? <TablePagination offset={offset} limit={50} count={keys.data?.items.length ?? 0} total={keys.data?.total} pending={keys.isFetching} onPageChange={next => setFilters({ offset: next ? String(next) : null })} alwaysShow /> : null}
     </section>
   </section>;
 }

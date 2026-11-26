@@ -7,13 +7,18 @@ import { api } from "../lib/api";
 import { creditAmount, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { RefreshButton } from "./RefreshButton";
+import { SortHeader, useTableSort } from "./TableSort";
+
+type LogSort = "created_at" | "attempt_count" | "latency_ms" | "total_tokens" | "charged_microcredits";
 
 export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<string, string | number | boolean | undefined>; timezone: string; onClose: () => void }) {
   const { t, locale } = useI18n();
   const [page, setPage] = useState(0);
+  const [sort, toggleSort] = useTableSort<LogSort>();
  const [selected,setSelected]=useState("");const trace=useQuery({queryKey:["request-trace",selected],queryFn:()=>request<Row>(`/admin/requests/${encodeURIComponent(selected)}`),enabled:Boolean(selected)});
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const logs = useQuery({ queryKey: ["traffic-logs", query, page], queryFn: () => api.logs({ ...query, limit: 50, offset: page * 50 }) });
+  const requestQuery = { ...query, limit: 50, offset: page * 50, sort: sort?.key, dir: sort?.dir };
+  const logs = useQuery({ queryKey: ["traffic-logs", requestQuery], queryFn: () => api.logs(requestQuery) });
   useEffect(() => {
     const dialog = dialogRef.current;
     const overflow = document.body.style.overflow;
@@ -21,10 +26,23 @@ export function TrafficLogsDialog({ query, timezone, onClose }: { query: Record<
     return () => { dialog?.close(); document.body.style.overflow = overflow; };
   }, []);
   const total = logs.data?.total ?? 0;
+  function sortLogs(key: LogSort, firstDirection: "asc" | "desc") {
+    toggleSort(key, firstDirection);
+    setPage(0);
+  }
   return <dialog ref={dialogRef} className="api-key-logs-dialog" aria-labelledby="traffic-logs-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
     <div className="dialog-header"><h2 id="traffic-logs-title">{t("Matching requests")}</h2><IconButton label={t("Close dialog")} autoFocus type="button" className="icon-button" onClick={onClose}><X size={16} /></IconButton></div>
     <div className="panel-actions"><span>{t("Total")}: {integer(total)} · {timezone}</span><RefreshButton isRefreshing={logs.isFetching} onClick={() => logs.refetch()} /></div>
-    <div className="table-wrap"><table><thead><tr>{["Time", "Key", "Model", "Provider", t("Attempts / fallback"), t("Gateway request ID"), "Upstream request ID", "Status", "Latency", "Tokens", "Characters", "Spend (Credits)"].map((label) => <th key={label}>{t(label)}</th>)}</tr></thead>
+    <div className="table-wrap"><table><thead><tr>
+      <SortHeader sort={sort} sortKey="created_at" onSort={sortLogs}>{t("Time")}</SortHeader>
+      <th>{t("Key")}</th><th>{t("Model")}</th><th>{t("Provider")}</th>
+      <SortHeader sort={sort} sortKey="attempt_count" onSort={sortLogs}>{t("Attempts / fallback")}</SortHeader>
+      <th>{t("Gateway request ID")}</th><th>{t("Upstream request ID")}</th><th>{t("Status")}</th>
+      <SortHeader sort={sort} sortKey="latency_ms" onSort={sortLogs}>{t("Latency")}</SortHeader>
+      <SortHeader sort={sort} sortKey="total_tokens" onSort={sortLogs}>{t("Tokens")}</SortHeader>
+      <th>{t("Characters")}</th>
+      <SortHeader sort={sort} sortKey="charged_microcredits" onSort={sortLogs}>{t("Spend (Credits)")}</SortHeader>
+    </tr></thead>
       <tbody>
         {logs.isPending || logs.error || !logs.data?.items.length ? <tr><td colSpan={12}>{t(logs.isPending ? "Loading logs..." : logs.error ? "Unable to load logs" : "No requests yet.")}</td></tr> : null}
         {(logs.data?.items ?? []).map((log) => <tr key={log.id}>

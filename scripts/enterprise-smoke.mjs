@@ -36,6 +36,10 @@ const otherModel={...model,protocol:'anthropic',display_name:'备用模型',prov
 const modelRoute='/models/openai/demo-model/routing';
 const employee={issuer:'test',subject_claim:'sub',subject:'staff-01',name:'演示员工',department_id:'team',department_path:'/示例公司/研发部/平台组',principal_id:'key_demo',virtual_org_id:'vo_demo',virtual_org_name:org.name,policy_mode:'default',status:'active'};
 const personal={id:'key_demo',name:'演示员工',source:'employee',status:'active',quota_microcredits:'1000000000',used_microcredits:'1000',allowed_models:['*'],rate_limits:[]};
+const sortKeys=Array.from({length:52},(_,index)=>({
+ ...personal,id:`key_sort_${index}`,name:`sort-key-${index}`,source:'admin',key_prefix:'th_sort',created_at:'2026-11-11T00:00:00Z',
+ request_quota:0,token_quota:0,used_requests:index,used_tokens:index*100,used_microcredits:String(index*1_000_000),
+}));
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://localhost');
  const target=path.extname(url.pathname)?path.join(root,'dist',url.pathname):path.join(root,'dist/index.html');
@@ -86,6 +90,11 @@ try{
    else if(p.startsWith('/admin/ledger/') && !p.endsWith('/reconcile'))data={items:[{day:'2026-11-11',requests:3,charged_microcredits:'120000',upstream_currency:'CNY',upstream_cost_micros:'11000'}]};
    data=integrationFixture(url,role)??financeFixture(url)??data;
    if(p==='/admin/api-keys')data={items:[{...personal,source:'admin',key_prefix:'th_demo',created_at:'2026-11-11T00:00:00Z',request_quota:0,token_quota:0,requests_used:0,tokens_used:0}]};
+   if(p==='/admin/api-keys'&&url.searchParams.get('search')==='sort-key'){
+    const offset=Number(url.searchParams.get('offset')),limit=Number(url.searchParams.get('limit'));
+    const items=url.searchParams.get('sort')==='used_microcredits'&&url.searchParams.get('dir')==='desc'?[...sortKeys].reverse():sortKeys;
+    data={items:items.slice(offset,offset+limit),total:items.length,offset,limit};
+   }
    if(request.method()!=='GET'){const body=request.postData()?request.postDataJSON():{};writes.push({p,body});data={applied:body?.dry_run===false,preview:{before:null,after:body},audit_id:1};if(p==='/admin/mcp-tokens'&&request.method()==='POST')data={token:syntheticToken,record:{id:'mcp_new_demo',name:body.name,scopes:body.scopes,expires_at:'2030-12-01T00:00:00Z'}};}
    if(p==='/admin/requests/thr_demo_missing'){await route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({error:'request not found'})});return;}
    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});
@@ -100,6 +109,31 @@ try{
    assert.ok(await page.evaluate(()=>document.scrollingElement.scrollHeight<=innerHeight+1),`${role}${route} document must not scroll`);
    assert.equal(await page.locator('nav a').first().getAttribute('href'),role==='user'?'/organizations':'/');
    assert.equal(await page.locator('.nav-group').count(),role==='user'?4:5);
+   if(route==='/grant-keys'&&locale==='en-US'&&role==='super_admin'){
+    await page.goto(address+'/grant-keys?search=sort-key&offset=50');
+    await page.getByRole('link',{name:'sort-key-50',exact:true}).waitFor();
+    const spend=page.getByRole('button',{name:msg('Spent'),exact:true});
+    await spend.focus();
+    const sortedRead=page.waitForRequest(url=>new URL(url.url()).pathname==='/admin/api-keys'&&url.url().includes('dir=desc'));
+    await page.keyboard.press('Enter');
+    const sortedQuery=new URL((await sortedRead).url()).searchParams;
+    assert.equal(sortedQuery.get('sort'),'used_microcredits');
+    assert.equal(sortedQuery.get('search'),'sort-key');
+    assert.equal(sortedQuery.get('offset'),'0');
+    assert.equal(await spend.locator('..').getAttribute('aria-sort'),'descending');
+    await page.getByRole('link',{name:'sort-key-2',exact:true}).waitFor();
+    assert.equal(await page.locator('main tbody tr').first().getByRole('link').innerText(),'sort-key-51');
+    await page.getByRole('button',{name:msg('Next page'),exact:true}).click();
+    await page.getByRole('link',{name:'sort-key-0',exact:true}).waitFor();
+    assert.equal(await page.locator('main tbody tr').first().getByRole('link').innerText(),'sort-key-1');
+    await spend.click();
+    await page.getByRole('link',{name:'sort-key-0',exact:true}).waitFor();
+    assert.equal(await spend.locator('..').getAttribute('aria-sort'),'ascending');
+    await spend.click();
+    assert.equal(await spend.locator('..').getAttribute('aria-sort'),null);
+    await page.goto(address+route);
+    await page.getByRole('link',{name:personal.name,exact:true}).waitFor();
+   }
    if(route==='/'||route==='/traffic'){await page.locator('.metric').filter({has:page.getByText(msg('Spend (Credits)'),{exact:true})}).getByText('2.5',{exact:true}).waitFor();}
    if(route==='/'){
     await page.getByRole('heading',{name:msg('Channel health'),exact:true}).waitFor();

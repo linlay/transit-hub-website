@@ -1,4 +1,5 @@
 import { Select } from "../components/ThemedControls";
+import { SortHeader, sortRows, useTableSort } from "../components/TableSort";
 import { useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -12,7 +13,7 @@ import { api, isTelemetryError } from "../lib/api";
 import { compactTokenCount, creditAmount, dateTime, integer, percent } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
-import type { UsageCalibration, UsageSource, UsageSourceSummary } from "../lib/types";
+import type { UsageSource, UsageSourceSummary } from "../lib/types";
 
 const ranges = { "24h": 24, "7d": 24 * 7, "30d": 24 * 30 } as const;
 type RangeKey = keyof typeof ranges;
@@ -57,6 +58,8 @@ export function UsageAudit() {
     placeholderData: keepPreviousData,
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
+  const [anomalySort, toggleAnomalySort] = useTableSort<"success_requests" | "charged_microcredits" | "last_seen_at">();
+  const [calibrationSort, toggleCalibrationSort] = useTableSort<"samples">();
   const isRefreshing = summary.isFetching || calibration.isFetching;
   usePageActions(
     <>
@@ -75,6 +78,8 @@ export function UsageAudit() {
     () => items.filter((item) => item.alerting).sort((a, b) => b.last_seen_at.localeCompare(a.last_seen_at)),
     [items],
   );
+  const sortedAnomalies = sortRows(anomalies, anomalySort, (row, key) => key === "last_seen_at" ? new Date(row.last_seen_at) : row[key]);
+  const sortedCalibration = sortRows(calibration.data?.items ?? [], calibrationSort, row => row.samples);
   const rows = useMemo(() => modelRows(items), [items]);
   const totals = useMemo(() => {
     const counts = Object.fromEntries(sources.map((source) => [source, 0])) as Record<UsageSource, number>;
@@ -118,14 +123,14 @@ export function UsageAudit() {
                   <th>{t("Provider")}</th>
                   <th>{t("Model")}</th>
                   <th>{t("Usage source")}</th>
-                  <th className="numeric">{t("Requests")}</th>
-                  <th className="numeric">{t("Estimated charge")}</th>
-                  <th>{t("Last seen")}</th>
+                  <SortHeader sort={anomalySort} sortKey="success_requests" onSort={toggleAnomalySort} className="numeric">{t("Requests")}</SortHeader>
+                  <SortHeader sort={anomalySort} sortKey="charged_microcredits" onSort={toggleAnomalySort} className="numeric">{t("Estimated charge")}</SortHeader>
+                  <SortHeader sort={anomalySort} sortKey="last_seen_at" onSort={toggleAnomalySort}>{t("Last seen")}</SortHeader>
                   <th>{t("Upstream request ID")}</th>
                 </tr>
               </thead>
               <tbody>
-                {anomalies.map((item) => (
+                {sortedAnomalies.map((item) => (
                   <tr key={`${item.provider}:${item.public_model}:${item.usage_source}`}>
                     <td>{item.provider}</td>
                     <td>{item.public_model}</td>
@@ -203,7 +208,7 @@ export function UsageAudit() {
               <tr>
                 <th>{t("Provider")}</th>
                 <th>{t("Model")}</th>
-                <th className="numeric">{t("Samples")}</th>
+                <SortHeader sort={calibrationSort} sortKey="samples" onSort={toggleCalibrationSort} className="numeric">{t("Samples")}</SortHeader>
                 <th className="numeric">{t("Reported input")}</th>
                 <th className="numeric">{t("Estimated input")}</th>
                 <th className="numeric">{t("Input ratio")}</th>
@@ -214,7 +219,7 @@ export function UsageAudit() {
               </tr>
             </thead>
             <tbody>
-              {(calibration.data?.items ?? []).map((item: UsageCalibration) => (
+              {sortedCalibration.map((item) => (
                 <tr key={`${item.provider}:${item.public_model}`}>
                   <td>{item.provider}</td>
                   <td>{item.public_model}</td>

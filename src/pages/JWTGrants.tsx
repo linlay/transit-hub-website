@@ -1,3 +1,5 @@
+import { TablePagination } from "../components/TablePagination";
+import { SortHeader, nextTableSort, readTableSort } from "../components/TableSort";
 import { Select } from "../components/ThemedControls";
 import { useListFilters, useDebouncedValue } from "../lib/useListFilters";
 import { useListScroll } from "../lib/useListScroll";
@@ -25,6 +27,9 @@ import { compactTokenCount, integer } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 import { PAGE_REFETCH_INTERVAL_MS } from "../lib/query";
 
+const grantSortKeys = ["issued_count", "expires_at", "last_issued_at"] as const;
+const grantPageSize = 50;
+
 export function JWTGrants() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -32,6 +37,14 @@ export function JWTGrants() {
   const search = params.get("search") ?? "";
   const status = params.get("status") ?? "all";
   const debouncedSearch = useDebouncedValue(search);
+  const sort = readTableSort(params, grantSortKeys);
+  const rawOffset = Number(params.get("offset"));
+  const offset = Number.isSafeInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
+
+  function toggleSort(key: typeof grantSortKeys[number]) {
+    const next = nextTableSort(sort, key);
+    setFilters({ sort: next?.key ?? null, dir: next?.dir ?? null, offset: null });
+  }
   const [createOpen, setCreateOpen] = useState(false);
   const [copySource, setCopySource] = useState<JWTGrant | null>(null);
   const [editing, setEditing] = useState<JWTGrant | null>(null);
@@ -43,9 +56,9 @@ export function JWTGrants() {
   const [createCopyMessage, setCreateCopyMessage] = useState("");
   const [viewCopyMessage, setViewCopyMessage] = useState("");
   const grants = useQuery({
-    queryKey: ["jwt-grants", debouncedSearch, status],
+    queryKey: ["jwt-grants", debouncedSearch, status, sort, offset],
     placeholderData: keepPreviousData,
-    queryFn: () => api.jwtGrants({ search: debouncedSearch, status }),
+    queryFn: () => api.jwtGrants({ search: debouncedSearch, status, limit: grantPageSize, offset, sort: sort?.key, dir: sort?.dir }),
     refetchInterval: PAGE_REFETCH_INTERVAL_MS,
   });
   useListScroll(Boolean(grants.data));
@@ -190,10 +203,10 @@ export function JWTGrants() {
         <div className="toolbar filters">
           <label className="search">
             <Search size={16} />
-            <input type="search" value={search} onChange={(event) => setFilters({ search: event.target.value })} placeholder={t("Search grants")} />
+            <input type="search" value={search} onChange={(event) => setFilters({ search: event.target.value, offset: null })} placeholder={t("Search grants")} />
           </label>
-          <ResponsiveFilters count={Number(status !== "all")} summary={status !== "all" ? t(status === "active" ? "Active" : "Disabled") : ""} onReset={() => setFilters({ status: null })}>
-          <Select aria-label={t("Status")} value={status} onChange={(event) => setFilters({ status: event.target.value })}>
+          <ResponsiveFilters count={Number(status !== "all")} summary={status !== "all" ? t(status === "active" ? "Active" : "Disabled") : ""} onReset={() => setFilters({ status: null, offset: null })}>
+          <Select aria-label={t("Status")} value={status} onChange={(event) => setFilters({ status: event.target.value, offset: null })}>
             <option value="all">{t("All statuses")}</option>
             <option value="active">{t("Active")}</option>
             <option value="disabled">{t("Disabled")}</option>
@@ -207,11 +220,11 @@ export function JWTGrants() {
               <tr>
                 <th className="credential-name-col">{t("Name")}</th>
                 <th className="credential-status-col">{t("Status")}</th>
-                <th className="credential-issued-col">{t("Issued")}</th>
+                <SortHeader sort={sort} sortKey="issued_count" onSort={toggleSort} className="credential-issued-col">{t("Issued")}</SortHeader>
                 <th className="credential-limits-col">{t("Default limits")}</th>
                 <th>{t("Models")}</th>
-                <th className="credential-date-col">{t("Expires")}</th>
-                <th className="credential-date-col">{t("Last issued")}</th>
+                <SortHeader sort={sort} sortKey="expires_at" onSort={toggleSort} className="credential-date-col">{t("Expires")}</SortHeader>
+                <SortHeader sort={sort} sortKey="last_issued_at" onSort={toggleSort} className="credential-date-col">{t("Last issued")}</SortHeader>
                 <th className="row-actions-cell" aria-label={t("Actions")} />
               </tr>
             </thead>
@@ -257,6 +270,14 @@ export function JWTGrants() {
             </tbody>
           </table>
         </div>
+        {grants.data && <TablePagination
+          offset={offset}
+          limit={grantPageSize}
+          count={grants.data.items.length}
+          total={grants.data.total}
+          pending={grants.isFetching}
+          onPageChange={next => setFilters({ offset: next ? String(next) : null })}
+        />}
       </section>
 
       {createOpen ? (
